@@ -6,10 +6,10 @@ frontend
 1.ลง react เเล้ว
 2.ลง library เเล้ว
 {
-  npm instal dayjs --save
+  npm install dayjs --save
   npm install antd --save
-  npm instal axios --save
-  npm instal dayjs --save
+  npm install axios --save
+  npm install dayjs --save
 }
 -------------------------------------------------------------------------------------------------
 backend
@@ -27,7 +27,7 @@ backend
 
 -------------------------------------------------------------------------------------------------------------------
 frontend
-1.npm install //เพื่อติดตั้ง node_mudels
+1.npm install //เพื่อติดตั้ง node_modules
 
 -------------------------------------------------------------------------------------------------------------------
 git (เมื่อทำเสร็จเเล้วต้องการ push ขึ้น)
@@ -40,7 +40,7 @@ git push -u origin <ชื่อ branch>
 คำสั่งพื้นฐาน git
 git clone github.com/Worawut2547/Reg-System                         #ใช้ตอน start project
 git init                                                            #สร้าง git repo
-git add <ชื่อไฟล์ที่ต้องการ add>                                         #เพิ่มไฟลืทั้งหมดเข้า staging  
+git add <ชื่อไฟล์ที่ต้องการ add>                                         #เพิ่ม file ทั้งหมดเข้า staging  
 git status                                                     
 git commit -m "first commit"
 git remote add origin https://github.com/Worawut2547/Reg-System.git
@@ -68,17 +68,29 @@ git fetch origin <ชื่อ branch ที่ merge>                          
 git checkout main                                                                                                         
 git pull origin main                                                 #ดึงโค้ดล่าสุดจาก main
 git merge <ชื่อ branch ที่จะ merge เข้ากับ main>
-  ถ้า config
-  *เเก้ config เสร็จเเล้ว
+
+Warning ถ้า File เดียวกันถูกแก้ทั้งใน main และ branch → อาจเกิด conflict ตอน merge
+>> เเก้ config เสร็จเเล้ว
   git add <ไฟล์ที่ config>
   git status
   git commit -m "review code success"
   git push origin main
   
 ===================================================================================================================
+การทำ Pull Request
+1. Push ขึ้น git ก่อน
+git add .
+git status
+git commit -m "merge to main"
+git push origin <ชื่อ branch>                                          #push branch ของตัวเองขึ้น github
 
-การทำ Pull Request 
-
+2. เข้า github เลือก branch 
+เลือก branch ที่ push ขึ้นมา
+ตรวจสอบว่า
+   base: branch ที่จะ merge เข้า (main)
+   compare: branch ที่ทำงานอยู่ <ชื่อ branch>
+ใส่คำอธิบาย
+กด Create Pull Request
 ===================================================================================================================
 เเหล่งข้อมูลเพิ่มเติม 
 git : https://docs.mikelopster.dev/c/basic/git/intro
