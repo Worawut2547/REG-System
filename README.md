@@ -91,6 +91,19 @@ git push origin <ชื่อ branch>                                          #
    compare: branch ที่ทำงานอยู่ <ชื่อ branch>
 ใส่คำอธิบาย
 กด Create Pull Request
+
+Warning ถ้า File เกิดการ config กัน
+>> เเก้ Config ใน branch ตัวเอง (ไม่ใช่ main)
+  git checkout <ชื่อ branch>                                           #อยู่ที่ branch ตัวเอง
+  git pull origin main                                               #ดึงโค้ดล่าสุดจาก main ลงมาเพื่อดู config
+  เเก้ config
+  git add .
+  git status
+  git commit -m  "edit config success"
+  git push origin <ชื่อ branch>
+
+กลับไปที่ PR → GitHub จะอัปเดตอัตโนมัติว่า conflict ถูกแก้แล้ว
+
 ===================================================================================================================
 เเหล่งข้อมูลเพิ่มเติม 
 git : https://docs.mikelopster.dev/c/basic/git/intro
