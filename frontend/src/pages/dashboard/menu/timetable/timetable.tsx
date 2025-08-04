@@ -1,4 +1,3 @@
-// src/pages/dashboard/menu/register.tsx
 import React from 'react';
 import { Layout } from 'antd';
 import './timetable.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
@@ -13,7 +12,7 @@ const wrapperStyle: React.CSSProperties = {
 
   /* 👇 stretch full size of parent Content */
   width: '100%',          // fill X
-  height: '100%',         // fill Y
+  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
   display: 'flex',        // so Header/Content/Footer stack vertically
   flexDirection: 'column',
   overflow: 'hidden',
@@ -30,8 +29,9 @@ const headerStyle: React.CSSProperties = {
 const contentStyle: React.CSSProperties = {
   background: '#f5f5f5',            // เทาอ่อน
   padding: 24,
-  minHeight: 200,
+  minHeight: 400,
   color: '#333',
+  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
 };
 
 const footerStyle: React.CSSProperties = {

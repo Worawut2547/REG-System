@@ -199,16 +199,26 @@ const Dashboardpage: React.FC = () => {
                 style={{ fontSize: '16px', width: 64, height: 64 }}
               />
             </Col>
-            <Col span={12} />
-            <Col span={6} pull={0}>
+            <Col
+              span={6}
+              push={17}
+              style={{
+                position: 'fixed',
+                display: 'flex',              // ใช้ flexbox
+                justifyContent: 'center',     // จัดข้อความให้อยู่กลางแนวนอน
+                alignItems: 'center',         // จัดข้อความให้อยู่กลางแนวตั้ง
+                textAlign: 'center',          // จัดข้อความให้อยู่กลางในแนวตั้ง
+              }}
+            >
               <div className="name">
                 {students.map((s) => (
                   <h1 key={s.Student_id} className="name-text">
-                    สวัสดีคุณ {s.FirstName} {s.LastName}
+                    ยินดีต้อนรับคุณ {s.FirstName} {s.LastName}
                   </h1>
                 ))}
               </div>
             </Col>
+
           </Row>
         </Header>
 

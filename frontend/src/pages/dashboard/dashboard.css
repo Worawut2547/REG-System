@@ -42,3 +42,17 @@
   position: absolute; 
   z-index: 2;
 }
+
+/* ซ่อนแถบแสดงสถานะการเลื่อน */
+.scroll-progress-bar {
+  display: none;  /* ซ่อนแถบแสดงสถานะการเลื่อน */
+}
+
+/* หรือถ้าต้องการแค่ซ่อนแถบไม่ให้แสดง แต่ยังคงใช้ได้ */
+.scroll-progress-bar-hidden {
+  display: hidden; /* ซ่อนแถบแสดงสถานะการเลื่อน */
+  position: absolute; /* ควบคุมตำแหน่ง */
+  top: 0;
+  left: 0;
+  width: 100%;
+}
