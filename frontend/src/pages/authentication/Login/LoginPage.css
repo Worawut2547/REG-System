@@ -1,11 +1,12 @@
 .login-container {
   display: flex;
-  min-height: 100vh;
-  max-height: 98vh; 
-  font-family: 'Segoe UI', sans-serif;
+  min-height: reposive;
+  max-height: reposive; 
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
 }
-
 
 .login-left {
   flex: 1;
@@ -15,6 +16,14 @@
   justify-content: center;
   align-items: center;
   padding: 32px;
+}
+.login-right {
+  flex: 1;
+  background-color: #eef1ff00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
 }
 
 .login-logo {
@@ -44,7 +53,12 @@
   align-items: center
 }
 
-
+.ant-input:hover,
+.ant-input-password:hover,
+.ant-input-affix-wrapper:hover {
+  background-color: #daf8fc; /* สีตอน hover */
+  transition: background-color 0.3s ease; /* ทำให้เปลี่ยนสีลื่นขึ้น */
+}
 .icon {
   width: 22px;
   height: 22px;
@@ -71,15 +85,6 @@
   width: 100%;
 }
 
-
-.login-right {
-  flex: 1;
-  background-color: #eef1ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .building-image {
   width: 48vw;
   max-width: 700px;
@@ -87,4 +92,11 @@
   object-fit: contain;
 }
 
-
+.name{
+  width: 18vw;
+  max-width: 230px;
+  height: auto;
+  margin-bottom: 32px;
+  position: absolute; 
+  z-index: 1;
+}

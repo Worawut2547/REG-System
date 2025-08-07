@@ -1,0 +1,62 @@
+/* เปลี่ยนสีข้อความในเมนูทั้งหมด */
+.custom-menu .ant-menu-item,
+.custom-menu .ant-menu-submenu-title {
+  color: rgb(255, 255, 255) !important;
+}
+
+/* เปลี่ยนสีเมื่อ hover */
+.custom-menu .ant-menu-item:hover {
+  color: #000000 !important; /* สีตอน hover */
+  background-color: #ffffff !important;
+}
+
+/* เปลี่ยนสีตอน selected */
+.custom-menu .ant-menu-item-selected {
+  background-color: #5e45b3 !important;
+  color: white !important;
+}
+
+
+.name{
+  width: 300px;
+  height: 100px;
+  margin-bottom: 10px;
+  position: relative; 
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.name-text {
+  color: black;
+  font-size: 20px;
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;   /* ⭐ ไม่ตัดขึ้นบรรทัดใหม่ */
+}
+
+.buttonhide {
+  width: 18vw;
+  max-width: 230px;
+  height: auto;
+  margin-bottom: 32px;
+  position: absolute; 
+  z-index: 2;
+}
+
+/* ซ่อนแถบแสดงสถานะการเลื่อน */
+.scroll-progress-bar {
+  display: none;  /* ซ่อนแถบแสดงสถานะการเลื่อน */
+}
+
+/* หรือถ้าต้องการแค่ซ่อนแถบไม่ให้แสดง แต่ยังคงใช้ได้ */
+.scroll-progress-bar-hidden {
+  display: hidden; /* ซ่อนแถบแสดงสถานะการเลื่อน */
+  position: absolute; /* ควบคุมตำแหน่ง */
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+.side{
+  background-color: #2e236c !important;
+}
+

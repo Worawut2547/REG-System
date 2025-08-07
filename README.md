@@ -1,122 +1,131 @@
-=================================================================================================
-Checklist ที่ลงไว้เเล้ว
-ไฟล์ first.tsx , first.go สามารถลบได้
--------------------------------------------------------------------------------------------------
-frontend 
-1.ลง react เเล้ว
-2.ลง library เเล้ว
-{
-  npm install dayjs --save
-  npm install antd --save
-  npm install axios --save
-  npm install dayjs --save
-}
--------------------------------------------------------------------------------------------------
-backend
-1.ลง go module เเล้ว <reg_system>
-2.ลง library เเล้ว
-{
-  go get -u github.com/gin-gonic/gin
-  go get -u gorm.io/gorm
-  go get -u gorm.io/driver/sqlite
-  go get -u github.com/dgrijalva/jwt-go
-  go get -u golang.org/x/crypto@v0.16.0
-}
-===================================================================================================================
-สิ่งที่ต้องทำหลัง clone project ไปเเล้ว
 
--------------------------------------------------------------------------------------------------------------------
-frontend
-1.npm install //เพื่อติดตั้ง node_modules
+# ✅ Checklist ที่ลงไว้แล้ว
 
--------------------------------------------------------------------------------------------------------------------
-git (เมื่อทำเสร็จเเล้วต้องการ push ขึ้น)
+- [x] ลบไฟล์ `first.tsx`, `first.go`
+- [x] ติดตั้ง React
+- [x] ติดตั้ง Library
+
+---
+
+## 📦 Frontend Setup
+
+### ติดตั้ง Library แล้ว:
+```bash
+npm install dayjs --save
+npm install antd --save
+npm install axios --save
+npm install dayjs --save
+```
+
+---
+
+## 🛠️ Backend Setup
+
+### Go Module + Library เเล้ว:
+```bash
+go get -u github.com/gin-gonic/gin
+go get -u gorm.io/gorm
+go get -u gorm.io/driver/sqlite
+go get -u github.com/dgrijalva/jwt-go
+go get -u golang.org/x/crypto@v0.16.0
+```
+
+---
+
+## 📂 หลังจาก Clone Project
+
+### ✅ สำหรับ Frontend:
+```bash
+npm install
+```
+
+---
+
+## 🧠 Git Workflow
+
+### 🔼 Push โค้ดขึ้น GitHub
+```bash
 git add .
 git status
 git commit -m "first commit"
 git push -u origin <ชื่อ branch>
+```
 
-===================================================================================================================
-คำสั่งพื้นฐาน git
-git clone github.com/Worawut2547/Reg-System                         #ใช้ตอน start project
-git init                                                            #สร้าง git repo
-git add <ชื่อไฟล์ที่ต้องการ add>                                         #เพิ่ม file ทั้งหมดเข้า staging  
-git status                                                     
+### 🧾 คำสั่ง Git พื้นฐาน
+```bash
+git clone github.com/Worawut2547/Reg-System
+git init
+git add <ชื่อไฟล์>
+git status
 git commit -m "first commit"
 git remote add origin https://github.com/Worawut2547/Reg-System.git
 git push -u origin <ชื่อ branch>
 git pull origin <ชื่อ branch>
+```
 
--------------------------------------------------------------------------------------------------------------------
-คำสั่งเกี่ยวกับ branch
-git branch                                                          #Check all branchs
-git checkout -b <ชื่อ branch ใหม่>                                     #Create a new branch
-git checkout <ชื่อ branch>                                            #Move to branch
-Warning
->> กรณีด้านบน คือ มาสร้าง branch ที่เครื่องเองไม่ได้สร้าง branch ผ่าน github
->> ถ้าสร้าง branch ผ่าน github เเล้วอยากจะดึงข้อมูล branch ที่สร้างลงมา
-    git fetch origin <ชื่อ branch>                                    #ดึง branch จาก github มาไว้ที่เครื่องตัวเอง
-    git checkout <ชื่อ branch>
--------------------------------------------------------------------------------------------------------------------
-คำสั่งเกี่ยวกับ merge
-git checkout main                                                   #Move to branch main
-git merge <ชื่อ branch ที่จะ merge เข้ากับ main>
+### 🌿 คำสั่งเกี่ยวกับ Branch
+```bash
+git branch                          # ดูทั้งหมด
+git checkout -b <ชื่อ branch>       # สร้าง branch ใหม่
+git checkout <ชื่อ branch>          # ย้ายไป branch นั้น
+git fetch origin <ชื่อ branch>      # ดึง branch จาก github
+```
 
--------------------------------------------------------------------------------------------------------------------
-การ merge เข้ากับ main
-git fetch origin <ชื่อ branch ที่ merge>                                #ดึง branch ของคนที่ merge มาไว้ที่เครื่องตัวเอง
-git checkout main                                                                                                         
-git pull origin main                                                 #ดึงโค้ดล่าสุดจาก main
-git merge <ชื่อ branch ที่จะ merge เข้ากับ main>
+### 🔀 Merge เข้ากับ main
+```bash
+git fetch origin <ชื่อ branch>
+git checkout main
+git pull origin main
+git merge <ชื่อ branch>
+```
 
-Warning ถ้า File เดียวกันถูกแก้ทั้งใน main และ branch → อาจเกิด conflict ตอน merge
->> เเก้ config เสร็จเเล้ว
-  git add <ไฟล์ที่ config>
-  git status
-  git commit -m "review code success"
-  git push origin main
-  
-===================================================================================================================
-การทำ Pull Request
-1. Push ขึ้น git ก่อน
+💡 ถ้าเกิด conflict:
+```bash
+# แก้ไขไฟล์ที่ conflict แล้วทำตามนี้
+git add <ไฟล์ที่ conflict>
+git status
+git commit -m "review code success"
+git push origin main
+```
+
+---
+
+## 🔁 การทำ Pull Request (PR)
+
+### ขั้นตอน:
+1. Push โค้ด:
+```bash
 git add .
 git status
 git commit -m "merge to main"
-git push origin <ชื่อ branch>                                          #push branch ของตัวเองขึ้น github
+git push origin <ชื่อ branch>
+```
 
-2. เข้า github เลือก branch 
-เลือก branch ที่ push ขึ้นมา
-ตรวจสอบว่า
-   base: branch ที่จะ merge เข้า (main)
-   compare: branch ที่ทำงานอยู่ <ชื่อ branch>
-ใส่คำอธิบาย
-กด Create Pull Request
+2. บน GitHub:
+- ไปที่ branch ที่ push ขึ้น
+- ตรวจสอบว่า `base: main`, `compare: <ชื่อ branch>`
+- กด `Create Pull Request`
 
-Warning ถ้า File เกิดการ config กัน
->> เเก้ Config ใน branch ตัวเอง (ไม่ใช่ main)
-  git checkout <ชื่อ branch>                                           #อยู่ที่ branch ตัวเอง
-  git pull origin main                                               #ดึงโค้ดล่าสุดจาก main ลงมาเพื่อดู config
-  เเก้ config
-  git add .
-  git status
-  git commit -m  "edit config success"
-  git push origin <ชื่อ branch>
+💡 ถ้ามี Conflict:
+```bash
+git checkout <ชื่อ branch>
+git pull origin main
+# แก้ไขไฟล์ conflict
+git add .
+git status
+git commit -m "edit config success"
+git push origin <ชื่อ branch>
+```
 
-กลับไปที่ PR → GitHub จะอัปเดตอัตโนมัติว่า conflict ถูกแก้แล้ว
+GitHub จะอัปเดตว่า conflict ถูกแก้แล้ว
 
-===================================================================================================================
-เเหล่งข้อมูลเพิ่มเติม 
-git : https://docs.mikelopster.dev/c/basic/git/intro
+---
 
--------------------------------------------------------------------------------------------------------------------
-backend
-go : https://docs.mikelopster.dev/c/goapi-essential/intro
-gorm : https://gorm.io/docs/
-gin : https://gin-gonic.com/en/docs/introduction
+## 🔗 แหล่งข้อมูลเพิ่มเติม
 
--------------------------------------------------------------------------------------------------------------------
-react : https://www.w3schools.com/REACT/react_forms.asp
-antdesign : https://ant.design/components/overview/
-
-
-
+- Git: [docs.mikelopster.dev - Git](https://docs.mikelopster.dev/c/basic/git/intro)
+- Go: [Go API Essential](https://docs.mikelopster.dev/c/goapi-essential/intro)
+- GORM: [gorm.io/docs](https://gorm.io/docs/)
+- Gin: [gin-gonic.com](https://gin-gonic.com/en/docs/introduction)
+- React: [W3Schools - React Forms](https://www.w3schools.com/REACT/react_forms.asp)
+- Ant Design: [Ant Design Components](https://ant.design/components/overview/)
