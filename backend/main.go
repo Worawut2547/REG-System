@@ -1,12 +1,20 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/gin-contrib/cors"
+	
 	"reg_system/config"
-	"reg_system/controller/students"
-	"net/http"
+	
+	"reg_system/controller/admins/profile"
+	"reg_system/controller/teachers/profile"
+	"reg_system/controller/students/profile"
+	
+	"reg_system/controller/users"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
+
+const port = "8000"
 
 func main() {
 	config.ConnectionDB()
@@ -17,35 +25,59 @@ func main() {
 	r.Use(cors.Default())
 
 	r.Use(CORSMiddleware())
-	studentsGroup := r.Group("/students")
-	{
-		studentsGroup.GET("/", students.GetStudents)
-		studentsGroup.POST("/", students.CreateStudent)
-		studentsGroup.PUT("/:id", students.UpdateStudent)
-		studentsGroup.DELETE("/:id", students.DeleteStudent)
+
+
+	// Authentication
+	r.POST("/signin" , users.SignIn)
+
+
+	//---------------------------------------------------------
+	//Admin
+	adminGroup := r.Group("/admin"); {
+		adminGroup.GET("/:id",admins.GetAdminID)
+	}
+	//---------------------------------------------------------
+
+
+	//---------------------------------------------------------
+	//Student
+	studentGroup := r.Group("/student"); {
+		studentGroup.GET("/:id", students.GetStudentID)
+		studentGroup.POST("/",students.CreateStudent)
+	}
+	//---------------------------------------------------------
+
+
+	//---------------------------------------------------------
+	//Teacher
+	teacherGroup := r.Group("/teacher");{
+		teacherGroup.GET("/:id", teachers.GetTeacherID)
+		teacherGroup.POST("/" , teachers.CreateTeacher)
 	}
 
-	r.Run("localhost:8080") // Run on port 8080
+
+	// Run on port 8000
+	r.Run("localhost:" +port)
 }
+
+
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		
 		// ตั้งค่า CORS headers
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*") // หรือกำหนด origin ที่เฉพาะเจาะจงก็ได้
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Origin" , "*") //อนุญาตให้ port ที่จะมาเชื่อมต่อ (* อนุญาตทั้งหมด)
+		c.Writer.Header().Set("Access-Control-Allow-Credentials" , "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Method" , "GET , POST , PUT , DELETE , OPTIONS",)
 
-		// ✅ จัดการ Preflight Request (OPTIONS)
-		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(http.StatusNoContent) // ส่งกลับ 204 No Content
+		if c.Request.Method == "OPTIONS"{
+			c.AbortWithStatus(204)
 			return
 		}
-
-		// ✅ ทำงานต่อไปยัง handler อื่น ๆ
 		c.Next()
 
-		// ✅ ตรวจสอบ error ที่เกิดระหว่างการทำงาน
+		// ตรวจสอบ error ที่เกิดระหว่างการทำงาน
 		if len(c.Errors) > 0 {
 			c.JSON(-1, gin.H{
 				"status": "error",
