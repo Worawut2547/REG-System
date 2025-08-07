@@ -44,10 +44,10 @@ func CreateTeacher (c *gin.Context){
 		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
 		return
 	}
-	// เพิ่ม รหัสอาจารย์ , เลขบัตรปชช ลงตาราง Users หลังเพิ่มข้อมูลอาจรย์เเล้ว
+	// เพิ่ม รหัสนักศึกษา , เลขบัตรปชช ลงตาราง Users หลังเพิ่มข้อมูลนักเรียนเเล้ว
 	hashPassword , _ := config.HashPassword(teacher.Citizen_id)
 	user := &entity.Users{
-		Username: teacher.Teacher_id, // ดึงรหัสอาจารย์ออกมา
+		Username: teacher.Teacher_id, // ดึงรหัสนักศึกษาออกมา
 		Password: hashPassword,
 		Role: "teacher", //กำหนด Role
 	}
@@ -56,9 +56,27 @@ func CreateTeacher (c *gin.Context){
 		return
 	}
 	c.JSON(http.StatusOK , gin.H{
-		"message": "Create teacher success",
+		"message": "Create student success",
 		"Teacher_id": teacher.Teacher_id,
 		"FirstName": teacher.FirstName,
 		"LastName": teacher.LastName,
 	})
+}
+
+func GetTeacherAll (c *gin.Context){
+	var teachers [] entity.Teachers
+	db := config.DB()
+
+	results := db.Find(&teachers)
+	if results.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
+		return
+	}
+
+	if results.RowsAffected == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
+        return	
+	}
+
+	c.JSON(http.StatusOK , teachers)
 }

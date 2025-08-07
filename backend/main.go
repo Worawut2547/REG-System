@@ -43,7 +43,8 @@ func main() {
 	//Student
 	studentGroup := r.Group("/student"); {
 		studentGroup.GET("/:id", students.GetStudentID)
-		studentGroup.POST("/",students.CreateStudent)
+		studentGroup.POST("/create",students.CreateStudent)
+		studentGroup.GET("/all" , students.GetStudentAll)
 	}
 	//---------------------------------------------------------
 
@@ -52,7 +53,8 @@ func main() {
 	//Teacher
 	teacherGroup := r.Group("/teacher");{
 		teacherGroup.GET("/:id", teachers.GetTeacherID)
-		teacherGroup.POST("/" , teachers.CreateTeacher)
+		teacherGroup.POST("/create" , teachers.CreateTeacher)
+		teacherGroup.GET("/all" , teachers.GetTeacherAll)
 	}
 
 

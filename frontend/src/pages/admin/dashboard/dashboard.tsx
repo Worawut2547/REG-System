@@ -6,13 +6,13 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 
 /* ---------- page components ---------- */
 import MainPage from './menu/mainpage/mainpage';
-import RegisterPage from './menu/register/register';
+import RegisterPage from './menu/profile/register';
 import CoursePage from './menu/course/course';
 import TimeTablePage from './menu/timetable/timetable';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
-import ProfilePage from './menu/profile/profile';
+import ProfilePage from './menu/student/showName';
 import TeacherPage from './menu/teacher/teacher';
 import ReportPage from './menu/report/report';
 import GraduatePage from './menu/graduate/graduate';
@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
-import { GetNameAdmin } from '../../../services/https/getname';
+import { GetNameAdmin } from '../../../services/https/getName';
 const { Header, Sider, Content } = Layout;
 
 const AdminDashboardpage: React.FC = () => {

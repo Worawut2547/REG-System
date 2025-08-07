@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
-import { GetNameStudent } from '../../../services/https/getname';
+import { GetNameStudent } from '../../../services/https/getName';
 const { Header, Sider, Content } = Layout;
 
 const StudentDashboardpage: React.FC = () => {

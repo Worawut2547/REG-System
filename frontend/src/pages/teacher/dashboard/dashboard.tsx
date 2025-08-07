@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
-import { GetNameTeacher } from '../../../services/https/getname';
+import { GetNameTeacher } from '../../../services/https/getName';
 const { Header, Sider, Content } = Layout;
 
 const TeacherDashboardpage: React.FC = () => {
