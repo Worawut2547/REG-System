@@ -1,0 +1,31 @@
+.pill {
+  background: #2e236c;
+  color: white;
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  text-align: center;
+  margin-top: 0rem;
+}
+
+.ml-sm {
+  margin-left: 1rem;
+}
+
+.ml-lg {
+  margin-left: 1rem;
+}
+
+.mr-sm {
+  margin-right: 1rem;
+}
+
+const boxStyle = {
+  background: '#2e236c',
+  color: 'white',
+  padding: '6px 12px',
+  borderRadius: '6px',
+  textAlign: 'center',
+  width: '100%',
+};
+

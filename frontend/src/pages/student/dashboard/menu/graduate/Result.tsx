@@ -2,6 +2,7 @@
 import React from 'react';
 import { Layout, Button } from 'antd';
 import './graduate.css';
+import './Result.css'; // Assuming you have a CSS file for Result styles
 
 const { Header, Content, Footer } = Layout;
 
@@ -59,6 +60,12 @@ const valueStyle: React.CSSProperties = {
   alignItems: 'center',
 };
 
+const failTextStyle: React.CSSProperties = {
+  color: 'red',
+  fontWeight: 'bold',
+  fontSize: 20,
+};
+
 const gridRowStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: '180px 1fr',
@@ -80,6 +87,14 @@ const Grade: React.FC = () => {
           <div style={{ ...valueStyle, backgroundColor: '#2e236c', color: 'white' }}>
             {/* Course structure value here */}
           </div>
+        </div>
+
+
+        <div style={gridRowStyle}>
+          <div style={labelStyle}>ผลการอนุมัติ</div>
+            <div style={{ ...valueStyle, justifyContent: 'flex-start' }}>
+              <span style={failTextStyle}>FAIL</span>
+            </div>
         </div>
 
         <div style={gridRowStyle}>
