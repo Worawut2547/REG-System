@@ -32,6 +32,12 @@ func SetupDatabase() {
 		&entity.Teachers{},
 		&entity.Admins{},
 		&entity.Users{},
+		&entity.Semester{},
+		&entity.Subjects{},
+		&entity.SemesterSubject{},
+		&entity.Grades{},
+		&entity.GradeSemester{},
+		&entity.Scores{},
 	)
 	student := entity.Students{
 		Student_id: "B6616052",
