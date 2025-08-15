@@ -8,75 +8,145 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetStudentID (c *gin.Context){
+func GetStudentID(c *gin.Context) {
 	sid := c.Param("id")
 
-	student := new(entity.Students)
+	student := entity.Students{}
 	db := config.DB()
 
-	result := db.First(&student , "student_id = ?" , sid)
+	result := db.First(&student, "student_id = ?", sid)
+
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
 		return
 	}
 
 	if result.RowsAffected == 0 {
-        c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
-        return	
-	}
-
-	c.JSON(http.StatusOK , student)
-}
-
-func CreateStudent (c *gin.Context){
-	student := new(entity.Students)
-	if err := c.ShouldBind(&student); err != nil {
-		c.JSON(http.StatusBadRequest , gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
 		return
 	}
+
+	c.JSON(http.StatusOK, student)
+}
+
+func CreateStudent(c *gin.Context) {
+	student := new(entity.Students)
+	if err := c.ShouldBind(&student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// ถ้า Status ว่าง ให้กำหนด ค่า 10
+	if student.StatusStudentID == "" {
+		student.StatusStudentID = "10"
+	}
+
 	db := config.DB()
 
 	result := db.Create(&student)
-	
+
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
 		return
 	}
 	// เพิ่ม รหัสนักศึกษา , เลขบัตรปชช ลงตาราง Users หลังเพิ่มข้อมูลนักเรียนเเล้ว
-	hashPassword , _ := config.HashPassword(student.Citizen_id)
+	hashPassword, _ := config.HashPassword(student.CitizenID)
 	user := &entity.Users{
-		Username: student.Student_id, // ดึงรหัสนักศึกษาออกมา
+		Username: student.StudentID, // ดึงรหัสนักศึกษาออกมา
 		Password: hashPassword,
-		Role: "student", //กำหนด Role
+		Role:     "student", //กำหนด Role
 	}
-	if err := db.Create(&user).Error; err != nil{
+	if err := db.Create(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK , gin.H{
-		"message": "Create student success",
-		"Student_id": student.Student_id,
-		"FirstName": student.FirstName,
-		"LastName": student.LastName,
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Create student success",
+		"Student_id": student.StudentID,
+		"FirstName":  student.FirstName,
+		"LastName":   student.LastName,
 	})
 }
 
-func GetStudentAll (c *gin.Context){
+func GetStudentAll(c *gin.Context) {
 	var students []entity.Students
 	db := config.DB()
 
-	results := db.Find(&students)
+	results := db.
+		Preload("Degree").
+		Preload("Faculty").
+		Preload("Major").
+		Preload("StatusStudent").
+		Find(&students)
 	if results.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
 		return
 	}
 
 	if results.RowsAffected == 0 {
-        c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
-        return	
+		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+		return
 	}
 
-	c.JSON(http.StatusOK , students)
+	var response []map[string]interface{}
+
+	for _, student := range students {
+		degreeName := ""
+		majorID := ""
+		majorName := ""
+		facultyID := ""
+		facultyName := ""
+
+		if student.Degree != nil {
+			degreeName = student.Degree.Degree
+		}
+
+		if student.Major != nil {
+			majorID = student.Major.MajorID
+			majorName = student.Major.MajorName
+		}
+
+		if student.Faculty != nil {
+			facultyID = student.Faculty.FacultyID
+			facultyName = student.Faculty.FacultyName
+		}
+		s := map[string]interface{}{
+			"ID":              student.ID,
+			"StudentID":       student.StudentID,
+			"FirstName":       student.FirstName,
+			"LastName":        student.LastName,
+			"CitizenID":       student.CitizenID,
+			"StatusStudentID": student.StatusStudentID,
+			"MajorID":         majorID,
+			"MajorName":       majorName,
+			"FacultyID":       facultyID,
+			"FacultyName":     facultyName,
+			"Degree":          degreeName, // ส่งเฉพาะชื่อปริญญา
+			"Email":           student.Email,
+			"Phone":           student.Phone,
+		}
+		response = append(response, s)
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func CreateStatus(c *gin.Context) {
+	status := new(entity.StatusStudent)
+
+	if err := c.ShouldBind(&status); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := config.DB()
+	result := db.FirstOrCreate(&status)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, &status)
 }
 
 /*func CreateStudent(c *gin.Context) {

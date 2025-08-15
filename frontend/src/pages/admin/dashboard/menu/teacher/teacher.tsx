@@ -1,13 +1,16 @@
 // src/pages/dashboard/menu/register.tsx
 
 import './teacher.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
-import { useState , useEffect } from 'react';
-import { Col , Row , Table , Button , Space } from 'antd';
+import { useState, useEffect } from 'react';
+import { Col, Row, Table, Button, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { getTeacherID } from '../../../../../services/https/getAll';
+import { getTeacherAll } from '../../../../../services/https/getAll';
 import type { TeacherInterface } from '../../../../../interfaces/Teacher';
-import { Link } from 'react-router-dom'
+
+import { Layout } from 'antd';
+import CreateTeacher from './create'
+const { Header, Content, Footer } = Layout;
 
 // register.tsx  – only wrapperStyle changed
 const wrapperStyle: React.CSSProperties = {
@@ -47,7 +50,7 @@ const footerStyle: React.CSSProperties = {
 };
 
 
-const columns : ColumnsType<TeacherInterface> = [
+const columns: ColumnsType<TeacherInterface> = [
   {
     title: "ลำดับ",
     dataIndex: "ID",
@@ -55,7 +58,7 @@ const columns : ColumnsType<TeacherInterface> = [
   },
   {
     title: "รหัสอาจารย์",
-    dataIndex: "Teacher_id",
+    dataIndex: "TeacherID",
     key: "teacher_id",
   },
   {
@@ -87,8 +90,13 @@ const columns : ColumnsType<TeacherInterface> = [
 
 
 
-export default function ShowTeacherPage() {
+/*export default function ShowTeacherPage() {
   const [teacher , setTeachers] = useState<TeacherInterface[]>([]);
+
+  const [one,setOne] = useState(false)
+  const crete = ()=>{
+    setOne(!one) 
+  }
   
   useEffect(() => {
     getTeacherID()
@@ -109,11 +117,9 @@ export default function ShowTeacherPage() {
 
       <Col span = {12} style = {{ textAlign: "end" , alignSelf: "center"}}>
         <Space>
-          <Link to = "/admin/dashboard/create/teacher">
-            <Button type = "primary" icon = {<PlusOutlined />}>
+            <Button onClick = {create}  type = "primary" icon = {<PlusOutlined />}>
               สร้างข้อมูลอาจารย์ใหม่
             </Button>
-          </Link>
         </Space>
       </Col>
     </Row>
@@ -129,34 +135,70 @@ export default function ShowTeacherPage() {
     </div>
     </>
   );
-}
+}*/
 
-/*const CreateTeacherProfile: React.FC = () => {
+export const ShowNameTeacher: React.FC = () => {
 
-  const [loading , setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [teacher, setTeachers] = useState<TeacherInterface[]>([]);
+  useEffect(() => {
+    getTeacherAll()
+      .then((res) => {
+        console.log("ข้อมูลอาจารย์ที่ได้จาก API:", res);
+        setTeachers(res)
+      })
+      .catch((err) => console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", err));
+  }, []);
+
   const onFinish = async (values: TeacherInterface) => {
     setLoading(true);
     try {
-      const result = await CreateNameTeacher(values);
-      console.log("สร้างข้อมูลอาจารย์สำเร็จ",result);
+      const result = await ShowNameTeacher(values);
+      console.log("สร้างข้อมูลอาจารย์สำเร็จ", result);
     }
-    catch(error){
-      console.log("เกิดข้อผิดพลาด" , error);
+    catch (error) {
+      console.log("เกิดข้อผิดพลาด", error);
     }
-    finally{
+    finally {
       setLoading(false);
     }
   }
 
+  const [one, setOne] = useState(false)
+  const create = () => {
+    setOne(!one)
+  }
   return (
     <Layout style={wrapperStyle}>
       <Header style={headerStyle}>Header – หน้าระเบียนประวัติ</Header>
       <Content style={contentStyle}>
+        <Row gutter={[16, 16]}>
+          <Col span={12}>
+            <h2>จัดการข้อมูลนักศึกษา</h2>
+          </Col>
 
+          <Col span={12} style={{ textAlign: "end", alignSelf: "center" }}>
+            <Space>
+              <Button onClick={create} type="primary" icon={<PlusOutlined />}>
+                สร้างข้อมูลอาจารย์ใหม่
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+        <div style={{ marginTop: 20 }}>
+          <Table
+            rowKey="ID"
+            columns={columns}
+            dataSource={teacher}
+            style={{ width: "100%", overflow: "scroll" }}
+          >
+          </Table>
+        </div>
+        {one && <CreateTeacher />}
+        
       </Content>
       <Footer style={footerStyle}>Footer © 2025</Footer>
     </Layout>
   );
 };
-
-export default CreateTeacherProfile;*/

@@ -1,14 +1,21 @@
 package main
 
 import (
-	
 	"reg_system/config"
-	
+	"reg_system/test"
+
 	"reg_system/controller/admins/profile"
+
 	"reg_system/controller/teachers/profile"
+
 	"reg_system/controller/students/profile"
-	
+
 	"reg_system/controller/users"
+
+	"reg_system/controller/faculty"
+	"reg_system/controller/major"
+	"reg_system/controller/status"
+	"reg_system/controller/degree"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -20,60 +27,84 @@ func main() {
 	config.ConnectionDB()
 	config.SetupDatabase()
 
+	// Data Test
+	test.ExampleData()
+
 	r := gin.Default()
 
 	r.Use(cors.Default())
 
 	r.Use(CORSMiddleware())
 
-
 	// Authentication
-	r.POST("/signin" , users.SignIn)
-
+	r.POST("/signin", users.SignIn)
 
 	//---------------------------------------------------------
 	//Admin
-	adminGroup := r.Group("/admin"); {
-		adminGroup.GET("/:id",admins.GetAdminID)
+	adminGroup := r.Group("/admin")
+	{
+		adminGroup.GET("/:id", admins.GetAdminID)
 	}
 	//---------------------------------------------------------
-
 
 	//---------------------------------------------------------
 	//Student
-	studentGroup := r.Group("/student"); {
+
+	studentGroup := r.Group("/student")
+	{
 		studentGroup.GET("/:id", students.GetStudentID)
-		studentGroup.POST("/create",students.CreateStudent)
-		studentGroup.GET("/all" , students.GetStudentAll)
+		studentGroup.POST("/create", students.CreateStudent)
+		studentGroup.GET("/all", students.GetStudentAll)
+
+		studentGroup.POST("/create/status", students.CreateStatus)
 	}
 	//---------------------------------------------------------
-
 
 	//---------------------------------------------------------
 	//Teacher
-	teacherGroup := r.Group("/teacher");{
+	teacherGroup := r.Group("/teacher")
+	{
 		teacherGroup.GET("/:id", teachers.GetTeacherID)
-		teacherGroup.POST("/create" , teachers.CreateTeacher)
-		teacherGroup.GET("/all" , teachers.GetTeacherAll)
+		teacherGroup.POST("/create", teachers.CreateTeacher)
+		teacherGroup.GET("/all", teachers.GetTeacherAll)
 	}
 
+	//---------------------------------------------------------
+	//Major
+	majorGroup := r.Group("/major")
+	{
+		majorGroup.GET("/all", major.GetMajorAll)
+		majorGroup.POST("/create", major.CreateMajor)
+	}
+
+	//---------------------------------------------------------
+	//Faculty
+	facultyGroup := r.Group("/faculty")
+	{
+		facultyGroup.GET("/all", faculty.GetFacultyAll)
+		facultyGroup.POST("/create", faculty.CreateFaculty)
+	}
+
+	//---------------------------------------------------------
+	r.GET("/status/all", status.GetStatusStudentAll)
+
+	r.GET("degree/all", degree.GetDegreeAll)
+	r.POST("degree/create", degree.CreateDegree)
 
 	// Run on port 8000
-	r.Run("localhost:" +port)
+	r.Run("localhost:" + port)
 }
-
-
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		
-		// ตั้งค่า CORS headers
-		c.Writer.Header().Set("Access-Control-Allow-Origin" , "*") //อนุญาตให้ port ที่จะมาเชื่อมต่อ (* อนุญาตทั้งหมด)
-		c.Writer.Header().Set("Access-Control-Allow-Credentials" , "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Method" , "GET , POST , PUT , DELETE , OPTIONS",)
 
-		if c.Request.Method == "OPTIONS"{
+		// ตั้งค่า CORS headers
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*") //อนุญาตให้ port ที่จะมาเชื่อมต่อ (* อนุญาตทั้งหมด)
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Method", "GET , POST , PUT , DELETE , OPTIONS")
+
+		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}

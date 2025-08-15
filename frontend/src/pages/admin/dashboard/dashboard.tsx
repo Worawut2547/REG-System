@@ -12,8 +12,8 @@ import TimeTablePage from './menu/timetable/timetable';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
-import ProfilePage from './menu/student/showName';
-import TeacherPage from './menu/teacher/teacher';
+import ShowStudentPage from './menu/student/mainpage.tsx';
+import { ShowNameTeacher } from './menu/teacher/teacher';
 import ReportPage from './menu/report/report';
 import GraduatePage from './menu/graduate/graduate';
 import CurriculumPage from './menu/curriculum/curriculum';
@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
-import { GetNameAdmin } from '../../../services/https/getName';
+import { GetNameAdmin } from '../../../services/https/getname';
 const { Header, Sider, Content } = Layout;
 
 const AdminDashboardpage: React.FC = () => {
@@ -90,10 +90,10 @@ const AdminDashboardpage: React.FC = () => {
         return <ScorePage />;
       case 'ใบแจ้งยอดชำระ':
         return <PaymentPage />;
-      case 'ระเบียนประวัติ':
-        return <ProfilePage />;
+      case 'นักเรียน':
+        return <ShowStudentPage />;
       case 'อาจารย์':
-        return <TeacherPage />;
+        return <ShowNameTeacher />;
       case 'คำร้อง':
         return <ReportPage />;
       case 'แจ้งจบการศึกษา':
@@ -178,7 +178,7 @@ const AdminDashboardpage: React.FC = () => {
             { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
             { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
             { key: 'ใบแจ้งยอดชำระ', icon: <BankOutlined />, label: 'ใบแจ้งยอดชำระ' },
-            { key: 'ระเบียนประวัติ', icon: <UserOutlined />, label: 'ระเบียนประวัติ' },
+            { key: 'นักเรียน', icon: <UserOutlined />, label: 'นักเรียน' },
             { key: 'อาจารย์', icon: <ContactsOutlined />, label: 'อาจารย์' },
             { key: 'คำร้อง', icon: <ExclamationCircleOutlined />, label: 'คำร้อง' },
             { key: 'แจ้งจบการศึกษา', icon: <FormOutlined />, label: 'แจ้งจบการศึกษา' },

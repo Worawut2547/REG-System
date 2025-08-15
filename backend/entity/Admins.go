@@ -1,15 +1,10 @@
 package entity
 
-import (
-	"gorm.io/gorm"
-)
-
 type Admins struct {
-	gorm.Model
-	Admin_id 	string `gorm:"primaryKey" json:"Admin_id"`
+	AdminID   string `gorm:"primaryKey" json:"AdminID"`
 	FirstName  string `json:"FirstName"`
 	LastName   string `json:"LastName"`
-	Citizen_id string `json:"Citizen_id"`
+	CitizenID string `json:"CitizenID"`
 	Gender     string `json:"Gender"`
 	Email      string `json:"Email"`
 	Phone      string `json:"Phone"`
