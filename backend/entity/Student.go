@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -11,10 +12,12 @@ type Students struct {
 	FirstName   string    `json:"FirstName"`
 	LastName    string    `json:"LastName"`
 	CitizenID   string    `json:"CitizenID"`
-	Gender      string    `json:"Gender"`
 	Email       string    `json:"Email"`
 	Phone       string    `json:"Phone"`
 	GraduteDate time.Time `json:"GraduteDate"`
+
+	GenderID int `json:"GenderID"`
+	Gender *Gender `gorm:"foreignKey:GenderID;references:ID"`
 
 	DegreeID int     `json:"DegreeID"`
 	Degree   *Degree `gorm:"foreignKey:DegreeID;references:DegreeID"` // ระบุความสัมพันธ์ 1--1 [Degree]*/
@@ -28,5 +31,8 @@ type Students struct {
 	StatusStudentID string         `json:"StatusStudentID"`     // Foreign Key
 	StatusStudent   *StatusStudent `gorm:"foreignKey:StatusStudentID;references:StatusStudentID"` // ระบุความสัมพันธ์ 1--1 [StatusStudent]
 
+	CreatedAt time.Time `json:"CreatedAt"`
+	UpdatedAt time.Time `json:"UpdatedAt"`
+	DeletedAt gorm.DeletedAt `json:"DeletedAt,omitempty" gorm:"index"` // ใช้สำหรับ soft delete
 }
 

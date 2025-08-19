@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
+
 import { Form, Input, Button, Row, Col, Space, Card, Divider, message, Select } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 
+
 import type { StudentInterface } from "../../../../../../interfaces/Student";
-import { createStudent } from "../../../../../../services/https/create";
+import { createStudent } from "../../../../../../services/https/student/student";
+
 
 import type { MajorInterface } from "../../../../../../interfaces/Major";
 import { getMajorAll } from "../../../../../../services/https/major/major";
+
 
 import type { FacultyInterface } from "../../../../../../interfaces/Faculty";
 import { getFacultyAll } from "../../../../../../services/https/faculty/faculty";
@@ -15,35 +19,43 @@ import { getFacultyAll } from "../../../../../../services/https/faculty/faculty"
 import type { DegreeInterface } from "../../../../../../interfaces/Degree";
 import { getDegreeAll } from "../../../../../../services/https/degree/degree";
 
+import type { GenderInterface } from "../../../../../../interfaces/Gender";
+import { getGenderAll } from "../../../../../../services/https/gender/gender";
+
 interface CreateStudentProps {
   onBack: () => void;
 }
 
 const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
+
   const [majorOptions, setMajorOptions] = useState<MajorInterface[]>([]);
   const [facultyOptions, setFacultyOptions] = useState<FacultyInterface[]>([]);
-
   const [selectFaculty, setSelectFaculty] = useState<string | null>(null)
   const [degreeOptions, setDegreeOptions] = useState<DegreeInterface[]>([]);
+  const [genderOptions, setGenderOptions] = useState<GenderInterface[]>([]);
 
 
-  // เรียก API ดึง Major ทั้งหมดเมื่อคอมโพเนนต์ถูกโหลด
+  // เรียก API ดึง field ทั้งหมดเมื่อคอมโพเนนต์ถูกโหลด
   // Promise.all คือ การรอหลาย Promise ให้เสร็จพร้อมกัน เเล้วรวมออกมาเป็น array ตัวเดียว
   // ถ้า Promise ใด ล้มเหลว ก็จะล้มเหลวทั้งหมด
   useEffect(() => {
     Promise.all([
       getMajorAll(),
       getFacultyAll(),
-      getDegreeAll()
-    ]).then(([majors, faculties, degrees]) => {
-      setMajorOptions(majors);
-      setFacultyOptions(faculties);
-      setDegreeOptions(degrees);
-    }).catch((error) => {
-      console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
-      message.error("ไม่สามารถโหลดข้อมูลได้");
-    });
+      getDegreeAll(),
+      getGenderAll()
+    ])
+      .then(([majors, faculties, degrees, genders]) => {
+        setMajorOptions(majors);
+        setFacultyOptions(faculties);
+        setDegreeOptions(degrees);
+        setGenderOptions(genders);
+      })
+      .catch((error) => {
+        console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
+        message.error("ไม่สามารถโหลดข้อมูลได้");
+      });
   }, []);
 
   const handleFacultyChange = (value: string) => {
@@ -87,7 +99,6 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               <Input />
             </Form.Item>
           </Col>
-
           <Col xs={24} sm={24} md={12}>
             <Form.Item
               label="ชื่อ"
@@ -108,7 +119,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          {/* Gender
+          {/* Gender */}
           <Col xs={24} sm={24} md={12}>
             <Form.Item
               label="เพศ"
@@ -118,13 +129,12 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               <Select placeholder="เลือกเพศ">
                 {genderOptions.map((g) => (
                   <Select.Option key={g.ID} value={g.ID}>
-                    {g.gender}
+                    {g.Gender}
                   </Select.Option>
                 ))}
               </Select>
             </Form.Item>
           </Col>
-          {*/}
           <Col xs={24} sm={24} md={12}>
             <Form.Item
               label="เลขบัตรประชาชน"
@@ -159,6 +169,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
           </Col>
 
           {/* Degree */}
+
           <Col xs={24} sm={24} md={12}>
             <Form.Item
               label="ระดับการศึกษา"
@@ -211,24 +222,6 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               </Select>
             </Form.Item>
           </Col>
-
-          {/* Status 
-          <Col xs={24} sm={24} md={12}>
-            <Form.Item
-              label="สถานะทางการศึกษา"
-              name="StatusStudentID"
-              rules={[{ required: true, message: "กรุณาเลือกสถานะ!" }]}
-            >
-              <Select placeholder="เลือกสถานะ">
-                {statusOptions.map((s) => (
-                  <Select.Option key={s.StatusStudentID} value={s.StatusStudentID}>
-                    {s.Status}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-*/}
         </Row>
 
         <Row justify="end">
@@ -237,7 +230,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               <Button type="default" onClick={onBack}>
                 ยกเลิก
               </Button>
-              <Button type="primary" htmlType="submit" icon={<PlusOutlined />}>
+              <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={loading}>
                 ยืนยัน
               </Button>
             </Space>

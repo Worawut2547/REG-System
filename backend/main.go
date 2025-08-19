@@ -4,18 +4,20 @@ import (
 	"reg_system/config"
 	"reg_system/test"
 
-	"reg_system/controller/admins/profile"
+	"reg_system/controller/admins"
+	"reg_system/controller/gender"
 
-	"reg_system/controller/teachers/profile"
+	"reg_system/controller/teachers"
 
-	"reg_system/controller/students/profile"
+	"reg_system/controller/students"
 
 	"reg_system/controller/users"
 
+	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
 	"reg_system/controller/major"
+	"reg_system/controller/position"
 	"reg_system/controller/status"
-	"reg_system/controller/degree"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -50,46 +52,69 @@ func main() {
 	//---------------------------------------------------------
 	//Student
 
-	studentGroup := r.Group("/student")
+	studentGroup := r.Group("/students")
 	{
 		studentGroup.GET("/:id", students.GetStudentID)
-		studentGroup.POST("/create", students.CreateStudent)
-		studentGroup.GET("/all", students.GetStudentAll)
+		studentGroup.POST("/", students.CreateStudent)
+		studentGroup.GET("/", students.GetStudentAll)
 
-		studentGroup.POST("/create/status", students.CreateStatus)
+		studentGroup.PUT("/:id", students.UpdateStudent)
+		studentGroup.DELETE("/:id", students.DeleteStudent)
 	}
 	//---------------------------------------------------------
 
 	//---------------------------------------------------------
 	//Teacher
-	teacherGroup := r.Group("/teacher")
+	teacherGroup := r.Group("/teachers")
 	{
 		teacherGroup.GET("/:id", teachers.GetTeacherID)
-		teacherGroup.POST("/create", teachers.CreateTeacher)
-		teacherGroup.GET("/all", teachers.GetTeacherAll)
+		teacherGroup.POST("/", teachers.CreateTeacher)
+		teacherGroup.GET("/", teachers.GetTeacherAll)
+		teacherGroup.PUT("/:id", teachers.UpdateTeacher)
+		teacherGroup.DELETE("/:id", teachers.DeleteTeacher)
 	}
 
 	//---------------------------------------------------------
 	//Major
-	majorGroup := r.Group("/major")
+	majorGroup := r.Group("/majors")
 	{
-		majorGroup.GET("/all", major.GetMajorAll)
-		majorGroup.POST("/create", major.CreateMajor)
+		majorGroup.GET("/", major.GetMajorAll)
+		majorGroup.POST("/", major.CreateMajor)
 	}
 
 	//---------------------------------------------------------
 	//Faculty
-	facultyGroup := r.Group("/faculty")
+	facultyGroup := r.Group("/faculties")
 	{
-		facultyGroup.GET("/all", faculty.GetFacultyAll)
-		facultyGroup.POST("/create", faculty.CreateFaculty)
+		facultyGroup.GET("/", faculty.GetFacultyAll)
+		facultyGroup.POST("/", faculty.CreateFaculty)
 	}
 
 	//---------------------------------------------------------
-	r.GET("/status/all", status.GetStatusStudentAll)
+	// Degree
+	degreeGroup := r.Group("/degrees")
+	{
+		degreeGroup.GET("/", degree.GetDegreeAll)
+		degreeGroup.POST("/", degree.CreateDegree)
+	}
 
-	r.GET("degree/all", degree.GetDegreeAll)
-	r.POST("degree/create", degree.CreateDegree)
+	//---------------------------------------------------------
+	// Position
+	positionGroup := r.Group("/positions")
+	{
+		positionGroup.GET("/", position.GetPositionAll)
+		positionGroup.POST("/", position.CreatePosition)
+	}
+	//---------------------------------------------------------
+	// Status
+	statusGroup := r.Group("statuses")
+	{
+		statusGroup.GET("/", status.GetStatusStudentAll)
+		statusGroup.POST("/", status.CreateStatus)
+	}
+
+	
+	r.GET("/genders", gender.GetGenderAll)
 
 	// Run on port 8000
 	r.Run("localhost:" + port)

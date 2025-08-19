@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Col, Row, Table, Button, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { getStudentAll } from '../../../../../../services/https/getAll';
+import { getStudentAll } from '../../../../../../services/https/student/student';
 import type { StudentInterface } from '../../../../../../interfaces/Student';
 interface ShowStudentPageProps {
   onCreate?: () => void;
@@ -102,7 +102,7 @@ const ShowStudentPage: React.FC<ShowStudentPageProps> = ({ onCreate }) => {
         </Table>
       </div>
     </>
-  )
+  );
 }
 
 export default ShowStudentPage;

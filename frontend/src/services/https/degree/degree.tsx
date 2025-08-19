@@ -5,7 +5,7 @@ const apiUrl = "http://localhost:8000";
 
 export const getDegreeAll = async (): Promise<DegreeInterface[]> => {
     try{
-        const response = await axios.get(`${apiUrl}/degree/all`)
+        const response = await axios.get(`${apiUrl}/degrees/`)
         console.log("api degree data:", response);
 
         return response.data;

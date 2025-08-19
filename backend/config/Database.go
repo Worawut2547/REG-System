@@ -32,6 +32,8 @@ func SetupDatabase() {
 		&entity.Faculty{},
 		&entity.Majors{},
 		&entity.Degree{},
+		&entity.Position{},
+		&entity.Gender{},
 
 		&entity.Students{},
 		&entity.Teachers{},

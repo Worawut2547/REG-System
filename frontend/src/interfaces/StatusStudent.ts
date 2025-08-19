@@ -1,4 +1,4 @@
 export interface StatusStudentInterface {
     StatusStudentID?: string;
-    Status?: string;
+    StatusStudent?: string;
 }

@@ -17,3 +17,21 @@ func GetStatusStudentAll (c *gin.Context){
 
 	c.JSON(http.StatusOK , status)
 }
+
+func CreateStatus(c *gin.Context) {
+	status := new(entity.StatusStudent)
+
+	if err := c.ShouldBind(&status); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := config.DB()
+	result := db.FirstOrCreate(&status)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, &status)
+}

@@ -6,7 +6,7 @@ const apiUrl = "http://localhost:8000";
 export const getStatusStudentAll = async (): Promise<StatusStudentInterface[]> => {
     //console.log("Fetching student data for:", username);
     try{
-        const response = await axios.get(`${apiUrl}/status/all`)
+        const response = await axios.get(`${apiUrl}/statuses`)
         console.log("api status data:", response);
 
         return response.data;
