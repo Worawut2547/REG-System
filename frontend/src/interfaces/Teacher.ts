@@ -1,10 +1,20 @@
 export interface TeacherInterface {
-    id ?: number;
-    Teacher_id ?: string;
-    FirstName ?: string;
-    LastName ?: string;
-    Citizen_id ?: string;
-    Gender ?: string;
-    Email ?: string;
-    Phone ?: string;
+    ID?: number;
+    TeacherID?: string;
+    FirstName?: string;
+    LastName?: string;
+    CitizenID?: string;
+    GenderID?: number;
+    Gender?: string;
+    
+    Email?: string;
+    Phone?: string;
+
+    FacultyID?: string;
+    FacultyName?: string;
+
+    MajorID?: string;
+    MajorName?: string;
+
+    Position?: string;
 }

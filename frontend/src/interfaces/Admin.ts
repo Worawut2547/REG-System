@@ -1,9 +1,9 @@
 export interface AdminInterface {
-    id ?: number;
-    Admin_id ?: string;
+    ID ?: number;
+    AdminID ?: string;
     FirstName ?: string;
     LastName ?: string;
-    Citizen_id ?: string;
+    CitizenID ?: string;
     Gender ?: string;
     Email ?: string;
     Phone ?: string;

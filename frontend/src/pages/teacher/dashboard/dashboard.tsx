@@ -12,7 +12,7 @@ import TimeTablePage from './menu/timetable/timetable';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
-import ProfilePage from './menu/profile/profile';
+import ProfilePage from './menu/profile/mainpage';
 import TeacherPage from './menu/teacher/teacher';
 import ReportPage from './menu/report/report';
 import GraduatePage from './menu/graduate/graduate';
@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
-import { GetNameTeacher } from '../../../services/https/getname';
+import { getNameTeacher } from '../../../services/https/teacher/teacher';
 const { Header, Sider, Content } = Layout;
 
 const TeacherDashboardpage: React.FC = () => {
@@ -58,7 +58,7 @@ const TeacherDashboardpage: React.FC = () => {
     console.log("Username fro localStorage:",username);
     
     if(username){
-      GetNameTeacher(username)
+      getNameTeacher(username)
       .then(setStudent)
       .catch(console.error)
     }

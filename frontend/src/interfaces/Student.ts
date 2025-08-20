@@ -1,10 +1,24 @@
 export interface StudentInterface {
-    id ?: number;
-    Student_id ?: string;
-    FirstName ?: string;
-    LastName ?: string;
-    Citizen_id ?: string;
-    Gender ?: string;
-    Email ?: string;
-    Phone ?: string;
+    ID?: number;
+    StudentID?: string;
+    FirstName?: string;
+    LastName?: string;
+    CitizenID?: string;
+    
+    Email?: string;
+    Phone?: string;
+    
+    Gender?: string;
+
+    DegreeID?: number;
+    Degree?: string;
+    
+    FacultyID?: string;
+    FacultyName?: string;
+
+    MajorID?: string;
+    MajorName?: string;
+
+    StatusStudentID?: string;
+    StatusStudent?: string;
 }

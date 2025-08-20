@@ -6,14 +6,14 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 
 /* ---------- page components ---------- */
 import MainPage from './menu/mainpage/mainpage';
-import RegisterPage from './menu/register/register';
+import RegisterPage from './menu/profile/register';
 import CoursePage from './menu/course/course';
 import TimeTablePage from './menu/timetable/timetable';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
-import ProfilePage from './menu/profile/profile';
-import TeacherPage from './menu/teacher/teacher';
+import StudentPage from './menu/student/mainpage.tsx';
+import TeacherPage from './menu/teacher/mainpage.tsx';
 import ReportPage from './menu/report/report';
 import GraduatePage from './menu/graduate/graduate';
 import CurriculumPage from './menu/curriculum/curriculum';
@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
-import { GetNameAdmin } from '../../../services/https/getname';
+import { getNameAdmin } from '../../../services/https/admin/admin.tsx';
 const { Header, Sider, Content } = Layout;
 
 const AdminDashboardpage: React.FC = () => {
@@ -55,14 +55,14 @@ const AdminDashboardpage: React.FC = () => {
   useEffect(() => {
     // ดึง username จาก localStorage
     const username = localStorage.getItem("username");
-    console.log("Username fro localStorage:",username);
-    
-    if(username){
-      GetNameAdmin(username)
-      .then(setStudent)
-      .catch(console.error)
+    console.log("Username fro localStorage:", username);
+
+    if (username) {
+      getNameAdmin(username)
+        .then(setStudent)
+        .catch(console.error)
     }
-    else{
+    else {
       console.error("Username is missing!");
     }
   }, []);
@@ -90,8 +90,8 @@ const AdminDashboardpage: React.FC = () => {
         return <ScorePage />;
       case 'ใบแจ้งยอดชำระ':
         return <PaymentPage />;
-      case 'ระเบียนประวัติ':
-        return <ProfilePage />;
+      case 'นักเรียน':
+        return <StudentPage />;
       case 'อาจารย์':
         return <TeacherPage />;
       case 'คำร้อง':
@@ -178,7 +178,7 @@ const AdminDashboardpage: React.FC = () => {
             { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
             { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
             { key: 'ใบแจ้งยอดชำระ', icon: <BankOutlined />, label: 'ใบแจ้งยอดชำระ' },
-            { key: 'ระเบียนประวัติ', icon: <UserOutlined />, label: 'ระเบียนประวัติ' },
+            { key: 'นักเรียน', icon: <UserOutlined />, label: 'นักเรียน' },
             { key: 'อาจารย์', icon: <ContactsOutlined />, label: 'อาจารย์' },
             { key: 'คำร้อง', icon: <ExclamationCircleOutlined />, label: 'คำร้อง' },
             { key: 'แจ้งจบการศึกษา', icon: <FormOutlined />, label: 'แจ้งจบการศึกษา' },
@@ -192,16 +192,16 @@ const AdminDashboardpage: React.FC = () => {
       {/* Main layout */}
       <Layout>
         <Header
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: collapsed ? 80 : 240, /* เว้นให้พอดีกับ Sider */
-              width: `calc(100% - ${collapsed ? 80 : 240}px)`,
-              height: 64,
-              zIndex: 100,
-              backgroundColor: '#ffffffff'
-            }}
-          >
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: collapsed ? 80 : 240, /* เว้นให้พอดีกับ Sider */
+            width: `calc(100% - ${collapsed ? 80 : 240}px)`,
+            height: 64,
+            zIndex: 100,
+            backgroundColor: '#ffffffff'
+          }}
+        >
           <Row>
             <Col span={6} pull={1}>
               <Button
@@ -223,7 +223,7 @@ const AdminDashboardpage: React.FC = () => {
               }}
             >
               <div className="name">
-                {student &&  (
+                {student && (
                   <h1 className="name-text">
                     ยินดีต้อนรับคุณ {student.FirstName} {student.LastName}
                   </h1>
@@ -236,14 +236,14 @@ const AdminDashboardpage: React.FC = () => {
 
         <Content
           style={{
-          position: 'absolute',
-          top: 64,                          /* สูงเท่า Header */
-          left: collapsed ? 80 : 240,       /* เว้น Sider */
-          width: `calc(100% - ${collapsed ? 80 : 240}px)`,
-          height: 'calc(100vh - 64px)',     /* พอดีกับจอ */
-          padding: 24,
-          overflowY: 'auto',                /* ⭐ เลื่อนแค่ตรงนี้ */
-        }}
+            position: 'absolute',
+            top: 64,                          /* สูงเท่า Header */
+            left: collapsed ? 80 : 240,       /* เว้น Sider */
+            width: `calc(100% - ${collapsed ? 80 : 240}px)`,
+            height: 'calc(100vh - 64px)',     /* พอดีกับจอ */
+            padding: 24,
+            overflowY: 'auto',                /* ⭐ เลื่อนแค่ตรงนี้ */
+          }}
         >
           {renderContent()}
         </Content>
