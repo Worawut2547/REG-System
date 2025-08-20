@@ -2,13 +2,12 @@ package entity
 
 import (
 	"time"
-
 	"gorm.io/gorm"
 )
 
 type Semester struct {
-	gorm.Model
-
+	 
+	Semester_id int `gorm:"primaryKey;autoIncrement" json:"Semester_id"`
 	Term     int `json:"Term"`
 	Academic int `json:"Academic"`
 

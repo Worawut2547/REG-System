@@ -1,13 +1,15 @@
 package main
 
 import (
-	
 	"reg_system/config"
-	
+
 	"reg_system/controller/admins/profile"
-	"reg_system/controller/teachers/profile"
+	///"reg_system/controller/score"
 	"reg_system/controller/students/profile"
-	
+	"reg_system/controller/teachers/profile"
+
+	//"reg_system/controller/score"
+
 	"reg_system/controller/users"
 
 	"github.com/gin-contrib/cors"
@@ -26,52 +28,56 @@ func main() {
 
 	r.Use(CORSMiddleware())
 
-
 	// Authentication
-	r.POST("/signin" , users.SignIn)
-
+	r.POST("/signin", users.SignIn)
 
 	//---------------------------------------------------------
 	//Admin
-	adminGroup := r.Group("/admin"); {
-		adminGroup.GET("/:id",admins.GetAdminID)
+	adminGroup := r.Group("/admin")
+	{
+		adminGroup.GET("/:id", admins.GetAdminID)
 	}
 	//---------------------------------------------------------
-
 
 	//---------------------------------------------------------
 	//Student
-	studentGroup := r.Group("/student"); {
+	studentGroup := r.Group("/student")
+	{
 		studentGroup.GET("/:id", students.GetStudentID)
-		studentGroup.POST("/",students.CreateStudent)
+		studentGroup.POST("/", students.CreateStudent)
 	}
 	//---------------------------------------------------------
-
 
 	//---------------------------------------------------------
 	//Teacher
-	teacherGroup := r.Group("/teacher");{
+	teacherGroup := r.Group("/teacher")
+	{
 		teacherGroup.GET("/:id", teachers.GetTeacherID)
-		teacherGroup.POST("/" , teachers.CreateTeacher)
+		teacherGroup.POST("/", teachers.CreateTeacher)
 	}
 
+	//---------------------------------------------------------
+	//score
+	/*scoreGroup := r.Group("/score");{
+		scoreGroup.GET("/score/all" , score.GetScore)
+		scoreGroup.GET("/score/:id" , score.GetScoreID)
+		scoreGroup.POST("/score/create" , score.CreateScore)
+	}*/
 
 	// Run on port 8000
-	r.Run("localhost:" +port)
+	r.Run("localhost:" + port)
 }
-
-
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		
-		// ตั้งค่า CORS headers
-		c.Writer.Header().Set("Access-Control-Allow-Origin" , "*") //อนุญาตให้ port ที่จะมาเชื่อมต่อ (* อนุญาตทั้งหมด)
-		c.Writer.Header().Set("Access-Control-Allow-Credentials" , "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Method" , "GET , POST , PUT , DELETE , OPTIONS",)
 
-		if c.Request.Method == "OPTIONS"{
+		// ตั้งค่า CORS headers
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*") //อนุญาตให้ port ที่จะมาเชื่อมต่อ (* อนุญาตทั้งหมด)
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Method", "GET , POST , PUT , DELETE , OPTIONS")
+
+		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
