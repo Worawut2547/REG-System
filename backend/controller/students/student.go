@@ -20,6 +20,7 @@ func GetStudentID(c *gin.Context) {
 		Preload("Degree").
 		Preload("StatusStudent").
 		Preload("Gender").
+		Preload("Curriculum").
 		First(&students, "student_id = ?", sid)
 
 	if result.Error != nil {
@@ -40,6 +41,7 @@ func GetStudentID(c *gin.Context) {
 	facultyID := ""
 	facultyName := ""
 	status := ""
+	curriculumName := ""
 
 	// Check filed ว่าเป็น nil หรือไม่ ก่อนเข้าถึง field นั้นโดยตรงไม่งั้นจะ error
 	//--------------------------------------------------------------------------
@@ -59,6 +61,10 @@ func GetStudentID(c *gin.Context) {
 
 	if students.StatusStudent != nil {
 		status = students.StatusStudent.Status
+	}
+
+	if students.Curriculum != nil {
+		curriculumName = students.Curriculum.CurriculumName
 	}
 	//--------------------------------------------------------------------------
 
@@ -82,6 +88,9 @@ func GetStudentID(c *gin.Context) {
 		"Gender":          students.Gender.Gender,
 		"StatusStudentID": students.StatusStudentID,
 		"StatusStudent":   status,
+
+		"CurriculumID": students.CurriculumID,
+		"CurriculumName": curriculumName,
 	}
 
 	c.JSON(http.StatusOK, response)
