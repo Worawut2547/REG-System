@@ -5,6 +5,7 @@ import (
 	"reg_system/test"
 
 	"reg_system/controller/admins"
+	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
 
 	"reg_system/controller/teachers"
@@ -107,10 +108,21 @@ func main() {
 	}
 	//---------------------------------------------------------
 	// Status
-	statusGroup := r.Group("statuses")
+	statusGroup := r.Group("/statuses")
 	{
 		statusGroup.GET("/", status.GetStatusStudentAll)
 		statusGroup.POST("/", status.CreateStatus)
+	}
+
+	curriculumGroup := r.Group("/curriculums");{
+		curriculumGroup.GET("/" , curriculum.GetCurriculumAll)
+		curriculumGroup.POST("/" , curriculum.CreateCurriculum)
+	}
+
+	bookGroup := r.Group("/books");{
+		bookGroup.GET("/" , curriculum.GetBookPathAll)
+		bookGroup.GET("/:filename" , curriculum.ShowBookFile)
+		bookGroup.POST("/" , curriculum.UploadBookFile)
 	}
 
 	

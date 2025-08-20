@@ -14,6 +14,8 @@ func ExampleData() {
 	DegreeExample()
 	GenderExample()
 	StatusExample()
+	BookPathExample()
+	CurriculumExample()
 
 	student := entity.Students{
 		StudentID:       "B6616052",
