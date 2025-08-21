@@ -34,6 +34,8 @@ func SetupDatabase() {
 		&entity.Degree{},
 		&entity.Position{},
 		&entity.Gender{},
+		&entity.DayOfWeek{},
+		&entity.Semester{},
 
 		&entity.Students{},
 		&entity.Teachers{},
@@ -43,6 +45,8 @@ func SetupDatabase() {
 
 		&entity.BookPath{},
 		&entity.Curriculum{},
+		&entity.Subject{},
+		&entity.SubjectSchedules{},
 
 	)
 
