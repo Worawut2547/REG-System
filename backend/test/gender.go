@@ -7,15 +7,11 @@ import (
 
 func GenderExample() {
 	db := config.DB()
-	genderMale := entity.Gender{
-		ID:     1,
-		Gender: "Male",
-	}
-	db.FirstOrCreate(&genderMale)
 
-	genderFemale := entity.Gender{
-		ID:     2,
-		Gender: "Female",
+	genders := []entity.Gender{
+		{Gender: "Male"},
+		{Gender: "Female"},
 	}
-	db.FirstOrCreate(&genderFemale)
+
+	db.CreateInBatches(&genders, len(genders))
 }

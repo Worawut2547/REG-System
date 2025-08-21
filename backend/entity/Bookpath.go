@@ -7,7 +7,7 @@ import(
 
 type BookPath struct {
 	ID   int    `gorm:"primaryKey;autoIncrement" json:"ID"`
-	Path string `json:"Path"`
+	Path string `gorm:"unique" json:"Path"`
 
 	CreatedAt time.Time `json:"CreatedAt"`
 	UpdatedAt time.Time `json:"UpdatedAt"`
