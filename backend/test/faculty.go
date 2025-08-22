@@ -13,5 +13,8 @@ func FacultyExample() {
 		{FacultyID: "F02" , FacultyName: "สำนักวิชาวิทยาศาสตร์" },
 		{FacultyID: "F03" , FacultyName: "สำนักวิชาเทคโนโลยีสังคม" },
 	}
-	db.CreateInBatches(&faculties,len(faculties))
+
+	for _,fac := range faculties{
+		db.Save(&fac)
+	}
 }

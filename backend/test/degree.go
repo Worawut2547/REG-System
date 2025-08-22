@@ -9,9 +9,12 @@ func DegreeExample() {
 	db := config.DB()
 
 	degrees := []entity.Degree{
-		{Degree: "ระดับปริญญาตรี"},
-		{Degree: "ระดับปริญญาโท"},
-		{Degree: "ระดับปริญญาเอก"},
+		{DegreeID: 1 , Degree: "ระดับปริญญาตรี"},
+		{DegreeID: 2 ,Degree: "ระดับปริญญาโท"},
+		{DegreeID: 3 ,Degree: "ระดับปริญญาเอก"},
 	}
-	db.CreateInBatches(&degrees , len(degrees))
+
+	for _,degr := range degrees{
+		db.Save(&degr)
+	}
 }

@@ -20,6 +20,7 @@ func ExampleData() {
 	CurriculumExample()
 	SubjectExample()
 	SchedulesExample()
+	GradeExample()
 	
 
 	student := entity.Students{

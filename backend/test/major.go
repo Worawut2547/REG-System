@@ -21,5 +21,7 @@ func MajorExample() {
 		{MajorID: "MT30", MajorName: "นวัตกรรมเทคโนโลยีอุตสาหากรรมบริการ", FacultyID: "F03"},
 	}
 
-	db.CreateInBatches(majors , len(majors))
+	for _,maj := range majors {
+		db.Save(&maj)
+	}
 }

@@ -9,9 +9,11 @@ func GenderExample() {
 	db := config.DB()
 
 	genders := []entity.Gender{
-		{Gender: "Male"},
-		{Gender: "Female"},
+		{ID: 1 ,Gender: "Male"},
+		{ID: 2 ,Gender: "Female"},
 	}
 
-	db.CreateInBatches(&genders, len(genders))
+	for _,gend := range genders {
+		db.Save(&gend)
+	}
 }
