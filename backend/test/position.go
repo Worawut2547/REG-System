@@ -8,9 +8,11 @@ import (
 func PositionExample() {
 	db := config.DB()
 	positions := []entity.Position{
-		{Position: "ศาสตราจารย์"},
-		{Position: "รองศาสตราจารย์"},
-		{Position: "ผู้ช่วยศาสตราจารย์"},
+		{ID: 1, Position: "ศาสตราจารย์"},
+		{ID: 2, Position: "รองศาสตราจารย์"},
+		{ID: 3, Position: "ผู้ช่วยศาสตราจารย์"},
 	}
-	db.CreateInBatches(&positions , len(positions))
+	for _, post := range positions {
+		db.Save(&post)
+	}
 }

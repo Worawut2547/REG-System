@@ -10,22 +10,27 @@ func SubjectExample() {
 
 	subjects := []entity.Subject{
 		{
-			SubjectID:     "233031",
-			SubjectName:   "System Anylis",
-			FacultyID:     "F01",
-			MajorID:       "ENG23",
-			Credit:        4,
-			SemesterID:    1,
+			ID:          1,
+			SubjectID:   "233031",
+			SubjectName: "System Anylis",
+			FacultyID:   "F01",
+			MajorID:     "ENG23",
+			Credit:      4,
+			SemesterID:  1,
 		},
 
 		{
-			SubjectID:     "233001",
-			SubjectName:   "Computer Statistic",
-			FacultyID:     "F01",
-			MajorID:       "ENG23",
-			Credit:        2,
-			SemesterID:    1,
+			ID:          2,
+			SubjectID:   "233001",
+			SubjectName: "Computer Statistic",
+			FacultyID:   "F01",
+			MajorID:     "ENG23",
+			Credit:      2,
+			SemesterID:  1,
 		},
 	}
-	db.CreateInBatches(&subjects , len(subjects))
+
+	for _, subj := range subjects {
+		db.FirstOrCreate(&subj)
+	}
 }

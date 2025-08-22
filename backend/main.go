@@ -7,6 +7,7 @@ import (
 	"reg_system/controller/admins"
 	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
+	"reg_system/controller/grade"
 	"reg_system/controller/subject"
 
 	"reg_system/controller/teachers"
@@ -138,6 +139,15 @@ func main() {
 	{
 		subjectGroup.GET("/", subject.GetSubjectAll)
 		subjectGroup.GET("/schedules/", subject.GetScheduleAll)
+		subjectGroup.POST("/" , subject.CreateSubject)
+	}
+
+	//---------------------------------------------------------
+	// Subject
+	gradeGroup := r.Group("/grades")
+	{
+		gradeGroup.GET("/", grade.GetGradeAll)
+		gradeGroup.POST("/",grade.CreateGrade)
 	}
 
 	r.GET("/genders", gender.GetGenderAll)
