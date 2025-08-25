@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"reg_system/config"
 	"reg_system/entity"
+	"reg_system/services/grade"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +21,9 @@ func GetStudentID(c *gin.Context) {
 		Preload("Degree").
 		Preload("StatusStudent").
 		Preload("Gender").
+		Preload("Curriculum").
+		Preload("Grade").
+		Preload("Grade.Subject").
 		First(&students, "student_id = ?", sid)
 
 	if result.Error != nil {
@@ -40,6 +44,8 @@ func GetStudentID(c *gin.Context) {
 	facultyID := ""
 	facultyName := ""
 	status := ""
+	curriculumName := ""
+	genderName := ""
 
 	// Check filed ว่าเป็น nil หรือไม่ ก่อนเข้าถึง field นั้นโดยตรงไม่งั้นจะ error
 	//--------------------------------------------------------------------------
@@ -60,6 +66,35 @@ func GetStudentID(c *gin.Context) {
 	if students.StatusStudent != nil {
 		status = students.StatusStudent.Status
 	}
+
+	if students.Curriculum != nil {
+		curriculumName = students.Curriculum.CurriculumName
+	}
+
+	if students.Gender != nil {
+		genderName = students.Gender.Gender
+	}
+
+	//ดึงข้อมูลเกรดทั้งหมด
+	grades := []map[string]interface{}{}
+	if students.Grade != nil {
+		for _,g := range students.Grade{
+			subjectName := ""
+			
+			if g.Subject != nil{
+				subjectName = g.Subject.SubjectName
+			}
+			grades = append(grades , map[string]interface{}{
+				"Grade": g.Grade,
+				"TotalScore": g.TotalScore,
+				"SubjectID": g.SubjectID,
+				"SubjectName": subjectName,
+			})
+		}
+	}
+	// คำนวณ GPA
+	gpa := grade.CalculateGPA(students.Grade)
+
 	//--------------------------------------------------------------------------
 
 	// Step 3: สร้าง map สำหรับเก็บข้อมูลที่ต้องการส่งออก
@@ -79,9 +114,16 @@ func GetStudentID(c *gin.Context) {
 		"Degree":          degreeName, // ส่งเฉพาะชื่อปริญญา
 		"Email":           students.Email,
 		"Phone":           students.Phone,
-		"Gender":          students.Gender.Gender,
+		"Gender":          genderName,
 		"StatusStudentID": students.StatusStudentID,
 		"StatusStudent":   status,
+
+		"CurriculumID": students.CurriculumID,
+		"CurriculumName": curriculumName,
+
+		"GPA": gpa,
+		// เพิ่มข้อมูล Grade
+		"Grade": grades,
 	}
 
 	c.JSON(http.StatusOK, response)

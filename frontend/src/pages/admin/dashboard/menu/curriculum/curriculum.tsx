@@ -1,7 +1,10 @@
 // src/pages/dashboard/menu/register.tsx
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from 'antd';
 import './curriculum.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
+
+import { getCurriculumAll } from '../../../../../services/https/curriculum/curr';
+import { type CurriculumInterface } from '../../../../../interfaces/Curriculum';
 
 const { Header, Content, Footer } = Layout;
 
@@ -43,6 +46,20 @@ const footerStyle: React.CSSProperties = {
 };
 
 const Curriculum: React.FC = () => {
+
+  const [curr, setCurr] = useState<CurriculumInterface[]>([]);
+
+  useEffect(() => {
+    getCurriculumAll()
+      .then((curr) => {
+        console.log("API response:", curr);
+
+        setCurr(curr);
+      })
+      .catch((err) => console.error(err));
+  } , []);
+
+  
   return (
     <Layout style={wrapperStyle}>
       <Header style={headerStyle}>Header – หน้าหลักสูตร</Header>

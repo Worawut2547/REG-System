@@ -10,4 +10,8 @@ type Majors struct {
 
 	Students []Students `gorm:"foreignKey:MajorID" json:"-"` // ระบุความสัมพันธ์ 1--many [Students]
 	Teachers []Teachers `gorm:"foreignKey:MajorID" json:"-"` // ระบุความสัมพันธ์ 1--many [Teachers]
+
+	Curriculum []Curriculum `gorm:"foreignKey:MajorID" json:"-"` // ระบุความสัมพันธ์ 1--many [Curriculum]
+
+	Subject []Subject `gorm:"foreignKey:MajorID" json:"-"` //ระบุความสัมพันธ์เเบบ 1--many[Subject]
 }

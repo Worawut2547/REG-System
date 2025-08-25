@@ -28,7 +28,8 @@ interface CreateStudentProps {
 
 const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
-
+  const [selectedMajor , setSelectedMajor] = useState<string | null>(null);
+  const [allMajors , setAllMajors] = useState<MajorInterface[]>([]);
   const [majorOptions, setMajorOptions] = useState<MajorInterface[]>([]);
   const [facultyOptions, setFacultyOptions] = useState<FacultyInterface[]>([]);
   const [selectFaculty, setSelectFaculty] = useState<string | null>(null)
@@ -47,6 +48,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
       getGenderAll()
     ])
       .then(([majors, faculties, degrees, genders]) => {
+        setAllMajors(majors)
         setMajorOptions(majors);
         setFacultyOptions(faculties);
         setDegreeOptions(degrees);
@@ -61,9 +63,15 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
   const handleFacultyChange = (value: string) => {
     setSelectFaculty(value);
 
+    // กรองสาขาที่ตรงกับคณะ
+    const filteredMajors = allMajors.filter(m => m.FacultyID == value);
+    setMajorOptions(filteredMajors);
+
+    setSelectedMajor(null);
+
     // เมื่อเลือก Faculty ให้ดึง Major ที่ตรงกับ Faculty นั้น
-    const faculty = facultyOptions.find(f => f.FacultyID === value);
-    setMajorOptions(faculty?.Majors || []);
+    /*const faculty = facultyOptions.find(f => f.FacultyID === value);
+    setMajorOptions(faculty?.Majors || []);*/
   }
 
   const onFinish = async (values: StudentInterface) => {

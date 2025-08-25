@@ -5,8 +5,13 @@ import (
 	"reg_system/test"
 
 	"reg_system/controller/admins"
+
 	"reg_system/controller/bill"
+
+	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
+	"reg_system/controller/grade"
+
 	"reg_system/controller/subject"
 
 	"reg_system/controller/teachers"
@@ -111,7 +116,7 @@ func main() {
 	}
 	//---------------------------------------------------------
 	// Status
-	statusGroup := r.Group("statuses")
+	statusGroup := r.Group("/statuses")
 	{
 		statusGroup.GET("/", status.GetStatusStudentAll)
 		statusGroup.POST("/", status.CreateStatus)
@@ -131,10 +136,10 @@ func main() {
 	subjectrGroup := r.Group("/subjects")
 	{
 		subjectrGroup.GET("/", subject.GetSubjectAll)
-		subjectrGroup.GET("/:id", subject.GetSubjectByID)
+		/*subjectrGroup.GET("/:id", subject.GetSubjectByID)
 		subjectrGroup.POST("/", subject.CreateSubject)
 		subjectrGroup.PUT("/:id", subject.UpdateSubject)
-		subjectrGroup.DELETE("/:id", subject.DeleteSubject)
+		subjectrGroup.DELETE("/:id", subject.DeleteSubject)*/
 
 		//r.Run(":8000")
 	}
@@ -151,6 +156,39 @@ func main() {
 	}
 	//---------------------------------------------------------
 
+	//---------------------------------------------------------
+	// Curriculum
+	curriculumGroup := r.Group("/curriculums")
+	{
+		curriculumGroup.GET("/", curriculum.GetCurriculumAll)
+		curriculumGroup.POST("/", curriculum.CreateCurriculum)
+	}
+
+	//---------------------------------------------------------
+	// BookPath
+	bookGroup := r.Group("/books")
+	{
+		bookGroup.GET("/", curriculum.GetBookPathAll)
+		bookGroup.GET("/:filename", curriculum.ShowBookFile)
+		bookGroup.POST("/", curriculum.UploadBookFile)
+	}
+
+	//---------------------------------------------------------
+	// Subject
+	subjectGroup := r.Group("/subjects")
+	{
+		subjectGroup.GET("/", subject.GetSubjectAll)
+		subjectGroup.GET("/schedules/", subject.GetScheduleAll)
+		subjectGroup.POST("/" , subject.CreateSubject)
+	}
+
+	//---------------------------------------------------------
+	// Subject
+	gradeGroup := r.Group("/grades")
+	{
+		gradeGroup.GET("/", grade.GetGradeAll)
+		gradeGroup.POST("/",grade.CreateGrade)
+	}
 	r.GET("/genders", gender.GetGenderAll)
 
 	// Run on port 8000

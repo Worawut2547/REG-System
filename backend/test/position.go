@@ -7,20 +7,12 @@ import (
 
 func PositionExample() {
 	db := config.DB()
-
-	options := []string{
-		"ศาสตราจารย์",
-		"รองศาสตราจารย์",
-		"ผู้ช่วยศาสตราจารย์",
+	positions := []entity.Position{
+		{ID: 1, Position: "ศาสตราจารย์"},
+		{ID: 2, Position: "รองศาสตราจารย์"},
+		{ID: 3, Position: "ผู้ช่วยศาสตราจารย์"},
 	}
-
-	for i, opt := range options {
-		position := entity.Position{
-			ID: i+1,
-			Position: opt,
-		}
-
-		db.FirstOrCreate(&position , entity.Position{ID: position.ID})
-
+	for _, post := range positions {
+		db.Save(&post)
 	}
 }

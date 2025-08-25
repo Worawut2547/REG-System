@@ -18,5 +18,6 @@ func SubjectExample() {
 
 	for _,subject := range subjects {
 		db.FirstOrCreate(&subject)
+
 	}
 }
