@@ -5,13 +5,17 @@ import (
 	"reg_system/test"
 
 	"reg_system/controller/admins"
+	"reg_system/controller/bill"
 	"reg_system/controller/gender"
+	"reg_system/controller/subject"
 
 	"reg_system/controller/teachers"
 
 	"reg_system/controller/students"
 
 	"reg_system/controller/users"
+
+	"reg_system/controller/registration"
 
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
@@ -112,8 +116,41 @@ func main() {
 		statusGroup.GET("/", status.GetStatusStudentAll)
 		statusGroup.POST("/", status.CreateStatus)
 	}
+	//---------------------------------------------------------
+	registrationGroup := r.Group("/registrations")
+	{
+		registrationGroup.GET("/", registration.GetRegistrationAll)
+		registrationGroup.GET("/:id", registration.GetRegistrationByID)
+		registrationGroup.POST("/", registration.CreateRegistration)
+		registrationGroup.PUT("/:id", registration.UpdateRegistration)
+		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
 
-	
+		//r.Run(":8000")
+	}
+	//---------------------------------------------------------
+	subjectrGroup := r.Group("/subjects")
+	{
+		subjectrGroup.GET("/", subject.GetSubjectAll)
+		subjectrGroup.GET("/:id", subject.GetSubjectByID)
+		subjectrGroup.POST("/", subject.CreateSubject)
+		subjectrGroup.PUT("/:id", subject.UpdateSubject)
+		subjectrGroup.DELETE("/:id", subject.DeleteSubject)
+
+		//r.Run(":8000")
+	}
+	//---------------------------------------------------------
+	billrGroup := r.Group("/bills")
+	{
+		billrGroup.GET("/", bill.GetBills)
+		billrGroup.GET("/:id", bill.GetBillByID)
+		billrGroup.POST("/", bill.CreateBill)
+		billrGroup.PUT("/:id", bill.UpdateBill)
+		billrGroup.DELETE("/:id", bill.DeleteBill)
+
+		r.Run(":8000")
+	}
+	//---------------------------------------------------------
+
 	r.GET("/genders", gender.GetGenderAll)
 
 	// Run on port 8000

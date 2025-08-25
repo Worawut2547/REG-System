@@ -10,10 +10,16 @@ func ExampleData() {
 	
 	FacultyExample()
 	MajorExample()
+	SubjectExample()
 	PositionExample()
 	DegreeExample()
 	GenderExample()
 	StatusExample()
+	RegistrationExample()
+	SubjectExample()
+
+	StudentExample()
+	BillExample()
 
 	student := entity.Students{
 		StudentID:       "B6616052",

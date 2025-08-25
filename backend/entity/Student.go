@@ -31,6 +31,9 @@ type Students struct {
 	StatusStudentID string         `json:"StatusStudentID"`     // Foreign Key
 	StatusStudent   *StatusStudent `gorm:"foreignKey:StatusStudentID;references:StatusStudentID"` // ระบุความสัมพันธ์ 1--1 [StatusStudent]
 
+	RegistrationID int `json:"RegistrationID"` // Foreign Key
+	Registration   *Registration `gorm:"foreignKey:RegistrationID;references:ID"` // ระบุความสัมพันธ์ 1--1 [Registration]
+
 	CreatedAt time.Time `json:"CreatedAt"`
 	UpdatedAt time.Time `json:"UpdatedAt"`
 	DeletedAt gorm.DeletedAt `json:"DeletedAt,omitempty" gorm:"index"` // ใช้สำหรับ soft delete
