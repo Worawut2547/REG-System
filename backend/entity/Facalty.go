@@ -1,6 +1,7 @@
 package entity
 
 type Faculty struct {
+	ID          int    `gorm:"primaryKey;autoIncrement" json:"ID"`
 	FacultyID   string `gorm:"primaryKey;unique" json:"FacultyID"`
 	FacultyName string `json:"FacultyName"`
 

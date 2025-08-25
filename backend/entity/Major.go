@@ -1,6 +1,7 @@
 package entity
 
 type Majors struct {
+	
 	MajorID   string `gorm:"primaryKey;unique" json:"MajorID"`
 	MajorName string `json:"MajorName"`
 

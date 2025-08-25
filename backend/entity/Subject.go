@@ -1,6 +1,7 @@
 package entity
 
 type Subject struct {
+
 	ID          int    `gorm:"primaryKey;autoIncrement" json:"ID"`
 	SubjectID   string `gorm:"unique" json:"SubjectID"`
 	SubjectName string `json:"SubjectName"`

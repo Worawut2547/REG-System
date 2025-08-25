@@ -31,6 +31,9 @@ type Students struct {
 	StatusStudentID string         `json:"StatusStudentID"`                                       // Foreign Key
 	StatusStudent   *StatusStudent `gorm:"foreignKey:StatusStudentID;references:StatusStudentID"` // ระบุความสัมพันธ์ 1--1 [StatusStudent]
 
+	RegistrationID int `json:"RegistrationID"` // Foreign Key
+	Registration   *Registration `gorm:"foreignKey:RegistrationID;references:ID"` // ระบุความสัมพันธ์ 1--1 [Registration]
+
 	CurriculumID string      `json:"CurriculumID"`                                    // Foreign Key
 	Curriculum   *Curriculum `gorm:"foreignKey:CurriculumID;references:CurriculumID"` // ระบุความสัมพันธ์ 1--1[Curriculum]
 
