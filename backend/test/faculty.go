@@ -14,7 +14,7 @@ func FacultyExample() {
 		{FacultyID: "F03" , FacultyName: "สำนักวิชาเทคโนโลยีสังคม" },
 	}
 
-	for _,faculty := range faculties {
-		db.FirstOrCreate(&faculty , entity.Faculty{FacultyID: faculty.FacultyID})
+	for _,fac := range faculties{
+		db.Save(&fac)
 	}
 }

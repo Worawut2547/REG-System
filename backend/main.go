@@ -6,23 +6,22 @@ import (
 	"reg_system/test"
 
 	"reg_system/controller/admins"
+	"reg_system/controller/bill"
 	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
-
+	"reg_system/controller/grade"
 	"reg_system/controller/teachers"
-
 	"reg_system/controller/students"
-
+	"reg_system/controller/registration"
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
 	"reg_system/controller/subjectcurriculum"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
 	"reg_system/controller/status"
-	subjects "reg_system/controller/subject"
+	"reg_system/controller/subject"
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/users"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -99,14 +98,21 @@ func main() {
 		positionGroup.GET("/", position.GetPositionAll)
 		positionGroup.POST("/", position.CreatePosition)
 	}
-
-	// -------------------- Statuses --------------------
+	// -------------------- Statuses ------------------
 	statusGroup := r.Group("/statuses")
 	{
 		statusGroup.GET("/", status.GetStatusStudentAll)
 		statusGroup.POST("/", status.CreateStatus)
 	}
-
+	//---------------------------------------------------------
+	registrationGroup := r.Group("/registrations")
+	{
+		registrationGroup.GET("/", registration.GetRegistrationAll)
+		registrationGroup.GET("/:id", registration.GetRegistrationByID)
+		registrationGroup.POST("/", registration.CreateRegistration)
+		registrationGroup.PUT("/:id", registration.UpdateRegistration)
+		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
+	}
 // -------------------- Curriculums --------------------
 curriculumGroup := r.Group("/curriculums")
 {
@@ -166,7 +172,25 @@ subjectCurriculumGroup := r.Group("/subject-curriculums")
 		}
 	}
 
-	// -------------------- Genders --------------------
+	//---------------------------------------------------------
+	billrGroup := r.Group("/bills")
+	{
+		billrGroup.GET("/", bill.GetBills)
+		billrGroup.GET("/:id", bill.GetBillByID)
+		billrGroup.POST("/", bill.CreateBill)
+		billrGroup.PUT("/:id", bill.UpdateBill)
+		billrGroup.DELETE("/:id", bill.DeleteBill)
+
+	}
+
+	//---------------------------------------------------------
+	// Subject
+	gradeGroup := r.Group("/grades")
+	{
+		gradeGroup.GET("/", grade.GetGradeAll)
+		gradeGroup.POST("/",grade.CreateGrade)
+	}
+		// -------------------- Genders --------------------
 	r.GET("/genders", gender.GetGenderAll)
 
 	// -------------------- Run Server --------------------

@@ -26,7 +26,7 @@ import (
 // Section 1: Request DTOs (รับข้อมูลจากฝั่ง Frontend)
 // ======================================================================
 
-// เปลี่ยนเป็น omitempty ถ้าต้องการให้ระบบ gen id เอง
+// CurriculumCreateReq : สำหรับ POST
 type CurriculumCreateReq struct {
 	CurriculumID   string `json:"curriculum_id"   binding:"required"`
 	CurriculumName string `json:"curriculum_name" binding:"required"`
@@ -38,13 +38,14 @@ type CurriculumCreateReq struct {
 	Description    string `json:"description"     binding:"omitempty"`
 }
 
+// CurriculumUpdateReq : สำหรับ PUT/PATCH
 type CurriculumUpdateReq struct {
 	CurriculumName *string `json:"curriculum_name,omitempty"`
 	TotalCredit    *int    `json:"total_credit,omitempty"`
 	StartYear      *int    `json:"start_year,omitempty"`
 	FacultyID      *string `json:"faculty_id,omitempty"`
 	MajorID        *string `json:"major_id,omitempty"`
-	BookID         *string `json:"book_id,omitempty"` // FE ส่ง string
+	BookID         *string `json:"book_id,omitempty"`
 	Description    *string `json:"description,omitempty"`
 }
 
@@ -52,8 +53,7 @@ type CurriculumUpdateReq struct {
 // Section 2: Helpers
 // ======================================================================
 
-// ตรวจว่า major_id และ faculty_id มีอยู่จริง
-// และถ้า Major ผูก Faculty อยู่แล้ว ต้องตรงกับ faculty_id ที่รับมา
+// ตรวจว่า major_id และ faculty_id มีอยู่จริง และสัมพันธ์กัน
 func validateMajorFaculty(db *gorm.DB, majorID, facultyID string) error {
 	if majorID != "" {
 		var major entity.Majors
@@ -67,6 +67,7 @@ func validateMajorFaculty(db *gorm.DB, majorID, facultyID string) error {
 			return errors.New("major_id does not belong to faculty_id")
 		}
 	}
+
 	if facultyID != "" {
 		var fac entity.Faculty
 		if err := db.First(&fac, "faculty_id = ?", facultyID).Error; err != nil {
@@ -76,13 +77,14 @@ func validateMajorFaculty(db *gorm.DB, majorID, facultyID string) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
 // ตรวจว่า book_id (int) มีจริงในตาราง book_paths
 func validateBookID(db *gorm.DB, bookID int) error {
 	if bookID == 0 {
-		return nil // อนุญาตให้ว่าง/0 = ไม่ผูกหนังสือ
+		return nil // อนุญาตให้ว่าง (0 = ไม่ผูกหนังสือ)
 	}
 	var bp entity.BookPath
 	if err := db.First(&bp, "id = ?", bookID).Error; err != nil {
@@ -107,6 +109,7 @@ func parseOptInt(s string) (*int, error) {
 	return &v, nil
 }
 
+// แปลง entity.Curriculum → response (snake_case)
 func curriculumToResp(cur entity.Curriculum) gin.H {
 	out := gin.H{
 		"curriculum_id":   cur.CurriculumID,
@@ -115,7 +118,7 @@ func curriculumToResp(cur entity.Curriculum) gin.H {
 		"start_year":      cur.StartYear,
 		"faculty_id":      cur.FacultyID,
 		"major_id":        cur.MajorID,
-		"book_id":         cur.BookID, // number (int) ตาม entity
+		"book_id":         cur.BookID,
 		"description":     cur.Description,
 	}
 	if cur.Faculty != nil {
@@ -141,7 +144,6 @@ func CreateCurriculum(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	db := config.DB()
 
 	// ตรวจความสอดคล้อง Major ↔ Faculty
@@ -150,7 +152,7 @@ func CreateCurriculum(c *gin.Context) {
 		return
 	}
 
-	// แปลงและตรวจ book_id (ถ้าส่งมา)
+	// แปลงและตรวจ book_id (ถ้ามี)
 	var bookID int
 	if bptr, err := parseOptInt(req.BookID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -170,7 +172,7 @@ func CreateCurriculum(c *gin.Context) {
 		StartYear:      req.StartYear,
 		FacultyID:      req.FacultyID,
 		MajorID:        req.MajorID,
-		BookID:         bookID, // ถ้า entity เป็น uint ให้ใช้ uint(bookID)
+		BookID:         bookID,
 		Description:    req.Description,
 	}
 
@@ -223,14 +225,14 @@ func GetCurriculumAll(c *gin.Context) {
 	out := make([]map[string]interface{}, 0, len(curs))
 	for i, cur := range curs {
 		row := curriculumToResp(cur)
-		row["index"] = i + 1 // ใช้โชว์ลำดับในตาราง (จะลบก็ได้)
+		row["index"] = i + 1 // ใช้โชว์ลำดับในตาราง
 		out = append(out, row)
 	}
+
 	c.JSON(http.StatusOK, out)
 }
 
-// PUT /curriculums/:curriculumId
-// รองรับ partial update (PATCH-style)
+// PUT /curriculums/:curriculumId (Partial update)
 func UpdateCurriculum(c *gin.Context) {
 	id := c.Param("curriculumId")
 	db := config.DB()
@@ -251,7 +253,7 @@ func UpdateCurriculum(c *gin.Context) {
 		return
 	}
 
-	// เตรียมค่าใหม่เพื่อเช็คความสอดคล้อง (ถ้ามีการแก้ faculty/major)
+	// ตรวจความสอดคล้อง faculty/major ใหม่ถ้ามีการแก้ไข
 	newFacultyID := cur.FacultyID
 	newMajorID := cur.MajorID
 	if req.FacultyID != nil {
@@ -294,18 +296,11 @@ func UpdateCurriculum(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "book_id must be a number"})
 				return
 			}
-			// ตรวจว่ามีจริง
 			if err := validateBookID(db, v); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
-			cur.BookID = v // ถ้า entity เป็น uint ให้ใช้: cur.BookID = uint(v)
-		} else {
-			// ถ้าต้องการรองรับ "ล้างค่า" book_id เมื่อส่ง "" ให้ตัดสินใจ:
-			// 1) ตั้งเป็น 0 (unassigned)
-			// cur.BookID = 0
-			// หรือ 2) ปล่อยผ่านไม่เปลี่ยนแปลง (คงค่าดิม)
-			// ตอนนี้เลือก "ปล่อยผ่าน" เพื่อความปลอดภัยของข้อมูลเดิม
+			cur.BookID = v
 		}
 	}
 

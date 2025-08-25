@@ -1,6 +1,7 @@
 package entity
 
 type Faculty struct {
+	ID          int    `gorm:"primaryKey;autoIncrement" json:"ID"`
 	FacultyID   string `gorm:"primaryKey;unique" json:"FacultyID"`
 	FacultyName string `json:"FacultyName"`
 
@@ -8,6 +9,6 @@ type Faculty struct {
 	Teachers []Teachers `gorm:"foreignKey:FacultyID" json:"-"` // ระบุความสัมพันธ์ 1--many [Teachers]
 	Majors   []Majors   `gorm:"foreignKey:FacultyID" json:"-"`   // ระบุความสัมพันธ์ 1--many [Majors]
 	Curriculum []Curriculum `gorm:"foreignKey:FacultyID" json:"-"`   // ระบุความสัมพันธ์ 1--many [Curriculum]
-	Subjects []Subjects `gorm:"foreignKey:FacultyID" json:"-"`   // ระบุความสัมพันธ์ 1--many [Subjects]
+	Subjects []Subject `gorm:"foreignKey:FacultyID" json:"-"`   // ระบุความสัมพันธ์ 1--many [Subjects]
 }
 

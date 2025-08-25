@@ -12,5 +12,5 @@ type SubjectStudyTime struct {
 	EndAt     time.Time `json:"end_at" gorm:"type:datetime;not null"`
 
 	// ความสัมพันธ์กลับไปที่ Subject
-	Subject *Subjects `json:"-" gorm:"foreignKey:SubjectID;references:SubjectID"`
+	Subject *Subject `json:"-" gorm:"foreignKey:SubjectID;references:SubjectID"`
 }

@@ -92,7 +92,7 @@ func CreateSubject(c *gin.Context) {
 		return
 	}
 
-	sub := entity.Subjects{
+	sub := entity.Subject{
 		SubjectID:   req.SubjectID,
 		SubjectName: req.SubjectName,
 		Credit:      req.Credit,
@@ -122,7 +122,7 @@ func GetSubjectID(c *gin.Context) {
 	id := c.Param("subjectId")
 	db := config.DB()
 
-	var sub entity.Subjects
+	var sub entity.Subject
 	if err := db.
 		Preload("Major").
 		Preload("Faculty").
@@ -160,7 +160,7 @@ func GetSubjectID(c *gin.Context) {
 func GetSubjectAll(c *gin.Context) {
 	db := config.DB()
 
-	var subs []entity.Subjects
+	var subs []entity.Subject
 	if err := db.
 		Preload("Major").
 		Preload("Faculty").
@@ -207,7 +207,7 @@ func UpdateSubject(c *gin.Context) {
 		return
 	}
 
-	var sub entity.Subjects
+	var sub entity.Subject
 	if err := db.First(&sub, "subject_id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "subject not found"})
@@ -270,7 +270,7 @@ func DeleteSubject(c *gin.Context) {
 	id := c.Param("subjectId")
 	db := config.DB()
 
-	if err := db.Delete(&entity.Subjects{}, "subject_id = ?", id).Error; err != nil {
+	if err := db.Delete(&entity.Subject{}, "subject_id = ?", id).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

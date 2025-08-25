@@ -114,7 +114,7 @@ func Create(c *gin.Context) {
 
 	// ตรวจว่ามี subject นี้จริงไหม
 	var count int64
-	if err := db.Model(&entity.Subjects{}).
+	if err := db.Model(&entity.Subject{}).
 		Where("subject_id = ?", subjectID).
 		Count(&count).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -1,9 +1,9 @@
 // src/pages/dashboard/menu/register.tsx
+
 import React, { useState } from "react";
 import { Layout, Button } from "antd";
 import ADD from "./add";
 import CHANGE from "./change";
-
 const { Header, Content, Footer } = Layout;
 
 const wrapperStyle: React.CSSProperties = {
@@ -41,6 +41,7 @@ const footerStyle: React.CSSProperties = {
 };
 
 const Curriculum: React.FC = () => {
+
   const [active, setActive] = useState<"add" | "change" | null>(null);
 
   return (
