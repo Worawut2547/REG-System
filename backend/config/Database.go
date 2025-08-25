@@ -40,5 +40,14 @@ func SetupDatabase() {
 		&entity.Admins{},
 		&entity.Users{},
 		&entity.StatusStudent{},
+
+		&entity.BookPath{},
+		&entity.Curriculum{},
+		&entity.Subjects{},
+		&entity.SubjectStudyTime{},
+		&entity.SubjectCurriculum{},
+
 	)
+
+	
 }

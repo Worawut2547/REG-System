@@ -1,7 +1,7 @@
 import axios from "axios";
 import { type MajorInterface } from "../../../interfaces/Major";
 
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../../api";
 
 export const getMajorAll = async (): Promise<MajorInterface[]> => {
     //console.log("Fetching student data for:", username);

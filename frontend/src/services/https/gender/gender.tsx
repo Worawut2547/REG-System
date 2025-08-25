@@ -2,7 +2,7 @@ import axios from "axios";
 import { type GenderInterface } from "../../../interfaces/Gender"
 
 
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../../api";
 
 export const getGenderAll = async (): Promise<GenderInterface[]> => {
     try {

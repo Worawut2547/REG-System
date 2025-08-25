@@ -1,7 +1,6 @@
 import axios from "axios";
 import { type PositionInterface } from "../../../interfaces/Position";
-
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../../api";
 
 export const getPositionAll = async(): Promise <PositionInterface[]> => {
     try {

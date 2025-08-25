@@ -14,6 +14,8 @@ func ExampleData() {
 	DegreeExample()
 	GenderExample()
 	StatusExample()
+	BookPathExample()
+	CurriculumExample()
 
 	student := entity.Students{
 		StudentID:       "B6616052",
@@ -27,6 +29,7 @@ func ExampleData() {
 		FacultyID:       "F01",
 		MajorID:         "ENG23",
 		StatusStudentID: "10",
+		CurriculumID: "curr23",
 	}
 	db.FirstOrCreate(&student)
 
