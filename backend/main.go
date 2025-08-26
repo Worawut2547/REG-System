@@ -133,16 +133,7 @@ func main() {
 		//r.Run(":8000")
 	}
 	//---------------------------------------------------------
-	subjectrGroup := r.Group("/subjects")
-	{
-		subjectrGroup.GET("/", subject.GetSubjectAll)
-		/*subjectrGroup.GET("/:id", subject.GetSubjectByID)
-		subjectrGroup.POST("/", subject.CreateSubject)
-		subjectrGroup.PUT("/:id", subject.UpdateSubject)
-		subjectrGroup.DELETE("/:id", subject.DeleteSubject)*/
 
-		//r.Run(":8000")
-	}
 	//---------------------------------------------------------
 	billrGroup := r.Group("/bills")
 	{
@@ -183,7 +174,7 @@ func main() {
 	}
 
 	//---------------------------------------------------------
-	// Subject
+	// Grades
 	gradeGroup := r.Group("/grades")
 	{
 		gradeGroup.GET("/", grade.GetGradeAll)

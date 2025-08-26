@@ -75,7 +75,7 @@ func ExampleData() {
 		Password: hashedPasswordAdmin,
 		Role:     "admin",
 	}
-	db.FirstOrCreate(&userAdmin)
+	db.Create(&userAdmin)
 
 	hashedPasswordStudent, _ := config.HashPassword(student.CitizenID)
 	userStudent := entity.Users{

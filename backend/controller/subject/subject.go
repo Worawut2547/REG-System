@@ -49,5 +49,3 @@ func CreateSubject (c *gin.Context){
 
 	c.JSON(http.StatusOK , subject)
 }
-
-

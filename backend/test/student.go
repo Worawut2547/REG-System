@@ -1,8 +1,10 @@
 package test
+
 import (
 	"reg_system/config"
 	"reg_system/entity"
 )
+
 func StudentExample() {
 	db := config.DB()
 
@@ -18,6 +20,15 @@ func StudentExample() {
 		FacultyID:       "F01",
 		MajorID:         "ENG23",
 		StatusStudentID: "10",
+		CurriculumID:    "curr23",
 	}
 	db.FirstOrCreate(&student)
+
+	hashedPasswordStudent, _ := config.HashPassword(student.CitizenID)
+	userStudent := entity.Users{
+		Username: student.StudentID,
+		Password: hashedPasswordStudent,
+		Role:     "student",
+	}
+	db.Create(&userStudent)
 }
