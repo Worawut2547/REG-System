@@ -1,7 +1,7 @@
 import axios from "axios";
 import { type DegreeInterface } from "../../../interfaces/Degree";
 
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../../api";
 
 export const getDegreeAll = async (): Promise<DegreeInterface[]> => {
     try{

@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
 func GetStudentID(c *gin.Context) {
 	sid := c.Param("id")
 
@@ -37,8 +36,8 @@ func GetStudentID(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
 		return
 	}
+
 	// Step 2: เอาค่า {Gender , FacultyName , MajorName , Degree} ออกมาเเสดง
-	// เพื่อเลือกส่งข้อมูลที่ต้องการออกไป
 	//--------------------------------------------------------------------------
 	degreeName := ""
 	majorID := ""
@@ -49,8 +48,7 @@ func GetStudentID(c *gin.Context) {
 	curriculumName := ""
 	genderName := ""
 
-	// Check filed ว่าเป็น nil หรือไม่ ก่อนเข้าถึง field นั้นโดยตรงไม่งั้นจะ error
-	//--------------------------------------------------------------------------
+	// Check filed ว่าเป็น nil หรือไม่ ก่อนเข้าถึง field นั้นโดยตรง
 	if students.Degree != nil {
 		degreeName = students.Degree.Degree
 	}
@@ -94,17 +92,15 @@ func GetStudentID(c *gin.Context) {
 			})
 		}
 	}
+
 	// คำนวณ GPA
 	gpa := grade.CalculateGPA(students.Grade)
 
-	//--------------------------------------------------------------------------
-
 	// Step 3: สร้าง map สำหรับเก็บข้อมูลที่ต้องการส่งออก
-	//--------------------------------------------------------------------------
+	//------------------------------------------------------------------
 	response := map[string]interface{}{
 		"StudentID": students.StudentID,
 		"FirstName": students.FirstName,
-		"LastName":  students.LastName,
 		"CitizenID": students.CitizenID,
 
 		"MajorID":   majorID,
@@ -113,18 +109,17 @@ func GetStudentID(c *gin.Context) {
 		"FacultyID":   facultyID,
 		"FacultyName": facultyName,
 
-		"Degree":          degreeName, // ส่งเฉพาะชื่อปริญญา
+		"Degree":          degreeName,
 		"Email":           students.Email,
 		"Phone":           students.Phone,
 		"Gender":          genderName,
 		"StatusStudentID": students.StatusStudentID,
 		"StatusStudent":   status,
 
-		"CurriculumID": students.CurriculumID,
+		"CurriculumID":   students.CurriculumID,
 		"CurriculumName": curriculumName,
 
-		"GPA": gpa,
-		// เพิ่มข้อมูล Grade
+		"GPA":   gpa,
 		"Grade": grades,
 		"Registration": students.Registration,
 
@@ -138,6 +133,7 @@ func GetStudentID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
 
 func CreateStudent(c *gin.Context) {
 	student := new(entity.Students)

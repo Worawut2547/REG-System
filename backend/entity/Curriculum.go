@@ -7,7 +7,7 @@ import (
 
 type Curriculum struct {
 	CurriculumID   string `gorm:"primaryKey" json:"CurriculumID"`
-	CurriculumName string `gorm:"unique" json:"CurriculumName"`
+	CurriculumName string `json:"CurriculumName"`
 	TotalCredit    int    `json:"TotalCredit"`
 	StartYear      int    `json:"StartYear"`
 	Description    string `json:"Description"`

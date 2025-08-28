@@ -13,10 +13,11 @@ func ExampleData() {
 	SubjectExample()
 	PositionExample()
 	DegreeExample()
-	DayExample()
 	SemesterExample()
 	GenderExample()
 	StatusExample()
+	BookPathExample()
+	CurriculumExample()
 
 	RegistrationExample()
 	StudentExample()
@@ -25,7 +26,6 @@ func ExampleData() {
 	BookPathExample()
 	CurriculumExample()
 	SubjectExample()
-	SchedulesExample()
 	GradeExample()
 
 	student := entity.Students{

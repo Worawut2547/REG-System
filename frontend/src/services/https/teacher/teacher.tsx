@@ -1,7 +1,7 @@
 import axios from "axios";
 import { type TeacherInterface } from "../../../interfaces/Teacher";
 
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../../api";
 
 
 export const getNameTeacher = async (username: string) => {
