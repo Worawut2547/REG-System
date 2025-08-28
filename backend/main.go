@@ -12,7 +12,6 @@ import (
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
 
-	"reg_system/controller/subject"
 
 	"reg_system/controller/teachers"
 
@@ -165,13 +164,6 @@ func main() {
 	}
 
 	//---------------------------------------------------------
-	// Subject
-	subjectGroup := r.Group("/subjects")
-	{
-		subjectGroup.GET("/", subject.GetSubjectAll)
-		subjectGroup.GET("/schedules/", subject.GetScheduleAll)
-		subjectGroup.POST("/" , subject.CreateSubject)
-	}
 
 	//---------------------------------------------------------
 	// Grades
