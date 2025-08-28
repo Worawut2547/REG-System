@@ -1,0 +1,25 @@
+/* Gradient hover/focus effect */
+.ant-form-item-control-input input:focus,
+.ant-form-item-control-input textarea:focus {
+  box-shadow: 0 0 8px rgba(24, 144, 255, 0.3);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+/* subtle hover บน FormItem */
+.ant-form-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+/* scrollbar textarea */
+textarea::-webkit-scrollbar {
+  width: 6px;
+}
+textarea::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}

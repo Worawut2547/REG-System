@@ -9,7 +9,7 @@ interface ShowNameTeacherProps {
     onEdit?: () => void;
 }
 
-export const ShowTeacherProfile: React.FC<ShowNameTeacherProps> = () => {
+export const ShowTeacherProfile: React.FC<ShowNameTeacherProps> = ({ onEdit }) => {
 
     const [username, setUsername] = useState<string | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export const ShowTeacherProfile: React.FC<ShowNameTeacherProps> = () => {
             </div>
 
             <Space style={{ marginTop: 16 }}>
-                <Button type="primary">
+                <Button type="primary" onClick={onEdit}>
                     เเก้ไข
                 </Button>
             </Space>

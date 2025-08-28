@@ -9,7 +9,7 @@ interface ShowNameStudentProps {
     onEdit?: () => void;
 }
 
-export const ShowStudentProfile: React.FC<ShowNameStudentProps> = () => {
+export const ShowStudentProfile: React.FC<ShowNameStudentProps> = ( {onEdit} ) => {
 
     const [username, setUsername] = useState<string | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -91,11 +91,17 @@ export const ShowStudentProfile: React.FC<ShowNameStudentProps> = () => {
                     <Descriptions.Item label="สาขา">{student?.MajorName}</Descriptions.Item>
                     <Descriptions.Item label="ระดับการศึกษา">{student?.Degree}</Descriptions.Item>
                     <Descriptions.Item label="สถานะทางการศึกษา">{student?.StatusStudent}</Descriptions.Item>
+                    <Descriptions.Item label="ศาสนา">{student?.Religion}</Descriptions.Item>
+                    <Descriptions.Item label="สัญชาติ">{student?.Nationality}</Descriptions.Item>
+                    <Descriptions.Item label="เชื้อชาติ">{student?.Ethnicity}</Descriptions.Item>
+                    <Descriptions.Item label="วันเกิด">{student?.BirthDay}</Descriptions.Item>
+                    <Descriptions.Item label="ผู้ปกครอง">{student?.Parent}</Descriptions.Item>
+                    <Descriptions.Item label="ที่อยู่">{student?.Address}</Descriptions.Item>
                 </Descriptions>
             </div>
 
             <Space style={{ marginTop: 16 }}>
-                <Button type="primary">
+                <Button type="primary" onClick={onEdit}>
                     เเก้ไข
                 </Button>
             </Space>

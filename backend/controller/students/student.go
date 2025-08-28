@@ -25,6 +25,7 @@ func GetStudentID(c *gin.Context) {
 		Preload("Curriculum").
 		Preload("Grade").
 		Preload("Grade.Subject").
+		Preload("Registration").
 		First(&students, "student_id = ?", sid)
 
 	if result.Error != nil {
@@ -125,6 +126,14 @@ func GetStudentID(c *gin.Context) {
 		"GPA": gpa,
 		// เพิ่มข้อมูล Grade
 		"Grade": grades,
+		"Registration": students.Registration,
+
+		"Address": students.Address,
+		"Religion": students.Religion,
+		"Nationality": students.Nationality,
+		"Ethnicity": students.Ethnicity,
+		"BirthDay": students.BirthDay,
+		"Parent": students.Parent,
 	}
 
 	c.JSON(http.StatusOK, response)

@@ -15,7 +15,7 @@ func RegistrationExample() {
 			RegistrationID: "REG001",
 			Date:           time.Now(),
 			StudentID:      "B6616052",
-			//SubjectID:      "233001",
+			SubjectID:      "233001",
 			/*SectionID:      1,
 			SemesterID:     1,*/
 		},
@@ -23,7 +23,7 @@ func RegistrationExample() {
 			RegistrationID: "REG002",
 			Date:           time.Now(),
 			StudentID:      "B6616052",
-			//SubjectID:      "233031",
+			SubjectID:      "233031",
 			/*SectionID:      2,
 			SemesterID:     1,*/
 		},

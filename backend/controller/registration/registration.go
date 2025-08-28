@@ -1,10 +1,10 @@
 package registration
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"reg_system/config"
 	"reg_system/entity"
-	"github.com/gin-gonic/gin"
 )
 
 func CreateRegistration(c *gin.Context) {
@@ -22,14 +22,18 @@ func CreateRegistration(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
 		return
 	}
-
+	
 	c.JSON(http.StatusOK, gin.H{"message": "Create registration success"})
 }
 func GetRegistrationAll(c *gin.Context) {
 	var registrations []entity.Registration
 	db := config.DB()
 
-	result := db.Find(&registrations)
+	result := db.
+		Preload("Student").
+		Preload("Subject").
+		Preload("Subject.Semester").
+		Find(&registrations)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
 		return
