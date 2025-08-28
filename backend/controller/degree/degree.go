@@ -12,7 +12,7 @@ func GetDegreeAll (c *gin.Context){
 	var degree []entity.Degree
 	db := config.DB()
 	if err := db.Find(&degree).Error; err != nil {
-	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get faculty"})
+	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get degree"})
 		return
 	}
 
@@ -30,7 +30,7 @@ func CreateDegree (c *gin.Context){
 	db := config.DB()
 	result := db.FirstOrCreate(&degree)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return		
 	}
 

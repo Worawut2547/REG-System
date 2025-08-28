@@ -118,7 +118,7 @@ func GetTeacherAll(c *gin.Context) {
 		Find(&teachers)
 
 	if results.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": results.Error.Error()})
 		return
 	}
 
@@ -177,7 +177,7 @@ func DeleteTeacher(c *gin.Context) {
 
 	result := db.Delete(&teacher, "teacher_id = ?", tid)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
@@ -198,7 +198,7 @@ func UpdateTeacher(c *gin.Context) {
 	result := db.Model(&teacher).Where("teacher_id = ?", tid).Updates(&teacher)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 

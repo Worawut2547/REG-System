@@ -31,14 +31,14 @@ func SignIn(c *gin.Context) {
 
 	result := db.First(&user, "Username = ?", payload.Username)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
 	// Cheack รหัสผ่าน
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "password is incerrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "password or username is incerrect"})
 		return
 	}
 

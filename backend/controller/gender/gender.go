@@ -14,7 +14,7 @@ func GetGenderAll (c *gin.Context){
 
 	result := db.Find(&genders)
 	if result.Error != nil{
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 

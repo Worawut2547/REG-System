@@ -39,7 +39,7 @@ func main() {
 
 	// -------------------- Gin Setup --------------------
 	r := gin.Default()
-	r.RedirectTrailingSlash = true
+	r.RedirectTrailingSlash = true // ถ้า /path/ หรือ /path Gin จะ redirect อัตโนมัติให้ตรงกัน
 	r.Use(cors.Default())
 	r.Use(CORSMiddleware())
 
@@ -60,6 +60,8 @@ func main() {
 		studentGroup.GET("/", students.GetStudentAll)
 		studentGroup.PUT("/:id", students.UpdateStudent)
 		studentGroup.DELETE("/:id", students.DeleteStudent)
+
+		studentGroup.GET("/:id/grades" , grade.GetGradeByStudentID)
 	}
 
 	// -------------------- Teachers --------------------
@@ -109,7 +111,7 @@ func main() {
 	registrationGroup := r.Group("/registrations")
 	{
 		registrationGroup.GET("/", registration.GetRegistrationAll)
-		registrationGroup.GET("/:id", registration.GetRegistrationByID)
+		registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)
 		registrationGroup.POST("/", registration.CreateRegistration)
 		registrationGroup.PUT("/:id", registration.UpdateRegistration)
 		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
