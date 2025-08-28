@@ -2,7 +2,7 @@ import axios from "axios";
 import { type SignInInterface } from "../../interfaces/SignIn";
 
 
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../api";
 
 const SignIn = async (data: SignInInterface) => {
     try {

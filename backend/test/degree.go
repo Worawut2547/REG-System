@@ -8,19 +8,13 @@ import (
 func DegreeExample() {
 	db := config.DB()
 
-	options := []string{
-		"ระดับปริญญาตรี",
-		"ระดับปริญญาโท",
-		"ระดับปริญญาเอก",
+	degrees := []entity.Degree{
+		{DegreeID: 1 , Degree: "ระดับปริญญาตรี"},
+		{DegreeID: 2 ,Degree: "ระดับปริญญาโท"},
+		{DegreeID: 3 ,Degree: "ระดับปริญญาเอก"},
 	}
 
-	for i, opt := range options {
-		degree := entity.Degree{
-			DegreeID: i+1,
-			Degree: opt,
-		}
-
-		db.FirstOrCreate(&degree , entity.Degree{DegreeID: degree.DegreeID})
-
+	for _,degr := range degrees{
+		db.Save(&degr)
 	}
 }

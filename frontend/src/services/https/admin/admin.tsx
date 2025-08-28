@@ -1,7 +1,7 @@
 import axios from "axios";
 
 
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../../api";
 
 
 export const getNameAdmin = async (username: string) => {

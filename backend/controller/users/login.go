@@ -28,6 +28,7 @@ func SignIn(c *gin.Context) {
 
 	// ค้นหา user ด้วย Username ที่กรอกเข้ามา SignIn
 	db := config.DB()
+
 	result := db.First(&user, "Username = ?", payload.Username)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
@@ -48,7 +49,7 @@ func SignIn(c *gin.Context) {
 		ExpirationHours: 24,
 	}
 
-	signedToken, err := jwtWrapper.GenerateToken(user.Username , user.Role)
+	signedToken, err := jwtWrapper.GenerateToken(user.Username, user.Role)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "error signing token"})
 		return
@@ -60,22 +61,22 @@ func SignIn(c *gin.Context) {
 	switch user.Role {
 
 	case "student":
-		respData , e = auth.HandleStudentLogin(user)
+		respData, e = auth.HandleStudentLogin(user)
 
 	case "admin":
-		respData , e = auth.HandleAdminLogin(user)
+		respData, e = auth.HandleAdminLogin(user)
 
 	case "teacher":
-		respData , e = auth.HandleTeacherLogin(user)
+		respData, e = auth.HandleTeacherLogin(user)
 
 	default:
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized role"})
 		return
 	}
 
-	if e != nil{
-	c.JSON(http.StatusInternalServerError, gin.H{"error": e.Error()})
-		return	
+	if e != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": e.Error()})
+		return
 	}
 
 	// เติม token เข้า response respData
@@ -84,5 +85,5 @@ func SignIn(c *gin.Context) {
 	respData["id"] = user.ID
 
 	// ส่ง JSON ออก
-	c.JSON(http.StatusOK , respData)
+	c.JSON(http.StatusOK, respData)
 }

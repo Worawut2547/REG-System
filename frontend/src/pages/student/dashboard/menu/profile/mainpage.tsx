@@ -1,6 +1,7 @@
-
+import { useState } from "react";
 import { Layout } from "antd";
 import { ShowStudentProfile } from "./showprofile/show.tsx";
+import { EditStudentPage } from "./edit/edit.tsx"; 
 
 const { Header, Content, Footer } = Layout;
 const wrapperStyle: React.CSSProperties = {
@@ -41,15 +42,19 @@ const footerStyle: React.CSSProperties = {
 
 // Component แม่ – คุม Layout และสลับหน้า
 const StudentPage = () => {
+  const [editPage , setEditPage] = useState(false);
 
   return (
     <Layout style={wrapperStyle}>
       <Header style={headerStyle}>ระเบียนประวัติ</Header>
       <Content style={contentStyle}>
-        <div>
-          <ShowStudentProfile  />
-          
-        </div>
+        
+        {editPage ? (
+          <EditStudentPage onBack={() => setEditPage(false)} />
+        ) : (
+          <ShowStudentProfile onEdit={() => setEditPage(true)} />
+        )}
+
       </Content>
       <Footer style={footerStyle}>Footer © 2025</Footer>
     </Layout>

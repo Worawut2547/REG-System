@@ -1,6 +1,8 @@
 
 import { Layout } from "antd";
 import { ShowTeacherProfile } from "./showprofile/show.tsx";
+import { EditTeacherPage } from "./edit/edit.tsx";
+import { useState } from "react";
 
 const { Header, Content, Footer } = Layout;
 const wrapperStyle: React.CSSProperties = {
@@ -40,21 +42,23 @@ const footerStyle: React.CSSProperties = {
 };
 
 // Component แม่ – คุม Layout และสลับหน้า
-const TeacherPage = () => {
+const TeacherProfilePage = () => {
+  const [editPage, setEditPade] = useState(false);
 
   return (
     <Layout style={wrapperStyle}>
       <Header style={headerStyle}>ระเบียนประวัติ</Header>
       <Content style={contentStyle}>
-        <div>
-          <ShowTeacherProfile  />
-          
-        </div>
+        {editPage ? (
+          <EditTeacherPage onBack={() => setEditPade(false)} />
+        ) : (
+          <ShowTeacherProfile onEdit={() => setEditPade(true)} />
+        )}
       </Content>
       <Footer style={footerStyle}>Footer © 2025</Footer>
     </Layout>
   );
 };
 
-export default TeacherPage;
+export default TeacherProfilePage;
 
