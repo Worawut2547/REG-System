@@ -1,60 +1,91 @@
-import React, { useState } from "react";
-import { Layout, Select, Row, Col, Card, Typography, Table, Button, Input } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
-import './score.css';
+// ===========================
+//  นำเข้า Library / Components
+// ===========================
+import React, { useState, useEffect } from "react"; // React และ Hook
+import { Layout, Select, Row, Col, Card, Typography, Table, Button, Input } from "antd"; // UI library Ant Design
+import { SearchOutlined } from "@ant-design/icons"; // ไอคอน search
+import type { ColumnsType } from "antd/es/table"; // Type ของ Table (TypeScript)
+import './score.css'; // CSS สำหรับหน้าคะแนน
 
-const { Header, Content, Footer } = Layout;
-const { Option } = Select;
-const { Title, Text } = Typography;
+const { Header, Content, Footer } = Layout; // แยก component ของ Layout
+const { Option } = Select; // ใช้ Select Option
+const { Title, Text } = Typography; // ตัวอักษรใหญ่ / ตัวธรรมดา
 
-// Type ของข้อมูลวิชา
-type Course = {
-  code: string;
-  name: string;
-  students: number;
-  color: string;
+// ===========================
+//  Type (โครงสร้างข้อมูล)
+// ===========================
+type Course = { // ข้อมูลรายวิชา
+  code: string; // รหัสวิชา
+  name: string; // ชื่อวิชา
+  students: number; // จำนวนคน
+  color: string; // สีของการ์ด
 };
 
-// Type ของข้อมูลนักศึกษา
-type Student = {
-  key: number;
-  id: string;
-  firstName: string;
-  lastName: string;
-  midterm: number;
-  final: number;
-  quiz: number;
-  homework: number;
+type Student = { // ข้อมูลนักศึกษา
+  key: number; // ใช้สำหรับ React Table
+  id: string; // รหัสนักศึกษา
+  firstName: string; // ชื่อ
+  lastName: string; // นามสกุล
+  midterm: number; // คะแนนกลางภาค
+  final: number; // คะแนนปลายภาค
+  quiz: number; // คะแนน quiz
+  homework: number; // คะแนนการบ้าน
 };
 
-// ข้อมูลวิชา
-const courses: Course[] = [
+// ===========================
+//  ข้อมูลตัวอย่าง (Mock Data)
+// ===========================
+const courses: Course[] = [ // รายวิชาทดสอบ
   { code: "ENG23 3031", name: "System Analysis", students: 115, color: "#1a1440ff" },
   { code: "ENG23 3051", name: "Formal Method", students: 125, color: "#332771ff" },
   { code: "ENG23 3014", name: "Web Application", students: 120, color: "#4c5ba8ff" },
   { code: "ENG23 2011", name: "Database System", students: 175, color: "#2d3685ff" },
 ];
 
-// ข้อมูลนักศึกษาเริ่มต้น
-const studentData: Student[] = [
+const studentData: Student[] = [ // ข้อมูลนักศึกษาเริ่มต้น
   { key: 1, id: "B6616052", firstName: "นายวรวุฒิ", lastName: "ทัศน์ทอง", midterm: 0, final: 0, quiz: 0, homework: 0 },
   { key: 2, id: "B6636987", firstName: "มงกี้", lastName: "ดี ลูฟี่", midterm: 0, final: 0, quiz: 0, homework: 0 },
   { key: 3, id: "B6605355", firstName: "ไก่ทอด", lastName: "สมุนไพร", midterm: 0, final: 0, quiz: 0, homework: 0 },
   { key: 4, id: "B6603953", firstName: "ปีเตอร์", lastName: "พาร์คเกอร์", midterm: 0, final: 0, quiz: 0, homework: 0 },
 ];
 
-// หน้าเลือกวิชา
-type TeacherDashboardProps = {
-  onSelectCourse: (course: { code: string; name: string }) => void;
+// ===========================
+//  Fetch Students (รอเชื่อม backend)
+// ===========================
+const fetchStudents = async (courseCode: string) => {
+  try {
+    // TODO: เชื่อม backend จริง
+    // const response = await fetch(`/api/students?course=${courseCode}`);
+    // const data: Student[] = await response.json();
+    // return data;
+
+    // ตอนนี้ใช้ mock data
+    return [
+      { key: 1, id: "B6616052", firstName: "นายวรวุฒิ", lastName: "ทัศน์ทอง", midterm: 20, final: 30, quiz: 10, homework: 15 },
+      { key: 2, id: "B6636987", firstName: "มงกี้", lastName: "ดี ลูฟี่", midterm: 15, final: 25, quiz: 8, homework: 20 },
+      { key: 3, id: "B6605355", firstName: "ไก่ทอด", lastName: "สมุนไพร", midterm: 10, final: 20, quiz: 15, homework: 10 },
+      { key: 4, id: "B6603953", firstName: "ปีเตอร์", lastName: "พาร์คเกอร์", midterm: 5, final: 10, quiz: 8, homework: 25 },
+    ];
+  } catch (error) {
+    console.error("Error fetching students:", error);
+    return [];
+  }
+};
+
+// ===========================
+//  TeacherDashboard Component
+// ===========================
+type TeacherDashboardProps = { // props สำหรับ dashboard
+  onSelectCourse: (course: { code: string; name: string }) => void; // เมื่อคลิกวิชา
 };
 
 const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onSelectCourse }) => {
-  const [year, setYear] = useState("2568");
-  const [term, setTerm] = useState("1");
+  const [year, setYear] = useState("2568"); // ปีการศึกษา
+  const [term, setTerm] = useState("1"); // เทอม
 
   return (
     <div style={{ padding: 20, maxWidth: 1500, margin: "auto" }}>
+      {/* เลือกปี และ เทอม */}
       <Row justify="start" align="middle" style={{ marginBottom: 5, gap: 50 }}>
         <Col>
           <Text strong style={{ marginRight: 8, fontSize: 18 }}>ปีการศึกษา</Text>
@@ -75,12 +106,16 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onSelectCourse }) =
         </Col>
       </Row>
 
+      {/* ชื่ออาจารย์ */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 5 }}>
         <Col>
-          <Title level={3} style={{ marginTop: 15, marginBottom: 30, fontWeight: "bold" }}>รองศาสตราจารย์ ดร.สมชาย ใจดี</Title>
+          <Title level={3} style={{ marginTop: 20, marginBottom: 30, fontWeight: "bold" }}>
+            รองศาสตราจารย์ ดร.สมชาย ใจดี
+          </Title>
         </Col>
       </Row>
 
+      {/* การ์ดรายวิชา */}
       <Row gutter={[40, 40]}>
         {courses.map(({ code, name, students, color }) => (
           <Col key={code} xs={24} sm={12} md={12} lg={12}>
@@ -97,7 +132,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onSelectCourse }) =
               }}
               bodyStyle={{ padding: 50 }}
               hoverable
-              onClick={() => onSelectCourse({ code, name })}
+              onClick={() => onSelectCourse({ code, name })} // คลิกเพื่อไปหน้า student-score
             >
               <Title level={3} style={{ color: "white", marginTop: 0 }}>{code}</Title>
               <Title level={3} style={{ color: "white", marginTop: 10 }}>{name}</Title>
@@ -110,31 +145,57 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onSelectCourse }) =
   );
 };
 
-// หน้าแก้ไข/กรอกคะแนน
+// ===========================
+//  StudentScorePage Component
+// ===========================
 type StudentScorePageProps = {
-  course: { code: string; name: string } | null;
-  onBack: () => void;
+  course: { code: string; name: string } | null; // วิชาที่เลือก
+  onBack: () => void; // กลับ dashboard
 };
 
 const StudentScorePage: React.FC<StudentScorePageProps> = ({ course, onBack }) => {
-  const [filterType, setFilterType] = useState<"all" | "midterm" | "final" | "quiz" | "homework">("all");
-  const [searchText, setSearchText] = useState("");
-  const [students, setStudents] = useState<Student[]>(studentData);
-  const [editingData, setEditingData] = useState<Student[]>([]);
-  const [editMode, setEditMode] = useState(false);
+  const [filterType, setFilterType] = useState<"all" | "midterm" | "final" | "quiz" | "homework">("all"); // เลือก column
+  const [searchText, setSearchText] = useState(""); // search รหัสนักศึกษา
+  const [students, setStudents] = useState<Student[]>([]); // ข้อมูลนักศึกษา
+  const [editingData, setEditingData] = useState<Student[]>([]); // ข้อมูลที่แก้ไข
+  const [editMode, setEditMode] = useState(false); // edit mode on/off
 
+  useEffect(() => {
+    const loadStudents = async () => {
+      if (course) {
+        const data = await fetchStudents(course.code); // โหลดนักศึกษา
+        setStudents(data);
+      }
+    };
+    loadStudents();
+  }, [course]);
+
+  // filter รหัสนักศึกษา
+  const filteredStudents = students.filter(s =>
+    s.id.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  // แก้ไขคะแนน
   const handleEdit = (key: number, field: keyof Student, value: number | string) => {
     setEditingData(prev =>
       prev.map(s => s.key === key ? { ...s, [field]: Number(value) || 0 } : s)
     );
   };
 
-  const handleSave = () => {
-    setStudents(editingData);
+  // บันทึกคะแนน
+  const handleSave = async () => {
+    // TODO: ส่ง backend
+    setStudents(prev =>
+      prev.map(s => {
+        const updated = editingData.find(e => e.key === s.key);
+        return updated ? updated : s;
+      })
+    );
     setEditMode(false);
     setEditingData([]);
   };
 
+  // สร้าง column Table ตาม filterType
   const getColumns = (): ColumnsType<Student> => {
     const cols: ColumnsType<Student> = [
       { title: "No.", dataIndex: "key", key: "no", align: "center" },
@@ -144,6 +205,7 @@ const StudentScorePage: React.FC<StudentScorePageProps> = ({ course, onBack }) =
     ];
 
     if (filterType === "all") {
+      // เพิ่ม column คะแนนทั้งหมด
       cols.push(
         { title: "Midterm", dataIndex: "midterm", key: "midterm", align: "center", render: (_, record) =>
             editMode ? <Input type="number" value={editingData.find(d => d.key === record.key)?.midterm} onChange={e => handleEdit(record.key, "midterm", e.target.value)} /> : record.midterm },
@@ -174,28 +236,22 @@ const StudentScorePage: React.FC<StudentScorePageProps> = ({ course, onBack }) =
     return cols;
   };
 
-  // ไฮไลท์แถวที่ตรงกับ searchText
-  const rowClassName = (record: Student) => {
-    if (searchText && record.id.toLowerCase().includes(searchText.toLowerCase())) {
-      return "highlight-row";
-    }
-    return "";
-  };
-
   return (
-    <div style={{ padding: 10, maxWidth: 1500, margin: "auto" }}>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
-        <Button onClick={onBack}>BACK</Button>
-        {course && (
-          <Text style={{ marginLeft: 16, fontWeight: "bold", fontSize: 30}}>
-            <Text strong style={{ fontSize: 30 }}>{course.code}</Text> - <Text strong style={{ fontSize: 30 }}>{course.name}</Text>
+    <div style={{ padding: 10, maxWidth: 1500, margin: "auto" }}>  
+      <Button onClick={onBack}>BACK</Button>
+      {course && (
+        <div style={{ marginTop: 20, marginBottom: 20 }}>
+          <Text style={{ fontWeight: "bold", fontSize: 30 }}>
+            <Text strong style={{ fontSize: 30 }}>{course.code}</Text> - 
+            <Text strong style={{ fontSize: 30 }}> {course.name}</Text>
           </Text>
-        )}
-      </div>
+        </div>
+      )}
 
-      <Row align="top" gutter={16} style={{ marginBottom: 10 }}>
+      {/* filter / search */}
+      <Row align="top" gutter={16} style={{ marginBottom: 20 }}>
         <Col>
-          <div style={{ backgroundColor: "#364a96ff", padding: "8px 12px", borderRadius: 6 }}>
+          <div style={{ backgroundColor: "#2e236c", padding: "8px 12px", borderRadius: 6 }}>
             <Text style={{ color: "white", marginRight: 8 }}>ประเภท</Text>
             <Select value={filterType} onChange={setFilterType} style={{ width: 150 }}>
               <Option value="all">All</Option>
@@ -207,7 +263,7 @@ const StudentScorePage: React.FC<StudentScorePageProps> = ({ course, onBack }) =
           </div>
         </Col>
         <Col>
-          <div style={{ backgroundColor: "#364a96ff", padding: "8px 12px", borderRadius: 6 }}>
+          <div style={{ backgroundColor: "#2e236c", padding: "8px 12px", borderRadius: 6 }}>
             <Text style={{ color: "white", marginRight: 8 }}>ค้นหาด้วยรหัสนักศึกษา</Text>
             <Input
               placeholder="Search..."
@@ -220,10 +276,14 @@ const StudentScorePage: React.FC<StudentScorePageProps> = ({ course, onBack }) =
         </Col>
       </Row>
 
+      {/* ปุ่ม edit */}
       {filterType !== "all" && !editMode && (
         <Button
           type="primary"
-          onClick={() => { setEditMode(true); setEditingData(students); }}
+          onClick={() => { 
+            setEditMode(true); 
+            setEditingData(searchText ? filteredStudents : students); 
+          }}
           style={{
             width: "100%",
             padding: "23px 0",
@@ -238,14 +298,15 @@ const StudentScorePage: React.FC<StudentScorePageProps> = ({ course, onBack }) =
         </Button>
       )}
 
+      {/* ตารางคะแนน */}
       <Table
-        dataSource={students} // แสดงทุกคน
+        dataSource={filteredStudents}
         columns={getColumns()}
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 50 }}
         bordered
-        rowClassName={rowClassName} // ไฮไลท์แถว
       />
 
+      {/* ปุ่ม save */}
       {editMode && (
         <div style={{ textAlign: "center", marginTop: 10 }}>
           <Button 
@@ -268,10 +329,12 @@ const StudentScorePage: React.FC<StudentScorePageProps> = ({ course, onBack }) =
   );
 };
 
-// หน้า Score หลัก
+// ===========================
+//  Score Component (หน้าหลัก)
+// ===========================
 const Score: React.FC = () => {
-  const [view, setView] = useState<"dashboard" | "student-score">("dashboard");
-  const [selectedCourse, setSelectedCourse] = useState<{ code: string; name: string } | null>(null);
+  const [view, setView] = useState<"dashboard" | "student-score">("dashboard"); // สลับหน้า
+  const [selectedCourse, setSelectedCourse] = useState<{ code: string; name: string } | null>(null); // วิชาที่เลือก
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -301,4 +364,4 @@ const Score: React.FC = () => {
   );
 };
 
-export default Score;
+export default Score; // export component

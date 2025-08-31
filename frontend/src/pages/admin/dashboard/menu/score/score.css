@@ -1,0 +1,14 @@
+/* ลดความสูงของ Input และ Select ให้เท่ากัน */
+.small-input {
+  height: 35px;       /* ความสูงเท่ากัน */
+  font-size: 14px;    /* ขนาดตัวอักษร */
+  padding: 4px 8px;
+}
+
+/* สำหรับ Select ของ Ant Design */
+.ant-select.small-input .ant-select-selector {
+  height: 35px !important;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}

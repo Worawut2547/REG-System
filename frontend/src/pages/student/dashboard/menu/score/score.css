@@ -1,0 +1,35 @@
+/* แถวปกติไม่ต้อง hover */
+.no-hover {
+  background-color: #fff;
+}
+
+/* แถวสรุป */
+.summary-row {
+  background-color: #e6e6e6;
+  font-weight: bold;
+}
+
+/* ทำให้มุมล่างซ้าย-ล่างขวาโค้ง สำหรับแถวสรุป */
+.summary-row td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.summary-row td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+/* ทำให้ตารางทั้งตารางเป็นแบบการ์ด: มุมบนและล่างโค้ง */
+.ant-table-wrapper {
+  border-radius: 8px;
+  overflow: hidden; /* ป้องกันแถวล้นมุมโค้ง */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* เลือกเฉพาะตารางคะแนนแต่ละคอร์ส */
+.course-table .ant-table-tbody > tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.course-table .ant-table-tbody > tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
