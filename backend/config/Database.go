@@ -40,5 +40,11 @@ func SetupDatabase() {
 		&entity.Admins{},
 		&entity.Users{},
 		&entity.StatusStudent{},
+
+		&entity.Report{},
+		&entity.ReportType{},
+		&entity.Attachment{},
+		&entity.Reviewer{},
+		&entity.ReviewerComment{},
 	)
 }

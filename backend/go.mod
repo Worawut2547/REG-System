@@ -6,8 +6,9 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/google/uuid v1.6.0
 	golang.org/x/crypto v0.16.0
-	gorm.io/driver/sqlite v1.6.0
+	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.30.1
 )
 
