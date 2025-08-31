@@ -1,8 +1,8 @@
 // src/pages/dashboard/menu/register.tsx
 import React from 'react';
 import { Layout } from 'antd';
-import './payment.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
-
+import './payment.css'; 
+import Element from './element';
 const { Header, Content, Footer } = Layout;
 
 // register.tsx  – only wrapperStyle changed
@@ -47,7 +47,7 @@ const Payment: React.FC = () => {
     <Layout style={wrapperStyle}>
       <Header style={headerStyle}>Header – หน้าจ่ายเงิน</Header>
       <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
+        <Element />
       </Content>
       <Footer style={footerStyle}>Footer © 2025</Footer>
     </Layout>

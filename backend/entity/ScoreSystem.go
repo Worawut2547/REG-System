@@ -17,6 +17,6 @@ type Scores struct {
 	Students	Students	`gorm:"foreignKey:Student_id"`
 
 	Subject_id	*string
-	Subjects 	Subjects	`gorm:"foreignKey:Subject_id"`
+	Subjects 	Subject	`gorm:"foreignKey:Subject_id"`
 }
 

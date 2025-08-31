@@ -1,6 +1,6 @@
 package entity
 
-import (
+/*import (
 	"time"
 	"gorm.io/gorm"
 )
@@ -66,4 +66,4 @@ type GradeSemester struct {
 
 	Student_id *string
 	Students   Students `gorm:"foreignKey:Student_id"`
-}
+}*/

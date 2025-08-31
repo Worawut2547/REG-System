@@ -10,10 +10,23 @@ func ExampleData() {
 	
 	FacultyExample()
 	MajorExample()
+	SubjectExample()
 	PositionExample()
 	DegreeExample()
+	SemesterExample()
 	GenderExample()
 	StatusExample()
+	BookPathExample()
+	CurriculumExample()
+
+	RegistrationExample()
+	StudentExample()
+	BillExample()
+
+	BookPathExample()
+	CurriculumExample()
+	SubjectExample()
+	GradeExample()
 
 	student := entity.Students{
 		StudentID:       "B6616052",
@@ -27,6 +40,7 @@ func ExampleData() {
 		FacultyID:       "F01",
 		MajorID:         "ENG23",
 		StatusStudentID: "10",
+		CurriculumID: "curr23",
 	}
 	db.FirstOrCreate(&student)
 
@@ -61,7 +75,7 @@ func ExampleData() {
 		Password: hashedPasswordAdmin,
 		Role:     "admin",
 	}
-	db.FirstOrCreate(&userAdmin)
+	db.Create(&userAdmin)
 
 	hashedPasswordStudent, _ := config.HashPassword(student.CitizenID)
 	userStudent := entity.Users{
