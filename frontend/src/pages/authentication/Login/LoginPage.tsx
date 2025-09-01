@@ -1,8 +1,11 @@
+// src/pages/authentication/Login/LoginPage.tsx
 import { Button, Form, Input, Col, Row, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 // สำหรับจัดการข้อมูลการ Login
 import SignIn from '../../../services/auth/auth';
+import ForgotPage from '../Forgot/ForgotPage'
 
 //Pictures
 import logo from "../../../assets/logo.png"
@@ -14,6 +17,7 @@ import "./LoginPage.css"
 
 function LoginPage() {
     const navigate = useNavigate();
+    const [showForgot, setShowForgot] = useState(false);
 
     const onFinish = async (values: any) => {
         try {
@@ -54,54 +58,64 @@ function LoginPage() {
 
     return (
         <div className="login-container">
-            <Row style={{ height: '100vh' }} align="middle" justify="center">
-                <Col span={12} style={{ display: 'center', justifyContent: 'center', alignItems: 'center' }}>
-                    <div className="login-left">
-                        <img src={logo} alt="Logo" className="login-logo" style={{ maxWidth: '200px', height: 'auto' }} />
-                        <Form
-                            name="login-form"
-                            onFinish={onFinish}
-                            layout="vertical"
-                            className="login-form"
-                        >
-                            <Form.Item
-                                name="username"
-                                rules={[{ required: true, message: 'กรุณากรอกชื่อผู้ใช้' }]}
+            {!showForgot ? (
+                <Row style={{ height: '100vh' }} align="middle" justify="center">
+                    <Col span={12} style={{ display: 'center', justifyContent: 'center', alignItems: 'center' }}>
+                        <div className="login-left">
+                            <img src={logo} alt="Logo" className="login-logo" style={{ maxWidth: '200px', height: 'auto' }} />
+                            <Form
+                                name="login-form"
+                                onFinish={onFinish}
+                                layout="vertical"
+                                className="login-form"
                             >
-                                <Input
-                                    placeholder="User name"
-                                    prefix={<img src={userIcon} className="icon" alt="user" />}
-                                    size="small"
-                                />
-                            </Form.Item>
+                                <Form.Item
+                                    name="username"
+                                    rules={[{ required: true, message: 'กรุณากรอกชื่อผู้ใช้' }]}
+                                >
+                                    <Input
+                                        placeholder="User name"
+                                        prefix={<img src={userIcon} className="icon" alt="user" />}
+                                        size="small"
+                                    />
+                                </Form.Item>
 
-                            <Form.Item
-                                name="password"
-                                rules={[{ required: true, message: 'กรุณากรอกรหัสผ่าน' }]}
-                            >
-                                <Input.Password
-                                    placeholder="Password"
-                                    prefix={<img src={lockIcon} className="icon" alt="password" />}
-                                    size="small"
-                                />
-                            </Form.Item>
-                            <Button color="default" variant="text" style={{ color: "#fd0000ff", fontSize: "14px", marginBottom: "5px" }}>
-                                Forgot Password
-                            </Button>
-                            <Form.Item>
-                                <Button type="primary" htmlType="submit" className="login-button" size="small">
-                                    LOGIN
+                                <Form.Item
+                                    name="password"
+                                    rules={[{ required: true, message: 'กรุณากรอกรหัสผ่าน' }]}
+                                >
+                                    <Input.Password
+                                        placeholder="Password"
+                                        prefix={<img src={lockIcon} className="icon" alt="password" />}
+                                        size="small"
+                                    />
+                                </Form.Item>
+                                <Button
+                                    color="default"
+                                    variant="text"
+                                    style={{ color: "#fd0000ff", fontSize: "14px", marginBottom: "5px" }}
+                                    onClick={() => setShowForgot(true)}
+                                >
+                                    Forgot Password
                                 </Button>
-                            </Form.Item>
-                        </Form>
-                    </div>
-                </Col>
-                <Col span={12} push={7} style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <div className="login-right">
-                        <img src={building} className="building-image" alt="Building" style={{ maxWidth: '400px', height: 'auto' }} />
-                    </div>
-                </Col>
-            </Row>
+                                <Form.Item>
+                                    <Button type="primary" htmlType="submit" className="login-button" size="small">
+                                        LOGIN
+                                    </Button>
+                                </Form.Item>
+                            </Form>
+                        </div>
+                    </Col>
+                    <Col span={12} push={7} style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <div className="login-right">
+                            <img src={building} className="building-image" alt="Building" style={{ maxWidth: '400px', height: 'auto' }} />
+                        </div>
+                    </Col>
+                </Row>
+            ) : (
+                <ForgotPage onBack={() => setShowForgot(false)} />
+            )};
+
         </div>
     )
 }

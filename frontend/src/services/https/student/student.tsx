@@ -36,8 +36,8 @@ export const getStudentAll = async (): Promise<StudentInterface[]> => {
 
 export const createStudent = async (data: StudentInterface): Promise<StudentInterface> => {
     try {
-        const responce = await axios.post(`${apiUrl}/students/`, data);
-        return responce.data;
+        const response = await axios.post(`${apiUrl}/students/`, data);
+        return response.data;
     }
     catch (error) {
         console.error("Error creating student:", error);
@@ -47,13 +47,24 @@ export const createStudent = async (data: StudentInterface): Promise<StudentInte
 
 export const updateStudentProfile = async (data: StudentInterface): Promise<StudentInterface> => {
     const username = localStorage.getItem("username");
-    console.log("api edit profile student:",data);
+    console.log("api edit profile student:", data);
     try {
-        const responce = await axios.put(`${apiUrl}/students/${username}`, data);
-        return responce.data
+        const response = await axios.put(`${apiUrl}/students/${username}`, data);
+        return response.data
     }
     catch (error) {
         console.error("Error edit student:", error);
+        throw error;
+    }
+}
+
+export const deleteStudent = async (sid: string) => {
+    try {
+        const response = await axios.delete(`${apiUrl}/students/${sid}`);
+        return response
+    }
+    catch (error) {
+        console.error("Error delete student:", error);
         throw error;
     }
 }

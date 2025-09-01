@@ -22,3 +22,4 @@ const SignIn = async (data: SignInInterface) => {
 };
 
 export default SignIn;
+
