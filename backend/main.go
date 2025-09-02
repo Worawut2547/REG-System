@@ -79,6 +79,8 @@ func main() {
 		teacherGroup.GET("/", teachers.GetTeacherAll)
 		teacherGroup.PUT("/:id", teachers.UpdateTeacher)
 		teacherGroup.DELETE("/:id", teachers.DeleteTeacher)
+
+		teacherGroup.GET("/:id/subjects", teachers.GetSubjectByTeacherID)
 		teacherGroup.POST("/grades", grade.CreateGrade)
 	}
 
@@ -123,6 +125,8 @@ func main() {
 		registrationGroup.POST("/", registration.CreateRegistration)
 		registrationGroup.PUT("/:id", registration.UpdateRegistration)
 		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
+
+		registrationGroup.GET("/subjects/:id" ,registration.GetStudentBySubjectID)
 	}
 
 	// -------------------- Curriculums --------------------

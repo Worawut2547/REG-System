@@ -1,12 +1,22 @@
 package grade
 
 import (
+	"log"
 	"net/http"
 	"reg_system/config"
 	"reg_system/entity"
 
 	"github.com/gin-gonic/gin"
 )
+
+type GradeResponse struct {
+	SubjectID    string `json:"SubjectID"`
+	SubjectName  string `json:"SubjectName"`
+	Credit       int    `json:"Credit"`
+	Grade        string `json:"Grade"`
+	Term         int    `json:"Term"`
+	AcademicYear int    `json:"AcademicYear"`
+}
 
 func GetGradeAll(c *gin.Context) {
 	var grades []entity.Grades
@@ -41,21 +51,6 @@ func CreateGrade(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gradesInput)
-	/*grades := new(entity.Grades)
-
-	if err := c.ShouldBindJSON(&grades); err != nil {
-		c.JSON(http.StatusBadRequest , gin.H{"error": err.Error()})
-		return
-	}
-
-	db := config.DB()
-	result := db.Create(&grades)
-	if result.Error != nil{
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK , grades)*/
 }
 
 func GetGradeByStudentID(c *gin.Context) {
@@ -69,7 +64,9 @@ func GetGradeByStudentID(c *gin.Context) {
 
 	db := config.DB()
 
-	result := db.Preload("Subject").Find(&grades, "student_id = ?", sid)
+	result := db.Preload("Subject").
+		Preload("Subject.Semester").
+		Find(&grades, "student_id = ?", sid)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
@@ -90,29 +87,32 @@ func GetGradeByStudentID(c *gin.Context) {
 	var response []GradeResponse
 
 	for _, grade := range grades {
+		log.Printf("Grade: %s, Subject: %+v, Semester: %+v", grade.Grade, grade.Subject, grade.Subject.Semester)
 		subjectName := ""
 		credit := 0
+		term := 0
+		academicYear := 0
 
 		if grade.Subject != nil {
 			subjectName = grade.Subject.SubjectName
 			credit = grade.Subject.Credit
+
+			if grade.Subject.Semester != nil {
+				term = grade.Subject.Semester.Term
+				academicYear = grade.Subject.Semester.AcademicYear
+			}
 		}
 
-		response = append(response , GradeResponse{
-			SubjectID: grade.SubjectID,
-			SubjectName: subjectName,
-			Credit: credit,
-			Grade: grade.Grade,
+		response = append(response, GradeResponse{
+			SubjectID:    grade.SubjectID,
+			SubjectName:  subjectName,
+			Credit:       credit,
+			Grade:        grade.Grade,
+			Term:         term,
+			AcademicYear: academicYear,
 		})
 	}
 
 	c.JSON(http.StatusOK, &response)
 
-}
-
-type GradeResponse struct {
-	SubjectID   string `json:"SubjectID"`
-	SubjectName string `json:"SubjectName"`
-	Credit      int    `json:"Credit"`
-	Grade       string `json:"Grade"`
 }

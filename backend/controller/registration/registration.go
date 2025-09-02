@@ -76,23 +76,22 @@ func GetRegistrationByStudentID(c *gin.Context) {
 			credit = reg.Subject.Credit
 		}
 
-		for _,st := range reg.Subject.StudyTimes{
+		for _, st := range reg.Subject.StudyTimes {
 			startAt = st.StartAt
 			endAt = st.EndAt
 		}
 
-		response = append(response , RegistrationResponse{
-			SubjectID: reg.SubjectID,
+		response = append(response, RegistrationResponse{
+			SubjectID:   reg.SubjectID,
 			SubjectName: subjectName,
-			Credit: credit,
-			Section: section,
-			StartAt: startAt,
-			EndAt: endAt,
+			Credit:      credit,
+			Section:     section,
+			StartAt:     startAt,
+			EndAt:       endAt,
 		})
 	}
 	c.JSON(http.StatusOK, &response)
 }
-
 
 func UpdateRegistration(c *gin.Context) {
 	id := c.Param("id")
@@ -144,4 +143,45 @@ type RegistrationResponse struct {
 
 	StartAt time.Time `json:"StartAt"`
 	EndAt   time.Time `json:"EndAt"`
+}
+
+func GetStudentBySubjectID(c *gin.Context) {
+	subj_id := c.Param("id")
+	var registrations []entity.Registration
+
+	db := config.DB()
+	result := db.Preload("Student").
+		Preload("Student.Major").
+		Preload("Student.Faculty").
+		Find(&registrations, "subject_id = ?", subj_id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found student regis"})
+		return
+	}
+
+	var response []StudentOutput
+	for _, regis := range registrations {
+		response = append(response, StudentOutput{
+			StudentID:   regis.StudentID,
+			FirstName:   regis.Student.FirstName,
+			LastName:    regis.Student.LastName,
+			MajorName:   regis.Student.Major.MajorName,
+			FacultyName: regis.Student.Faculty.FacultyName,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+type StudentOutput struct {
+	StudentID   string `json:"StudentID"`
+	FirstName   string `json:"FirstName"`
+	LastName    string `json:"LastName"`
+	MajorName   string `json:"MajorName"`
+	FacultyName string `json:"FacultyName"`
 }
