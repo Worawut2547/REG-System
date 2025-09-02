@@ -61,7 +61,20 @@ export const deleteTeacher = async (tid: string) => {
         return response
     }
     catch (error) {
-        console.error("Error delete student:", error);
+        console.error("Error delete teacher:", error);
+        throw error;
+    }
+}
+
+export const getSubjectByTeacherID = async() => {
+    try{
+        const tid = localStorage.getItem("username");
+        const response = await axios.get(`${apiUrl}/teachers/${tid}/subjects`);
+        console.log("api subject teacher:",response);
+        return response.data
+    }
+    catch (error) {
+        console.error("Error get subject teacher:", error);
         throw error;
     }
 }

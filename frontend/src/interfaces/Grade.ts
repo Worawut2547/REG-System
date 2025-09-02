@@ -7,4 +7,6 @@ export interface GradeStudentInterface {
     Credit?: number;
     TotalScore?: number;
     Grade: string;
+    Term?: number;
+    AcademicYear?: number;
 };
