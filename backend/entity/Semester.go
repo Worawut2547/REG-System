@@ -1,6 +1,5 @@
 package entity
 
-
 type Semester struct {
 	ID            int `gorm:"primaryKey;autoIncrement"`
 	Term          int `json:"Term"`

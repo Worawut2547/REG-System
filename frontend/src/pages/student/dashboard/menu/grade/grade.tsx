@@ -85,8 +85,12 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ rec, cumulative }) => (
       fontSize: 14,
       marginTop: 0,
       marginBottom: 30,
-      border: "1px solid #ccc",
+      border: "0px solid #ccc",
       tableLayout: "fixed",
+      borderBottomLeftRadius: 8,            // มุมบนซ้าย Header
+      borderBottomRightRadius: 8,           // มุมบนขวา Header
+      overflow: 'hidden',
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)", // เงา
     }}
   >
     <colgroup>
@@ -119,11 +123,11 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ rec, cumulative }) => (
         </td>
         <td style={{ borderRight: "1px solid #ccc", fontWeight: "bold", padding: 4 }}>
           C.Register<br />
-          <span style = {{fontWeight: "normal"}}>{cumulative.cRegister}</span>
+          <span style={{ fontWeight: "normal" }}>{cumulative.cRegister}</span>
         </td>
         <td style={{ fontWeight: "bold", padding: 4 }}>
           GPAX<br />
-          <span style = {{fontWeight: "normal"}}>{cumulative.gpax}</span>
+          <span style={{ fontWeight: "normal" }}>{cumulative.gpax}</span>
         </td>
       </tr>
     </tbody>
@@ -136,7 +140,6 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ rec, cumulative }) => (
 
 const Grade: React.FC = () => {
   const [studentData, setStudentData] = useState<Student | null>(null); // ข้อมูลนักเรียน
-  const [loading, setLoading] = useState(true); // loading spinner
   const [selectedYear, setSelectedYear] = useState<string>("all"); // filter ปี
   const [selectedTerm, setSelectedTerm] = useState<string>("all"); // filter เทอม
 
@@ -144,52 +147,48 @@ const Grade: React.FC = () => {
   // mock fetch backend
   // ============================================================
   useEffect(() => {
-    setLoading(true); // แสดง spinner
-    setTimeout(() => {
-      const mockData: Student = {
-        id: "B6619602",
-        name: "นางสาวรุ่งอรุณ ศรีบัว",
-        records: [
-          {
-            year: 2566,
-            term: 1,
-            courses: [
-              { code: "ENG25 1010-1", name: "ENGINEERING GRAPHICS I", credit: 2, grade: "A" },
-              { code: "IST20 1001-1", name: "DIGITAL LITERACY", credit: 2, grade: "C+" },
-              { code: "IST20 1002-1", name: "USE OF APPLICATION PROGRAMS FOR LEARNING", credit: 1, grade: "A" },
-              { code: "IST30 1101-1", name: "ENGLISH FOR COMMUNICATION 1 (T)", credit: 3, grade: "S" },
-            ],
-            gpa: 3.21,
-          },
-          {
-            year: 2566,
-            term: 2,
-            courses: [
-              { code: "ENG20 1010-1", name: "INTRODUCTION TO ENGINEERING PROFESSION", credit: 1, grade: "A" },
-              { code: "ENG23 1001-1", name: "COMPUTER PROGRAMMING I", credit: 2, grade: "A" },
-              { code: "IST20 1003-1", name: "LIFE SKILLS", credit: 3, grade: "B+" },
-              { code: "SCI03 1002-1", name: "CALCULUS II", credit: 4, grade: "B+" },
-              { code: "SCI05 1002-1", name: "PHYSICS II", credit: 4, grade: "C+" },
-              { code: "SCI05 1192-1", name: "PHYSICS LABORATORY II", credit: 1, grade: "A" },
-            ],
-            gpa: 3.37,
-          },
-          {
-            year: 2567,
-            term: 1,
-            courses: [
-              { code: "ENG25 1010-1", name: "ENGINEERING GRAPHICS I", credit: 2, grade: "A" },
-              { code: "IST20 1001-1", name: "DIGITAL LITERACY", credit: 2, grade: "C+" },
-              { code: "IST20 1002-1", name: "USE OF APPLICATION PROGRAMS FOR LEARNING", credit: 1, grade: "A" },
-              { code: "IST30 1101-1", name: "ENGLISH FOR COMMUNICATION 1 (T)", credit: 3, grade: "S" },
-            ],
-            gpa: 3.29,
-          },
-        ],
-      };
-      setStudentData(mockData); // เซ็ตข้อมูล mock
-      setLoading(false); // ปิด spinner
-    }, 1000);
+    const mockData: Student = {
+      id: "B6619602",
+      name: "นางสาวรุ่งอรุณ ศรีบัว",
+      records: [
+        {
+          year: 2566,
+          term: 1,
+          courses: [
+            { code: "ENG25 1010-1", name: "ENGINEERING GRAPHICS I", credit: 2, grade: "A" },
+            { code: "IST20 1001-1", name: "DIGITAL LITERACY", credit: 2, grade: "C+" },
+            { code: "IST20 1002-1", name: "USE OF APPLICATION PROGRAMS FOR LEARNING", credit: 1, grade: "A" },
+            { code: "IST30 1101-1", name: "ENGLISH FOR COMMUNICATION 1 (T)", credit: 3, grade: "S" },
+          ],
+          gpa: 3.21,
+        },
+        {
+          year: 2566,
+          term: 2,
+          courses: [
+            { code: "ENG20 1010-1", name: "INTRODUCTION TO ENGINEERING PROFESSION", credit: 1, grade: "A" },
+            { code: "ENG23 1001-1", name: "COMPUTER PROGRAMMING I", credit: 2, grade: "A" },
+            { code: "IST20 1003-1", name: "LIFE SKILLS", credit: 3, grade: "B+" },
+            { code: "SCI03 1002-1", name: "CALCULUS II", credit: 4, grade: "B+" },
+            { code: "SCI05 1002-1", name: "PHYSICS II", credit: 4, grade: "C+" },
+            { code: "SCI05 1192-1", name: "PHYSICS LABORATORY II", credit: 1, grade: "A" },
+          ],
+          gpa: 3.37,
+        },
+        {
+          year: 2567,
+          term: 1,
+          courses: [
+            { code: "ENG25 1010-1", name: "ENGINEERING GRAPHICS I", credit: 2, grade: "A" },
+            { code: "IST20 1001-1", name: "DIGITAL LITERACY", credit: 2, grade: "C+" },
+            { code: "IST20 1002-1", name: "USE OF APPLICATION PROGRAMS FOR LEARNING", credit: 1, grade: "A" },
+            { code: "IST30 1101-1", name: "ENGLISH FOR COMMUNICATION 1 (T)", credit: 3, grade: "S" },
+          ],
+          gpa: 3.29,
+        },
+      ],
+    };
+    setStudentData(mockData); // เซ็ตข้อมูล mock
     // TODO: แทนที่ mockData ด้วย fetch API จาก backend
     // fetch('/api/student/grades')
     //   .then(res => res.json())
@@ -197,8 +196,7 @@ const Grade: React.FC = () => {
     //   .catch(err => console.error(err));
   }, []);
 
-  if (loading || !studentData) return <Spin size="large" style={{ margin: 50 }} />;
-  // แสดง loading ขณะรอข้อมูล
+  if (!studentData) return null;
 
   // ============================================================
   // filter ปี/เทอม
@@ -211,15 +209,15 @@ const Grade: React.FC = () => {
   // กรอง record ตาม dropdown
 
   return (
-    <Layout 
-      style = {{
+    <Layout
+      style={{
         minHeight: "100vh",
         borderRadius: 8,                      // ขอบมน wrapper
         boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
         overflow: "hidden",
       }}
     >
-      <Header 
+      <Header
         style={{
           background: "#2e236c",
           color: "white",
@@ -232,9 +230,9 @@ const Grade: React.FC = () => {
         รายงานผลการเรียน
       </Header>
 
-      <Content style={{ background: "#f5f5f5", padding: 24, overflowX: "auto" }}>
+      <Content style={{ background: "#f5f5f5", padding: 24, overflowX: "auto" , }}>
         {/* แสดงข้อมูลนักเรียน */}
-        <div style={{ marginTop: 5 , paddingBottom: 8 , borderBottom: "2px solid #ccc" , marginBottom: 20 }}>
+        <div style={{ marginTop: 5, paddingBottom: 8, borderBottom: "2px solid #ccc", marginBottom: 20 }}>
           <Text style={{ fontWeight: "normal", fontSize: 25 }}>
             <Text strong style={{ fontSize: 25 }}>{studentData.id}</Text> -
             <Text strong style={{ fontSize: 25 }}> {studentData.name}</Text>
@@ -274,16 +272,15 @@ const Grade: React.FC = () => {
           </Space>
         </Space>
 
-
         {/* ตารางผลการเรียนต่อเทอม */}
         {filteredRecords.map((rec, idx) => {
           const cumulative = getCumulative(studentData.records, idx);
           // คำนวณ cumulative GPA
           return (
             <div key={`${rec.year}-${rec.term}`}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, marginBottom: 0, border: "1px solid #ccc", tableLayout: "fixed" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, marginBottom: 0, border: "1px solid #ccc", tableLayout: "fixed", borderTopLeftRadius: 8, borderTopRightRadius: 8, overflow: "hidden",boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)", }}>
                 <thead>
-                  <tr style={{ background: "#002080", color: "white", fontWeight: "bold", textAlign: "center" }}>
+                  <tr style={{ background: "#2e236c", color: "white", fontWeight: "bold", textAlign: "center" }}>
                     <th colSpan={5} style={{ padding: 8 }}>ภาคการศึกษาที่ {rec.term}/{rec.year}</th>
                   </tr>
                   <tr style={{ background: "#d9d9f3" }}>
@@ -296,7 +293,7 @@ const Grade: React.FC = () => {
                 <tbody>
                   {rec.courses.map((course, cIdx) => (
                     <tr key={cIdx}>
-                      <td style={{ textAlign: "center", padding: 4, borderBottom: "1px solid #ddd", borderRight: "1px solid #ccc" }}>{course.code}</td>
+                      <td style={{ textAlign: "left", padding: 4, borderBottom: "1px solid #ddd", borderRight: "1px solid #ccc",  }}>{course.code}</td>
                       <td colSpan={2} style={{ padding: 4, borderBottom: "1px solid #ddd", borderRight: "1px solid #ccc" }}>{course.name}</td>
                       <td style={{ textAlign: "center", padding: 4, borderBottom: "1px solid #ddd", borderRight: "1px solid #ccc" }}>{course.credit}</td>
                       <td style={{ textAlign: "center", padding: 4, borderBottom: "1px solid #ddd" }}>{course.grade}</td>
@@ -324,11 +321,12 @@ const Grade: React.FC = () => {
         )}
       </Content>
 
-      <Footer 
+      <Footer
         style={{
           background: "#1890ff",
           color: "white",
           textAlign: "center",
+          padding: 12,
           borderBottomLeftRadius: 8,          // มุมล่างซ้าย Footer
           borderBottomRightRadius: 8,         // มุมล่างขวา Footer
         }}

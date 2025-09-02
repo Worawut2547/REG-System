@@ -1,35 +1,33 @@
-/* แถวปกติไม่ต้อง hover */
-.no-hover {
-  background-color: #fff;
+/* ปิด hover ทุกแถวในตารางคอร์ส */
+.course-table .ant-table-tbody > tr:hover > td {
+  background: inherit !important;
 }
 
-/* แถวสรุป */
-.summary-row {
-  background-color: #e6e6e6;
+/* พื้นหลังแถวสรุป */
+.course-table .summary-row td {
+  background-color: #e3e3e3ff !important;
   font-weight: bold;
 }
 
-/* ทำให้มุมล่างซ้าย-ล่างขวาโค้ง สำหรับแถวสรุป */
-.summary-row td:first-child {
-  border-bottom-left-radius: 8px;
+.summary-row {
+  background-color: #e3e3e3; /* สีปกติ */
 }
 
-.summary-row td:last-child {
+.summary-row:hover td {
+  background-color: #e3e3e3 !important; /* ปิด hover */
+}
+
+/* ทำให้มุมล่างซ้าย-ขวาของแถวสรุปโค้ง */
+.course-table .summary-row td:first-child {
+  border-bottom-left-radius: 8px;
+}
+.course-table .summary-row td:last-child {
   border-bottom-right-radius: 8px;
 }
 
-/* ทำให้ตารางทั้งตารางเป็นแบบการ์ด: มุมบนและล่างโค้ง */
+/* ทำให้ตารางทั้งตารางเป็นการ์ด */
 .ant-table-wrapper {
   border-radius: 8px;
-  overflow: hidden; /* ป้องกันแถวล้นมุมโค้ง */
+  overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-/* เลือกเฉพาะตารางคะแนนแต่ละคอร์ส */
-.course-table .ant-table-tbody > tr:last-child td:first-child {
-  border-bottom-left-radius: 8px;
-}
-
-.course-table .ant-table-tbody > tr:last-child td:last-child {
-  border-bottom-right-radius: 8px;
 }

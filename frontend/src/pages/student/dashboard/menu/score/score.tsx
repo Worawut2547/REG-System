@@ -33,7 +33,7 @@ const studentInfo = {
 // ------------------------- MOCK DATA -------------------------
 // ยังใช้ mock data เหมือนเดิมเพื่อรัน UI
 const mockData: BackendData = {
- // ปี 2567
+  // ปี 2567
   "2567-1": [
     {
       course: "ENG23 3001: COMPUTER NETWORK",
@@ -192,17 +192,18 @@ const StudentScore: React.FC = () => {
 
   // ------------------------- Columns -------------------------
   const columns: ColumnsType<Score> = [
+
     {
-      title: <div style={{ textAlign: "center" }}>SCORE EVALUATION</div>,
+      title: <div style={{ textAlign: "center" , fontSize: 16}}>Score Evaluation</div>,
       dataIndex: "evaluation",
       key: "evaluation",
       width: 250,
       render: (text: string) => <div style={{ textAlign: "left" }}>{text}</div>,
     },
-    { title: "TOTAL", dataIndex: "total", key: "total", width: 80, align: "center" },
-    { title: "POINT", dataIndex: "point", key: "point", width: 80, align: "center" },
-    { title: "CAL", dataIndex: "cal", key: "cal", width: 150, align: "center" },
-    { title: "NET POINT", dataIndex: "net", key: "net", width: 80, align: "center" },
+    { title: "Total", dataIndex: "total", key: "total", width: 80, align: "center" },
+    { title: "Point", dataIndex: "point", key: "point", width: 80, align: "center" },
+    { title: "Cal", dataIndex: "cal", key: "cal", width: 150, align: "center" },
+    { title: "Net Point", dataIndex: "net", key: "net", width: 80, align: "center" },
   ];
 
   // ------------------------- ตัวอย่างฟังก์ชันเชื่อม backend -------------------------
@@ -264,7 +265,7 @@ const StudentScore: React.FC = () => {
             {yearOptions.map(year => <Option key={year} value={year}>{year}</Option>)}
           </Select>
 
-          <span style={{ marginLeft: 30 }}>ภาคการศึกษา</span>
+          <span style={{ fontSize: 18, marginLeft: 30 }}>ภาคการศึกษา</span>
           <Select
             value={selectedTerm}
             style={{ width: 150 }}
@@ -275,7 +276,7 @@ const StudentScore: React.FC = () => {
         </Space>
 
         {courses.map((courseData, idx) => (
-          <div key={idx} style={{ marginBottom: 30, background: "#d7dae4ff", borderRadius: 8, padding: 12 }}>
+          <div key={idx} style={{ marginBottom: 30, background: "#f5f5f5", borderRadius: 8, padding: 12 }}>
             <h3 style={{ marginBottom: 10, color: "black" }}>{courseData.course}</h3>
             <Table<Score>
               className="course-table"
@@ -294,7 +295,24 @@ const StudentScore: React.FC = () => {
               rowKey={(record) => record.evaluation}
               size="small"
               bordered
-              rowClassName={(record) => (record.evaluation === "สรุป" ? "summary-row" : "no-hover")}
+              rowClassName={(record) => (record.evaluation === "สรุป" ? "summary-row no-hover" : "no-hover")}              
+              components={{
+                header: {
+                  cell: (props: any) => (
+                    <th
+                      {...props}
+                      style={{
+                        backgroundColor: "#2e236c", // สีพื้นหัวตาราง
+                        color: "white",             // สีตัวอักษร
+                        textAlign: "center",        // จัดกลาง
+                        fontWeight: "bold",         // ตัวหนา
+                        fontSize: "16px",           // ขนาดหัวตาราง
+                        padding: "8px",
+                      }}
+                    />
+                  ),
+                },
+              }}
             />
           </div>
         ))}

@@ -161,7 +161,7 @@ const Grade: React.FC = () => {
       return (
         <>
           <Button onClick={handleBack} style={{ marginBottom: 20 }}>BACK</Button>
-          <div style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 20 }}>
+          <div style={{ fontWeight: 'bold', fontSize: 30, marginBottom: 20 }}>
             {(() => {
               const course = mockCourses.find(c => `${c.code}-${c.section}` === selectedCourseKey);
               return course ? `${course.code} - ${course.name}  (Section ${course.section})` : selectedCourseKey;
@@ -201,6 +201,7 @@ const Grade: React.FC = () => {
                       color: 'black',
                       textAlign: 'center', // หัวตารางทั้งหมดชิดกลาง
                       padding: '8px',
+                      fontSize: '16px',
                     }}
                   />
                 ),
@@ -292,6 +293,23 @@ const Grade: React.FC = () => {
           pagination={{ pageSize: limit }}
           scroll={{ x: 800 }}
           bordered
+          components={{
+            header: {
+              cell: (props: any) => (
+                <th
+                  {...props}
+                  style={{
+                    backgroundColor: '#c1c7d7ff', // สีพื้นหัวตาราง
+                    color: 'black',               // สีตัวอักษร
+                    textAlign: 'center',          // ชิดกลาง
+                    fontWeight: 'bold',           // ตัวหนา
+                    fontSize: '16px',             // ขนาดตัวอักษรหัวตาราง
+                    padding: '8px',
+                  }}
+                />
+              ),
+            },
+          }}
         />
       </>
     );

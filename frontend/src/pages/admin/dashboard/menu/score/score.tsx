@@ -224,6 +224,7 @@ const Score: React.FC = () => {
                       color: 'black',
                       textAlign: 'center',
                       padding: '8px',
+                      fontSize: '16px'
                     }}
                   />
                 ),
@@ -336,6 +337,7 @@ const Score: React.FC = () => {
                     color: 'black',
                     textAlign: props.align || 'center',
                     padding: '8px',
+                    fontSize: '16px'
                   }}
                 />
               ),
