@@ -1,12 +1,15 @@
 package entity
+import "time"
 
 type Section struct {
-	Section_id string `gorm:"primaryKey" json:"Section_id"`
-	Group_Name string `json:"StudyGroup_Name"`
-	Schedule   string `json:"Schedule"`
+	ID          int    `gorm:"primaryKey;autoIncrement" json:"ID"`
 
-	Registrations []Registration `gorm:"foreignKey:Section_id;references:Section_id" json:"-"`
+	SectionID   int `gorm:"unique" json:"SectionID"` // Unique identifier for the section
 
-	Subject_id string  `json:"Subject_id"`
-	Subject    *Subject `gorm:"foreignKey:Subject_id;references:Subject_id"`
+	Group 		int `json:"Group"` // Group number for the section
+
+	DateTeaching time.Time `json:"DateTeaching"` // Date and time when the section is taught
+	
+	SubjectID   string `json:"SubjectID"` // Reference to the subject associated with this
+	Subject *Subject `gorm:"foreignKey:SubjectID;references:SubjectID" json:"Subject"` // Association with the Subject entity*/
 }

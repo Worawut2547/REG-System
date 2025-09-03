@@ -1,6 +1,7 @@
 package entity
 
 type Majors struct {
+	
 	MajorID   string `gorm:"primaryKey;unique" json:"MajorID"`
 	MajorName string `json:"MajorName"`
 
@@ -9,4 +10,7 @@ type Majors struct {
 
 	Students []Students `gorm:"foreignKey:MajorID" json:"-"` // ระบุความสัมพันธ์ 1--many [Students]
 	Teachers []Teachers `gorm:"foreignKey:MajorID" json:"-"` // ระบุความสัมพันธ์ 1--many [Teachers]
+
+	Curriculum []Curriculum `gorm:"foreignKey:MajorID" json:"-"` // ระบุความสัมพันธ์ 1--many [Curriculum]
+	Subjects []Subject `gorm:"foreignKey:MajorID" json:"-"` // ระบุความสัมพันธ์ 1--many [Subjects]
 }

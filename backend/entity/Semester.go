@@ -1,9 +1,9 @@
 package entity
 
 type Semester struct {
-	Semester_id   string `gorm:"primaryKey" json:"Semester_id"`
-	Term          string `json:"Term"`
-	Academic_Year string `json:"Academic_Year"`
+	ID            int `gorm:"primaryKey;autoIncrement"`
+	Term          int `json:"Term"`
+	AcademicYeaar int `json:"AcademicYeaar"`
 
-	Registrations []Registration `gorm:"foreignKey:Semester_id;references:Semester_id" json:"-"`
+	Subject []Subject `gorm:"references:ID" json:"-"` // ระบุความสัมพันธ์เเบบ 1--many[Subject]
 }

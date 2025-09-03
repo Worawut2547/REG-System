@@ -1,7 +1,7 @@
 import axios from "axios";
 import { type FacultyInterface } from "../../../interfaces/Faculty";
 
-const apiUrl = "http://localhost:8000";
+import { apiUrl } from "../../api";
 
 export const getFacultyAll = async (): Promise<FacultyInterface[]> => {
     //console.log("Fetching student data for:", username);

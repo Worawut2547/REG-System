@@ -1,7 +1,8 @@
 // src/pages/dashboard/menu/register.tsx
 import React from 'react';
 import { Layout } from 'antd';
-import './graduate.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
+import './graduate.css';
+import Element from './element';
 
 const { Header, Content, Footer } = Layout;
 
@@ -47,7 +48,7 @@ const Graduate: React.FC = () => {
     <Layout style={wrapperStyle}>
       <Header style={headerStyle}>Header – หน้าแจ้งจบ</Header>
       <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
+        <Element />
       </Content>
       <Footer style={footerStyle}>Footer © 2025</Footer>
     </Layout>

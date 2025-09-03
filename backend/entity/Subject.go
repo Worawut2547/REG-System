@@ -1,9 +1,24 @@
 package entity
-
+// ตารางวิชา
 type Subject struct {
-	Subject_id   string `gorm:"primaryKey" json:"Subject_id"`
-	Subject_Name string `json:"Subject_Name"`
-	Credit       int    `json:"Credit"`
+	SubjectID   string `gorm:"unique" json:"SubjectID"`
+	SubjectName string `json:"SubjectName"`
+	Credit      int    `json:"Credit"`
+	// ความสัมพันธ์กับ Semester (One-to-Many)
+    SemesterID int       `json:"SemesterID"`                          // Foreign Key
+	Semester   *Semester `gorm:"foreignKey:SemesterID;references:ID"` // ระบุความสัมพันธ์เเบบ 1--1[Semester]
+	// ความสัมพันธ์กับ Major
+	MajorID string  `json:"MajorID"`
+	Major   *Majors `gorm:"foreignKey:MajorID;references:MajorID"`
 
-	Registrations []Registration `gorm:"foreignKey:Subject_id;references:Subject_id" json:"-"`
+	// ความสัมพันธ์กับ Faculty
+	FacultyID string   `json:"FacultyID"`
+	Faculty   *Faculty `gorm:"foreignKey:FacultyID;references:FacultyID"`
+
+	// ความสัมพันธ์กับ StudyTime (One-to-Many)
+	StudyTimes []SubjectStudyTime `json:"study_times" gorm:"foreignKey:SubjectID;references:SubjectID;constraint:OnDelete:CASCADE"`
+	Sections   []Section           `gorm:"foreignKey:SubjectID;references:SubjectID" json:"sections"`
+	Grade []Grades `gorm:"foreignKey:SubjectID;references:SubjectID" json:"Grade"` // ระบุความสัมพันธ์เเบบ 1--many[Grade]
+
 }
+

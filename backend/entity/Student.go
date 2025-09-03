@@ -29,12 +29,25 @@ type Students struct {
 	MajorID string  `json:"MajorID"`                               // Foreign Key
 	Major   *Majors `gorm:"foreignKey:MajorID;references:MajorID"` // ระบุความสัมพันธ์ 1--1 [Majors]
 
-	Reports []Report `gorm:"foreignKey:StudentID;references:StudentID" json:"-"`
-
-	Registrations []Registration `gorm:"foreignKey:StudentID;references:StudentID" json:"-"`
-
 	StatusStudentID string         `json:"StatusStudentID"`                                       // Foreign Key
 	StatusStudent   *StatusStudent `gorm:"foreignKey:StatusStudentID;references:StatusStudentID"` // ระบุความสัมพันธ์ 1--1 [StatusStudent]
+
+	Reports []Report `gorm:"foreignKey:StudentID;references:StudentID" json:"-"`
+
+	/*RegistrationID int `json:"RegistrationID"` // Foreign Key*/
+	Registration []Registration `gorm:"foreignKey:StudentID;references:StudentID" json:"Registration"` // ระบุความสัมพันธ์ 1--1 [Registration]
+
+	CurriculumID string      `json:"CurriculumID"`                                    // Foreign Key
+	Curriculum   *Curriculum `gorm:"foreignKey:CurriculumID;references:CurriculumID"` // ระบุความสัมพันธ์ 1--1[Curriculum]
+
+	Grade []Grades `gorm:"foreignKey:StudentID;references:StudentID" json:"Grade"` // ระบุความสัมพันธ์เเบบ 1--many[Grade]
+
+	Address     string `json:"Address"`
+	Nationality string `json:"Nationality"`
+	Ethnicity   string `json:"Ethnicity"`
+	Religion    string `json:"Religion"`
+	BirthDay    string `json:"BirthDay"`
+	Parent      string `json:"Parent"`
 
 	CreatedAt time.Time      `json:"CreatedAt"`
 	UpdatedAt time.Time      `json:"UpdatedAt"`

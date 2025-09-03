@@ -21,7 +21,7 @@ func MajorExample() {
 		{MajorID: "MT30", MajorName: "นวัตกรรมเทคโนโลยีอุตสาหากรรมบริการ", FacultyID: "F03"},
 	}
 
-	for _, major := range majors {
-		db.FirstOrCreate(&major, entity.Majors{MajorID: major.MajorID})
+	for _,maj := range majors {
+		db.Save(&maj)
 	}
 }
