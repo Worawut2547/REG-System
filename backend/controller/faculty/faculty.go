@@ -32,7 +32,7 @@ func CreateFaculty(c *gin.Context) {
 	db := config.DB()
 	result := db.FirstOrCreate(&faculty)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 

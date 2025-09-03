@@ -28,7 +28,7 @@ func GetStudentID(c *gin.Context) {
 		First(&students, "student_id = ?", sid)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
@@ -75,24 +75,6 @@ func GetStudentID(c *gin.Context) {
 		genderName = students.Gender.Gender
 	}
 
-	//ดึงข้อมูลเกรดทั้งหมด
-	grades := []map[string]interface{}{}
-	if students.Grade != nil {
-		for _,g := range students.Grade{
-			subjectName := ""
-			
-			if g.Subject != nil{
-				subjectName = g.Subject.SubjectName
-			}
-			grades = append(grades , map[string]interface{}{
-				"Grade": g.Grade,
-				"TotalScore": g.TotalScore,
-				"SubjectID": g.SubjectID,
-				"SubjectName": subjectName,
-			})
-		}
-	}
-
 	// คำนวณ GPA
 	gpa := grade.CalculateGPA(students.Grade)
 
@@ -120,7 +102,6 @@ func GetStudentID(c *gin.Context) {
 		"CurriculumName": curriculumName,
 
 		"GPA":   gpa,
-		"Grade": grades,
 		"Registration": students.Registration,
 
 		"Address": students.Address,
@@ -152,7 +133,7 @@ func CreateStudent(c *gin.Context) {
 	result := db.Create(&student)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
@@ -164,7 +145,7 @@ func CreateStudent(c *gin.Context) {
 		Role:     "student", //กำหนด Role
 	}
 	if err := db.Create(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -189,7 +170,7 @@ func GetStudentAll(c *gin.Context) {
 		Preload("StatusStudent").
 		Find(&students)
 	if results.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": results.Error.Error()})
 		return
 	}
 
@@ -265,7 +246,7 @@ func UpdateStudent(c *gin.Context) {
 	// อัพเดทข้อมูลนักเรียน
 	result := db.Model(&student).Where("student_id = ?", sid).Updates(&student)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
@@ -285,7 +266,7 @@ func DeleteStudent(c *gin.Context) {
 	result := db.Delete(&student, "student_id = ?", sid)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 

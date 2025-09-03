@@ -365,3 +365,4 @@ const Score: React.FC = () => {
 };
 
 export default Score; // export component
+

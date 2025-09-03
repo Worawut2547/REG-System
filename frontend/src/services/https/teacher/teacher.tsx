@@ -33,8 +33,8 @@ export const getTeacherAll = async (): Promise<TeacherInterface[]> => {
 
 export const createTeacher = async (data: TeacherInterface): Promise<TeacherInterface> => {
     try {
-        const responce = await axios.post(`${apiUrl}/teachers/`, data)
-        return responce.data
+        const response = await axios.post(`${apiUrl}/teachers/`, data)
+        return response.data
     }
     catch (error) {
         console.error("Error creating teacher:", error);
@@ -44,13 +44,37 @@ export const createTeacher = async (data: TeacherInterface): Promise<TeacherInte
 
 export const updateTeacherProfile = async (data: TeacherInterface): Promise<TeacherInterface> => {
     const username = localStorage.getItem("username");
-    console.log("api edit profile teacher:",data);
+    console.log("api edit profile teacher:", data);
     try {
-        const responce = await axios.put(`${apiUrl}/teachers/${username}`, data)
-        return responce.data
+        const response = await axios.put(`${apiUrl}/teachers/${username}`, data)
+        return response.data
     }
     catch (error) {
         console.error("Error editing teacher:", error);
+        throw error;
+    }
+}
+
+export const deleteTeacher = async (tid: string) => {
+    try {
+        const response = await axios.delete(`${apiUrl}/teachers/${tid}`)
+        return response
+    }
+    catch (error) {
+        console.error("Error delete teacher:", error);
+        throw error;
+    }
+}
+
+export const getSubjectByTeacherID = async() => {
+    try{
+        const tid = localStorage.getItem("username");
+        const response = await axios.get(`${apiUrl}/teachers/${tid}/subjects`);
+        console.log("api subject teacher:",response);
+        return response.data
+    }
+    catch (error) {
+        console.error("Error get subject teacher:", error);
         throw error;
     }
 }
