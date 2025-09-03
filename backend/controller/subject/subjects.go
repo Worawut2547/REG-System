@@ -31,6 +31,7 @@ type SubjectCreateReq struct {
 	Credit      int    `json:"credit"       binding:"required,min=1,max=5"`
 	MajorID     string `json:"major_id"     binding:"required"`
 	FacultyID   string `json:"faculty_id"   binding:"required"`
+	SemesterID  int    `json:"semester_id"  binding:"required"`
 }
 
 // SubjectUpdateReq ใช้รับข้อมูลตอนแก้ไขรายวิชา
@@ -39,6 +40,7 @@ type SubjectUpdateReq struct {
 	Credit      *int    `json:"credit,omitempty"    binding:"omitempty,min=1,max=5"`
 	MajorID     *string `json:"major_id,omitempty"`
 	FacultyID   *string `json:"faculty_id,omitempty"`
+	SemesterID  *int    `json:"semester_id,omitempty"`
 }
 
 // ======================================================================
@@ -98,6 +100,7 @@ func CreateSubject(c *gin.Context) {
 		Credit:      req.Credit,
 		MajorID:     req.MajorID,
 		FacultyID:   req.FacultyID,
+		SemesterID:  req.SemesterID,
 	}
 
 	if err := db.Create(&sub).Error; err != nil {
@@ -113,6 +116,9 @@ func CreateSubject(c *gin.Context) {
 		"credit":       sub.Credit,
 		"major_id":     sub.MajorID,
 		"faculty_id":   sub.FacultyID,
+		"semester_id":  sub.SemesterID,
+		"term":  sub.Semester.Term,
+		"academic_year": sub.Semester.AcademicYeaar,
 	})
 }
 
@@ -127,6 +133,7 @@ func GetSubjectID(c *gin.Context) {
 		Preload("Major").
 		Preload("Faculty").
 		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
+		Preload("Semester").
 		First(&sub, "subject_id = ?", id).Error; err != nil {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -143,6 +150,9 @@ func GetSubjectID(c *gin.Context) {
 		"credit":       sub.Credit,
 		"major_id":     sub.MajorID,
 		"faculty_id":   sub.FacultyID,
+		"semester_id":  sub.SemesterID,
+		"term":  sub.Semester.Term,
+		"academic_year": sub.Semester.AcademicYeaar,
 		//"study_times":  sub.StudyTimes, // อ่านอย่างเดียว (CRUD แยกใน study time controller)
 	}
 	if sub.Major != nil {
@@ -164,9 +174,10 @@ func GetSubjectAll(c *gin.Context) {
 	if err := db.
 		Preload("Major").
 		Preload("Faculty").
+		Preload("Semester").
 		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
 		Find(&subs).Error; err != nil {
-
+		
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -180,6 +191,8 @@ func GetSubjectAll(c *gin.Context) {
 			"credit":       s.Credit,
 			"major_id":     s.MajorID,
 			"faculty_id":   s.FacultyID,
+			"term":  s.Semester.Term,
+			"academic_year": s.Semester.AcademicYeaar,
 			//"study_times":  s.StudyTimes,
 		}
 		if s.Major != nil {
@@ -261,6 +274,8 @@ func UpdateSubject(c *gin.Context) {
 		"credit":       sub.Credit,
 		"major_id":     sub.MajorID,
 		"faculty_id":   sub.FacultyID,
+		"term":  sub.Semester.Term,
+		"academic_year": sub.Semester.AcademicYeaar,
 	})
 }
 

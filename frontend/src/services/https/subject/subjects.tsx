@@ -9,6 +9,8 @@ type SubjectCreateDTO = {
   credit: number;
   major_id: string;
   faculty_id: string;
+  term?: string;
+  academic_year?: string;
 };
 
 type SubjectAPI = {
@@ -17,6 +19,8 @@ type SubjectAPI = {
   credit?: number | string;
   major_id?: string; MajorID?: string;
   faculty_id?: string; FacultyID?: string;
+  term?: string;
+  academic_year?: string;
 };
 
 const mapSubjectFromAPI = (s: SubjectAPI): SubjectInterface => ({
@@ -25,6 +29,8 @@ const mapSubjectFromAPI = (s: SubjectAPI): SubjectInterface => ({
   Credit:      Number(s.credit ?? 0),
   MajorID:     s.major_id ?? s.MajorID ?? "",
   FacultyID:   s.faculty_id ?? s.FacultyID ?? "",
+  Term:        s.term,
+  AcademicYear: s.academic_year,
 });
 
 export const createSubject = async (
@@ -49,6 +55,8 @@ export const createSubject = async (
     credit:       creditNum,
     major_id:     MajorID,
     faculty_id:   FacultyID,
+    term:         data.Term,
+    academic_year: data.AcademicYear,
   };
 
   try {

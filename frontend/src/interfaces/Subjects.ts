@@ -11,4 +11,9 @@ export interface SubjectInterface {
     FacultyID?: string;           // รหัสสาขาวิชา
     FacultyName?: string;         // ชื่อสาขา
 
+    SemesterID?: string;        // รหัสภาคการศึกษา
+
+    Term?: string;              // เทอม เช่น "1", "2", "3"
+    AcademicYear?: string;      // ปีการศึกษา เช่น "2023"
+
 }
