@@ -42,10 +42,7 @@ func SetupDatabase() {
 		&entity.Users{},
 
 		&entity.Semester{},
-		/*&entity.Subjects{},
-		&entity.SemesterSubject{},
-		&entity.Grades{},
-		&entity.GradeSemester{},*/
+		&entity.Subject{},
 		&entity.Scores{},
 
 		&entity.StatusStudent{},
