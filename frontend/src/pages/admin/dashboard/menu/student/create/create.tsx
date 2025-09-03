@@ -28,8 +28,8 @@ interface CreateStudentProps {
 
 const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
-  const [selectedMajor , setSelectedMajor] = useState<string | null>(null);
-  const [allMajors , setAllMajors] = useState<MajorInterface[]>([]);
+  const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
+  const [allMajors, setAllMajors] = useState<MajorInterface[]>([]);
   const [majorOptions, setMajorOptions] = useState<MajorInterface[]>([]);
   const [facultyOptions, setFacultyOptions] = useState<FacultyInterface[]>([]);
   const [selectFaculty, setSelectFaculty] = useState<string | null>(null)
@@ -75,6 +75,10 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
   }
 
   const onFinish = async (values: StudentInterface) => {
+    if (!selectedMajor) {
+      message.error("กรุณาเลือกสาขา");
+      return;
+    }
     console.log("Form values:", values);
     // TODO: เรียก API create student
     setLoading(true);
@@ -221,7 +225,11 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               name="MajorID"
               rules={[{ required: true, message: "กรุณาเลือกสาขา!" }]}
             >
-              <Select placeholder="เลือกสาขา">
+              <Select
+                placeholder="เลือกสาขา"
+                value={selectedMajor ?? undefined}
+                onChange={(value) => setSelectedMajor(value)}
+              >
                 {majorOptions.map((m) => (
                   <Select.Option key={m.MajorID} value={m.MajorID}>
                     {m.MajorName}

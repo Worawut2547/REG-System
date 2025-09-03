@@ -9,9 +9,9 @@ func SemesterExample() {
 	db := config.DB()
 
 	semesters := []entity.Semester{
-		{ID: 1 ,Term: 1 , AcademicYeaar: 2568},
-		{ID: 2 ,Term: 2 , AcademicYeaar: 2568},
-		{ID: 3 ,Term: 3 , AcademicYeaar: 2568},
+		{ID: 1 ,Term: 1 , AcademicYear: 2568},
+		{ID: 2 ,Term: 2 , AcademicYear: 2568},
+		{ID: 3 ,Term: 3 , AcademicYear: 2568},
 	}
 	for _,semt := range semesters{
 		db.FirstOrCreate(&semt)

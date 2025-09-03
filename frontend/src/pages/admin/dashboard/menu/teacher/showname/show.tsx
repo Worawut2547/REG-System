@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Col, Row, Table, Button, Space } from 'antd';
+import { Col, Row, Table, Button, Space, Popconfirm, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { getTeacherAll } from '../../../../../../services/https/teacher/teacher';
+import { getTeacherAll, deleteTeacher } from '../../../../../../services/https/teacher/teacher';
 import type { TeacherInterface } from '../../../../../../interfaces/Teacher';
 
 interface ShowTeacherPageProps {
   onCreate?: () => void;
 }
 
-const columns: ColumnsType<TeacherInterface> = [
+const columns = (handleDelete: (TeacherID: string) => void): ColumnsType<TeacherInterface> => [
   {
     title: "ลำดับ",
     dataIndex: "ID",
@@ -55,6 +55,23 @@ const columns: ColumnsType<TeacherInterface> = [
     dataIndex: "Email",
     key: "email",
   },
+  {
+    title: "ลบช้อมูล",
+    key: "action",
+    render: (_, record) => (
+      <Popconfirm
+        title="คุณเเน่ใจหรือไม่ที่ลบข้อมูลนนี้"
+        okText="ยืนยัน"
+        cancelText="ยกเลิก"
+        onConfirm={() => handleDelete(record.TeacherID!)}
+      >
+        <Button type="primary" danger>
+          ลบข้อมูล
+        </Button>
+
+      </Popconfirm>
+    )
+  }
 ];
 
 const ShowTeacherPage: React.FC<ShowTeacherPageProps> = ({ onCreate }) => {
@@ -69,34 +86,46 @@ const ShowTeacherPage: React.FC<ShowTeacherPageProps> = ({ onCreate }) => {
       .catch((err) => console.error(err));
   }, []);
 
+  const handleDelete = async (TeacherID: string) => {
+    try {
+      await deleteTeacher(TeacherID);
+      message.success('ลบข้อมูลสำเร็จ');
+      setTeachers(prev => prev.filter(teacher => teacher.TeacherID !== TeacherID));
+    }
+    catch (error) {
+        message.error('ลบข้อมูลไม่สำเร็จ');
+        console.error(error);
+    }
+  }
 
   return (
-    <>
-      <Row gutter={[16, 16]}>
-        <Col span={12}>
-          <h2>จัดการข้อมูลอาจารย์</h2>
-        </Col>
+      <>
+        <Row gutter={[16, 16]}>
+          <Col span={12}>
+            <h2>จัดการข้อมูลอาจารย์</h2>
+          </Col>
 
-        <Col span={12} style={{ textAlign: "end", alignSelf: "center" }}>
-          <Space>
-            <Button onClick={onCreate} type="primary" icon={<PlusOutlined />} >
-              สร้างข้อมูลอาจารย์ใหม่
-            </Button>
-          </Space>
-        </Col>
-      </Row>
+          <Col span={12} style={{ textAlign: "end", alignSelf: "center" }}>
+            <Space>
+              <Button onClick={onCreate} type="primary" icon={<PlusOutlined />} >
+                สร้างข้อมูลอาจารย์ใหม่
+              </Button>
+            </Space>
+          </Col>
+        </Row>
 
-      <div style={{ marginTop: 20 }}>
-        <Table
-          rowKey="ID"
-          columns={columns}
-          dataSource={teacher}
-          style={{ width: "100%", overflow: "scroll" }}
-        >
-        </Table>
-      </div>
-    </>
-  );
+        <div style={{ marginTop: 20 }}>
+          <Table
+            rowKey="ID"
+            columns={columns(handleDelete)}
+            dataSource={teacher}
+            style={{ width: "100%", overflow: "scroll" }}
+          >
+          </Table>
+        </div>
+      </>
+    );
 }
 
-export default ShowTeacherPage;
+
+  export default ShowTeacherPage;

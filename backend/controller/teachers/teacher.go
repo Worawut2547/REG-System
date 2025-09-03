@@ -19,6 +19,7 @@ func GetTeacherID(c *gin.Context) {
 		Preload("Faculty").
 		Preload("Major").
 		Preload("Position").
+		Preload("Subject").
 		First(&teacher, "teacher_id = ?", tid)
 
 	if result.Error != nil {
@@ -39,35 +40,35 @@ func GetTeacherID(c *gin.Context) {
 
 	// Check filed ว่าเป็น nil หรือไม่ ก่อนเข้าถึง field นั้นโดยตรงไม่งั้นจะ error
 	//--------------------------------------------------------------------------
-	if teacher.Gender != nil{
+	if teacher.Gender != nil {
 		genderName = teacher.Gender.Gender
 	}
 
-	if teacher.Faculty != nil{
+	if teacher.Faculty != nil {
 		facultyName = teacher.Faculty.FacultyName
 	}
 
-	if teacher.Major != nil{
+	if teacher.Major != nil {
 		majorName = teacher.Major.MajorName
 	}
 
-	if teacher.Position != nil{
+	if teacher.Position != nil {
 		positionName = teacher.Position.Position
 	}
 
 	// Step 3: สร้าง map สำหรับเก็บข้อมูลที่ต้องการส่งออก
 	//--------------------------------------------------------------------------
 	response := map[string]interface{}{
-		"TeacherID": teacher.TeacherID,
-		"FirstName": teacher.FirstName,
-		"LastName": teacher.LastName,
-		"CitizenID": teacher.CitizenID,
-		"Email": teacher.Email,
-		"Phone": teacher.Phone,
-		"Gender": genderName,
+		"TeacherID":   teacher.TeacherID,
+		"FirstName":   teacher.FirstName,
+		"LastName":    teacher.LastName,
+		"CitizenID":   teacher.CitizenID,
+		"Email":       teacher.Email,
+		"Phone":       teacher.Phone,
+		"Gender":      genderName,
 		"FacultyName": facultyName,
-		"MajorName": majorName,
-		"Position": positionName,
+		"MajorName":   majorName,
+		"Position":    positionName,
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -118,7 +119,7 @@ func GetTeacherAll(c *gin.Context) {
 		Find(&teachers)
 
 	if results.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": results.Error.Error()})
 		return
 	}
 
@@ -177,7 +178,7 @@ func DeleteTeacher(c *gin.Context) {
 
 	result := db.Delete(&teacher, "teacher_id = ?", tid)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
@@ -198,7 +199,7 @@ func UpdateTeacher(c *gin.Context) {
 	result := db.Model(&teacher).Where("teacher_id = ?", tid).Updates(&teacher)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
@@ -208,4 +209,48 @@ func UpdateTeacher(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, teacher)
+}
+
+func GetSubjectByTeacherID(c *gin.Context) {
+	tid := c.Param("id")
+	var teacher entity.Teachers
+
+	db := config.DB()
+	result := db.Preload("Subject").
+		Preload("Subject.Semester").
+		First(&teacher, "teacher_id = ?", tid)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
+		return
+	}
+
+	if len(teacher.Subject) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "teacher subject not found"})
+		return
+	}
+
+	var response []SubjectTeacherResponse
+	for _, subj := range teacher.Subject {
+		response = append(response, SubjectTeacherResponse{
+			SubjectID:   subj.SubjectID,
+			SubjectName: subj.SubjectName,
+			Credit:      subj.Credit,
+			Term: subj.Semester.Term,
+			AcademicYear: subj.Semester.AcademicYear,
+		})
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+type SubjectTeacherResponse struct {
+	SubjectID    string `json:"SubjectID"`
+	SubjectName  string `json:"SubjectName"`
+	Credit       int    `json:"Credit"`
+	Term         int    `json:"Term"`
+	AcademicYear int    `json:"AcademicYear"`
 }

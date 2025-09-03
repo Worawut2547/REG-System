@@ -118,7 +118,7 @@ func CreateSubject(c *gin.Context) {
 		"faculty_id":   sub.FacultyID,
 		"semester_id":  sub.SemesterID,
 		"term":  sub.Semester.Term,
-		"academic_year": sub.Semester.AcademicYeaar,
+		"academic_year": sub.Semester.AcademicYear,
 	})
 }
 
@@ -152,7 +152,10 @@ func GetSubjectID(c *gin.Context) {
 		"faculty_id":   sub.FacultyID,
 		"semester_id":  sub.SemesterID,
 		"term":  sub.Semester.Term,
-		"academic_year": sub.Semester.AcademicYeaar,
+		"academic_year": sub.Semester.AcademicYear,
+		/*"teacher_id":        sub.TeacherID,
+		"teacher_firstname": sub.Teacher.FirstName,
+		"teacher_lastname":  sub.Teacher.LastName,*/
 		//"study_times":  sub.StudyTimes, // อ่านอย่างเดียว (CRUD แยกใน study time controller)
 	}
 	if sub.Major != nil {
@@ -192,7 +195,10 @@ func GetSubjectAll(c *gin.Context) {
 			"major_id":     s.MajorID,
 			"faculty_id":   s.FacultyID,
 			"term":  s.Semester.Term,
-			"academic_year": s.Semester.AcademicYeaar,
+			"academic_year": s.Semester.AcademicYear,
+			/*"teacher_id":        s.TeacherID,
+			"teacher_firstname": s.Teacher.FirstName,
+			"teacher_lastname":  s.Teacher.LastName,*/	
 			//"study_times":  s.StudyTimes,
 		}
 		if s.Major != nil {
@@ -275,7 +281,7 @@ func UpdateSubject(c *gin.Context) {
 		"major_id":     sub.MajorID,
 		"faculty_id":   sub.FacultyID,
 		"term":  sub.Semester.Term,
-		"academic_year": sub.Semester.AcademicYeaar,
+		"academic_year": sub.Semester.AcademicYear,
 	})
 }
 

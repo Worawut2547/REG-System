@@ -1,16 +1,16 @@
 // src/pages/dashboard/menu/student/showName.tsx
 import { useState, useEffect } from 'react';
-import { Col, Row, Table, Button, Space } from 'antd';
+import { Col, Row, Table, Button, Space, Popconfirm, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { getStudentAll } from '../../../../../../services/https/student/student';
+import { getStudentAll, deleteStudent } from '../../../../../../services/https/student/student';
 import type { StudentInterface } from '../../../../../../interfaces/Student';
 interface ShowStudentPageProps {
   onCreate?: () => void;
 }
 
 
-const columns: ColumnsType<StudentInterface> = [
+const columns = (handleDelete: (StudentID: string) => void): ColumnsType<StudentInterface> =>[
   {
     title: "ลำดับ",
     dataIndex: "ID",
@@ -60,6 +60,22 @@ const columns: ColumnsType<StudentInterface> = [
     title: "สถานะทางการศึกษา",
     dataIndex: "StatusStudentID",
     key: "status",
+  },
+  {
+    title: "ลบข้อมูล",
+    key: "action",
+    render: (_, record) => (
+      <Popconfirm
+        title="คุณเเน่ใจหรือไม่ที่ลบข้อมูลนนี้ ?"
+        okText="ยืนยัน"
+        onConfirm={() => handleDelete(record.StudentID!)}
+        cancelText="ยกเลิก"
+      >
+        <Button type="primary" danger>
+          ลบข้อมูล
+        </Button>
+      </Popconfirm>
+    )
   }
 ];
 
@@ -76,6 +92,18 @@ const ShowStudentPage: React.FC<ShowStudentPageProps> = ({ onCreate }) => {
       .catch((err) => console.error(err));
   }, []);
 
+  const handleDelete = async (StudentID: string) => {
+    try {
+      await deleteStudent(StudentID)
+
+      
+    }
+    catch (error) {
+      message.error('ลบข้อมูลไม่สำเร็จ');
+      console.error(error);
+    }
+
+  }
   return (
     <>
       <Row gutter={[16, 16]}>
@@ -95,7 +123,7 @@ const ShowStudentPage: React.FC<ShowStudentPageProps> = ({ onCreate }) => {
       <div style={{ marginTop: 20 }}>
         <Table
           rowKey="ID"
-          columns={columns}
+          columns={columns(handleDelete)}
           dataSource={student}
           style={{ width: "100%", overflow: "scroll" }}
         >

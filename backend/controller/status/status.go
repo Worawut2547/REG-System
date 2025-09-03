@@ -29,7 +29,7 @@ func CreateStatus(c *gin.Context) {
 	db := config.DB()
 	result := db.FirstOrCreate(&status)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
