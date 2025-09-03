@@ -1,56 +1,97 @@
-// src/pages/dashboard/menu/register.tsx
-import React from 'react';
-import { Layout } from 'antd';
-import './grade.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
-
+import React, { useState, useEffect } from "react";
+import { Layout } from "antd";
+import TeacherDashboard from "./Dashboard/Dashboard";
+import { getSubjectByTeacherID } from "../../../../../services/https/teacher/teacher";
+import StudentGrade from "./TableGrade/table"
 const { Header, Content, Footer } = Layout;
 
-// register.tsx  – only wrapperStyle changed
-const wrapperStyle: React.CSSProperties = {
-  /* keep your corner-rounding / shadow if you like */
-  borderRadius: 8,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-
-  /* 👇 stretch full size of parent Content */
-  width: '100%',          // fill X
-  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
-  display: 'flex',        // so Header/Content/Footer stack vertically
-  flexDirection: 'column',
-  overflow: 'hidden',
-};
-const headerStyle: React.CSSProperties = {
-  background: '#2e236c',            // ม่วงเข้ม
-  color: 'white',
-  textAlign: 'center',
-  padding: 16,
-  fontSize: 20,
+type APISubject = {
+  AcademicYear: number;
+  Term: number;
+  SubjectID: string;
+  SubjectName: string;
+  Credit: number;
 };
 
-const contentStyle: React.CSSProperties = {
-  background: '#f5f5f5',            // เทาอ่อน
-  padding: 24,
-  minHeight: 400,
-  color: '#333',
-  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
+type Course = {
+  code: string;
+  name: string;
+  color: string;
+  credit: number;
+  year: number;
+  term: number;
 };
 
-const footerStyle: React.CSSProperties = {
-  background: '#1890ff',            // ฟ้า Ant Design
-  color: 'white',
-  textAlign: 'center',
-  padding: 12,
-};
+const subjectColors = ["#1a1440ff", "#332771ff", "#4c5ba8ff", "#2d3685ff", "#1890ff"];
 
-const Grade: React.FC = () => {
+const GradePage: React.FC = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [year, setYear] = useState<string>("2568");
+  const [term, setTerm] = useState<string>("1");
+  const [view, setView] = useState<"dashboard" | "student-grade">("dashboard");
+  const [selectedCourse, setSelectedCourse] = useState<{ code: string; name: string } | null>(null);
+
+  // ดึงข้อมูลรายวิชา
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      const apiData: APISubject[] = await getSubjectByTeacherID();
+      const yearSet = new Set<string>();
+      const termSet = new Set<string>();
+      const mapped = apiData.map((s, idx) => {
+        yearSet.add(String(s.AcademicYear));
+        termSet.add(String(s.Term));
+        return {
+          code: s.SubjectID,
+          name: s.SubjectName,
+          color: subjectColors[idx % subjectColors.length],
+          credit: s.Credit,
+          year: s.AcademicYear,
+          term: s.Term,
+        };
+      });
+      setCourses(mapped);
+      if (!year) setYear(Array.from(yearSet).sort().reverse()[0]);
+      if (!term) setTerm(Array.from(termSet).sort().reverse()[0]);
+    };
+    fetchSubjects();
+  }, []);
+
+  const yearOptions = Array.from(new Set(courses.map(c => String(c.year)))).sort().reverse();
+  const termOptions = Array.from(new Set(courses.map(c => String(c.term)))).sort();
+
   return (
-    <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>Header – หน้าเกรด</Header>
-      <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
+    <Layout style={{ minHeight: "100vh" }}>
+      <Header style={{ background: "#2e236c", color: "white", fontSize: 24, textAlign: "center" }}>
+        Dashboard รายวิชา
+      </Header>
+      <Content style={{ padding: 24 }}>
+        {view === "dashboard" && (
+          <TeacherDashboard
+            courses={courses}
+            year={year}
+            term={term}
+            setYear={setYear}
+            setTerm={setTerm}
+            yearOptions={yearOptions}
+            termOptions={termOptions}
+            onSelectCourse={(course) => {
+              setSelectedCourse(course); // เก็บวิชาที่เลือก
+              setView("student-grade"); // เปลี่ยนไปหน้า Student Grade
+            }}
+          />
+        )}
+
+        {view == "student-grade" && selectedCourse && (
+          <StudentGrade
+            subjectCode={selectedCourse.code}
+            subjectName={selectedCourse.name}
+            onBack={() => setView("dashboard")}
+          />
+        )}
       </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
+      <Footer style={{ textAlign: "center", background: "#1890ff", color: "white" }}>Footer © 2025</Footer>
     </Layout>
   );
 };
 
-export default Grade;
+export default GradePage;

@@ -16,7 +16,7 @@ func GetAdminID (c *gin.Context){
 
 	result := db.First(&admin , "Admin_id = ?" , aid)
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 

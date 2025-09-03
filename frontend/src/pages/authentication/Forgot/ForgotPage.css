@@ -1,0 +1,50 @@
+.forgot-container {
+  display: flex;
+  min-height: reposive;
+  max-height: reposive; 
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.forgot-button {
+  height: 72px;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 10px;
+  background-color: #1c2341;
+  color: white;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.forgot-left {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+}
+
+.forgot-right {
+  flex: 1;
+  background-color: #eef1ff00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
+
+.forgot-form {
+  width: 33vw;
+  max-width: 460px;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+}

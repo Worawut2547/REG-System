@@ -1,7 +1,6 @@
 package registration
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,26 +16,28 @@ func CreateRegistration(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if payload.Date.IsZero() {
-		payload.Date = time.Now()
-	}
-	svc := services.RegistrationService{DB: config.DB()}
-	if err := svc.Create(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+	db := config.DB()
+	result := db.Create(&registration)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Create registration success"})
 }
+func GetRegistrationAll(c *gin.Context) {
+	var registrations []entity.Registration
+	db := config.DB()
 
-// POST /api/registrations/bulk
-type bulkReq struct {
-	StudentID string                `json:"student_id" binding:"required"`
-	Items     []entity.Registration `json:"items"       binding:"required,min=1,dive"`
-}
-func CreateRegistrationBulk(c *gin.Context) {
-	var req bulkReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	result := db.
+		Preload("Student").
+		Preload("Subject").
+		Preload("Subject.Semester").
+		Find(&registrations)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 	svc := services.RegistrationService{DB: config.DB()}
@@ -47,42 +48,68 @@ func CreateRegistrationBulk(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Create registrations success", "count": len(req.Items)})
 }
 
-// GET /api/registrations?student_id=
-func GetRegistrationAll(c *gin.Context) {
-    studentID := c.Query("student_id")
-    svc := services.RegistrationService{DB: config.DB()}
-    rows, err := svc.FindAll(studentID)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-    // คืน 200 พร้อม [] กรณีไม่มีข้อมูล เพื่อให้ฝั่งเว็บโหลดหน้าได้
-    c.JSON(http.StatusOK, rows)
-}
+func GetRegistrationByStudentID(c *gin.Context) {
+	sid := c.Param("id")
+	var registration []entity.Registration
+	db := config.DB()
 
-// GET /api/registrations/:id
-func GetRegistrationByID(c *gin.Context) {
-	id := c.Param("id")
-	svc := services.RegistrationService{DB: config.DB()}
-	row, err := svc.FindByRegID(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Registration not found"})
+	result := db.Preload("Subject").
+		Preload("Subject.StudyTimes").
+		Find(&registration, "student_id = ?", sid)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, row)
+
+	var response []RegistrationResponse
+
+	for _, reg := range registration {
+		subjectName := ""
+		credit := 0
+		section := 0
+		var startAt time.Time
+		var endAt time.Time
+
+		if reg.Subject != nil {
+			subjectName = reg.Subject.SubjectName
+			credit = reg.Subject.Credit
+		}
+
+		for _, st := range reg.Subject.StudyTimes {
+			startAt = st.StartAt
+			endAt = st.EndAt
+		}
+
+		response = append(response, RegistrationResponse{
+			SubjectID:   reg.SubjectID,
+			SubjectName: subjectName,
+			Credit:      credit,
+			Section:     section,
+			StartAt:     startAt,
+			EndAt:       endAt,
+		})
+	}
+	c.JSON(http.StatusOK, &response)
 }
 
-// PUT /api/registrations/:id
 func UpdateRegistration(c *gin.Context) {
 	id := c.Param("id")
-	var patch entity.Registration
-	if err := c.ShouldBindJSON(&patch); err != nil {
+	var registration entity.Registration
+	db := config.DB()
+
+	if err := c.ShouldBind(&registration); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	svc := services.RegistrationService{DB: config.DB()}
-	if err := svc.UpdateByRegID(id, patch); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+	if err := db.First(&registration, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	result := db.Save(&registration)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Registration updated successfully"})
@@ -91,10 +118,70 @@ func UpdateRegistration(c *gin.Context) {
 // DELETE /api/registrations/:id
 func DeleteRegistration(c *gin.Context) {
 	id := c.Param("id")
-	svc := services.RegistrationService{DB: config.DB()}
-	if err := svc.DeleteByRegID(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	var registration entity.Registration
+	db := config.DB()
+
+	if err := db.First(&registration, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Registration not found"})
 		return
 	}
+
+	result := db.Delete(&registration)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Registration deleted successfully"})
+}
+
+type RegistrationResponse struct {
+	SubjectID   string `json:"SubjectID"`
+	SubjectName string `json:"SubjectName"`
+	Section     int    `json:"Section"`
+	Credit      int    `json:"Credit"`
+
+	StartAt time.Time `json:"StartAt"`
+	EndAt   time.Time `json:"EndAt"`
+}
+
+func GetStudentBySubjectID(c *gin.Context) {
+	subj_id := c.Param("id")
+	var registrations []entity.Registration
+
+	db := config.DB()
+	result := db.Preload("Student").
+		Preload("Student.Major").
+		Preload("Student.Faculty").
+		Find(&registrations, "subject_id = ?", subj_id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found student regis"})
+		return
+	}
+
+	var response []StudentOutput
+	for _, regis := range registrations {
+		response = append(response, StudentOutput{
+			StudentID:   regis.StudentID,
+			FirstName:   regis.Student.FirstName,
+			LastName:    regis.Student.LastName,
+			MajorName:   regis.Student.Major.MajorName,
+			FacultyName: regis.Student.Faculty.FacultyName,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+type StudentOutput struct {
+	StudentID   string `json:"StudentID"`
+	FirstName   string `json:"FirstName"`
+	LastName    string `json:"LastName"`
+	MajorName   string `json:"MajorName"`
+	FacultyName string `json:"FacultyName"`
 }

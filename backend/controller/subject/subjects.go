@@ -160,13 +160,15 @@ func GetSubjectID(c *gin.Context) {
 	}
 
 	resp := map[string]interface{}{
-		"subject_id":   sub.SubjectID,
-		"subject_name": sub.SubjectName,
-		"credit":       sub.Credit,
-		"major_id":     sub.MajorID,
-		"faculty_id":   sub.FacultyID,
-		"study_times":  studyTimes,
-		"sections":     sections,
+		"subject_id":        sub.SubjectID,
+		"subject_name":      sub.SubjectName,
+		"credit":            sub.Credit,
+		"major_id":          sub.MajorID,
+		"faculty_id":        sub.FacultyID,
+		/*"teacher_id":        sub.TeacherID,
+		"teacher_firstname": sub.Teacher.FirstName,
+		"teacher_lastname":  sub.Teacher.LastName,*/
+		//"study_times":  sub.StudyTimes, // อ่านอย่างเดียว (CRUD แยกใน study time controller)
 	}
 	if sub.Major != nil {
 		resp["major_name"] = sub.Major.MajorName
@@ -197,12 +199,15 @@ func GetSubjectAll(c *gin.Context) {
 	out := make([]map[string]interface{}, 0, len(subs))
 	for i, s := range subs {
 		row := map[string]interface{}{
-			"index":        i + 1, // ใช้สำหรับแสดงลำดับในตาราง (ถ้าไม่ใช้จะลบออกก็ได้)
-			"subject_id":   s.SubjectID,
-			"subject_name": s.SubjectName,
-			"credit":       s.Credit,
-			"major_id":     s.MajorID,
-			"faculty_id":   s.FacultyID,
+			"index":             i + 1, // ใช้สำหรับแสดงลำดับในตาราง (ถ้าไม่ใช้จะลบออกก็ได้)
+			"subject_id":        s.SubjectID,
+			"subject_name":      s.SubjectName,
+			"credit":            s.Credit,
+			"major_id":          s.MajorID,
+			"faculty_id":        s.FacultyID,
+			/*"teacher_id":        s.TeacherID,
+			"teacher_firstname": s.Teacher.FirstName,
+			"teacher_lastname":  s.Teacher.LastName,*/
 			//"study_times":  s.StudyTimes,
 		}
 		if s.Major != nil {

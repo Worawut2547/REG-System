@@ -27,6 +27,8 @@ type Teachers struct {
 	PositionID int       `json:"PositionID"`
 	Position   *Position `gorm:"foreignKey:PositionID;references:ID"` // ระบุความสัมพันธ์ 1--1 [Position]
 
+	Subject []Subject `gorm:"foreignKey:TeacherID;references:TeacherID" json:"Subject"`  // ระบุความสัมพันธ์เเบบ 1--many[Subject]
+
 	CreatedAt time.Time      `json:"CreatedAt"`
 	UpdatedAt time.Time      `json:"UpdatedAt"`
 	DeletedAt gorm.DeletedAt `json:"DeletedAt,omitempty" gorm:"index"` // ใช้สำหรับ soft delete

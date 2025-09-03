@@ -30,10 +30,13 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
   const [facultyOptions, setFacultyOptions] = useState<FacultyInterface[]>([]);
   const [selectFaculty, setSelectFaculty] = useState<string | null>(null);
 
+  const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
+  const [allMajors, setAllMajors] = useState<MajorInterface[]>([]);
   const [majorOptions, setMajorOptions] = useState<MajorInterface[]>([]);
+
   const [positionOptions, setPositionOptions] = useState<PositionInterface[]>([]);
 
-  const [genderOptions , setGenderOptions] = useState<GenderInterface[]>([]);
+  const [genderOptions, setGenderOptions] = useState<GenderInterface[]>([]);
 
 
   // เรียก API ดึง field ทั้งหมดเมื่อคอมโพเนนต์ถูกโหลด
@@ -46,8 +49,9 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
       getPositionAll(),
       getGenderAll(),
     ])
-      .then(([faculties, majors, positions , genders]) => {
+      .then(([faculties, majors, positions, genders]) => {
         setFacultyOptions(faculties);
+        setAllMajors(majors);
         setMajorOptions(majors);
         setPositionOptions(positions);
         setGenderOptions(genders);
@@ -60,14 +64,19 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
 
   const handleFacultyChange = (value: string) => {
     setSelectFaculty(value);
-
-    // เมื่อเลือก Faculty ให้ดึง Major ที่ตรงกับ Faculty นั้น
-    const faculty = facultyOptions.find(f => f.FacultyID === value);
-    setMajorOptions(faculty?.Majors || []);
+    
+    // กรองสาขาที่ตรงกับคณะ
+    const filtermajors = allMajors.filter(m => m.FacultyID == value);
+    setMajorOptions(filtermajors);
+    setSelectedMajor(null);
   }
 
 
   const onFinish = async (values: TeacherInterface) => {
+    if (!selectedMajor) {
+      message.error("กรุณาเลือกสาขา");
+      return;
+    }
     console.log("Form values:", values);
 
     setLoading(true);
@@ -215,7 +224,11 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
               name="MajorID"
               rules={[{ required: true, message: "กรุณาเลือกสาขา!" }]}
             >
-              <Select placeholder="เลือกสาขา">
+              <Select
+                placeholder="เลือกสาขา"
+                value={selectedMajor ?? undefined}
+                onChange={(value) => setSelectedMajor(value)}
+              >
                 {majorOptions.map((m) => (
                   <Select.Option key={m.MajorID} value={m.MajorID}>
                     {m.MajorName}
