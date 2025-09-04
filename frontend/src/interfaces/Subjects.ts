@@ -5,10 +5,13 @@ export interface StudyTimeInterface {
 }
 
 export interface SectionInterface {
+  // Numeric primary key of Section (entity.ID)
   SectionID: number;
   Group: number;
   DateTeaching: string; // ส่งมาเป็น string จาก backend (format ใน controller)
   SubjectID: string;
+  // Optional human-friendly code (entity.SectionID string, e.g., SEC001)
+  SectionCode?: string;
 }
 
 export interface SubjectInterface {

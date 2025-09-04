@@ -22,6 +22,9 @@ async function tryBoth<T>(primary: () => Promise<T>, fallback: () => Promise<T>)
   }
 }
 
+// Avoid 304/strong caching in dev proxies
+const noCache = { headers: { "Cache-Control": "no-cache" as const }, params: { _ts: () => Date.now() } } as const;
+
 // ---------- CRUD / Query ----------
 
 // ดึงรายวิชาทั้งหมด
@@ -45,8 +48,8 @@ export const getSubjectAll = async (): Promise<SubjectInterface[]> => {
   };
 
   return tryBoth(
-    async () => normalizeList((await axios.get(`${apiUrl}/subjects`)).data),
-    async () => normalizeList((await axios.get(`${rootBase}/subjects`)).data)
+    async () => normalizeList((await axios.get(`${apiUrl}/subjects`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } })).data),
+    async () => normalizeList((await axios.get(`${rootBase}/subjects`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } })).data)
   );
 };
 
@@ -70,12 +73,23 @@ export const getSubjectById = async (subjectId: string): Promise<SubjectInterfac
     }));
 
     const sectionsSrc: any[] = raw.Sections ?? raw.sections ?? [];
-    const sections: SectionInterface[] = sectionsSrc.map((s: any) => ({
-      SectionID: Number(s.SectionID ?? s.section_id ?? s.id ?? 0),
-      Group: Number(s.Group ?? s.group ?? 0),
-      DateTeaching: String(s.DateTeaching ?? s.date_teaching ?? ""),
-      SubjectID: subjectId,
-    }));
+    const sections: SectionInterface[] = sectionsSrc.map((s: any, idx: number) => {
+      const codeVal = s.SectionID ?? s.section_id ?? "";
+      const idVal = s.ID ?? s.id;
+      const numericFromCode = typeof codeVal === "string" && /^\d+$/.test(codeVal) ? Number(codeVal) : (typeof codeVal === "number" ? codeVal : 0);
+      let sectionId = Number(idVal ?? numericFromCode ?? 0);
+      if (!Number.isFinite(sectionId) || sectionId <= 0) {
+        // Backend ไม่ส่ง id เชิงตัวเลขมา → ใช้ลำดับ (idx+1) เป็นค่าแทนเพื่อให้ใช้งานเลือกได้
+        sectionId = idx + 1;
+      }
+      return {
+        SectionID: sectionId,
+        Group: Number(s.Group ?? s.group ?? 0),
+        DateTeaching: String(s.DateTeaching ?? s.date_teaching ?? ""),
+        SubjectID: subjectId,
+        SectionCode: String(codeVal || ""),
+      } as SectionInterface;
+    });
 
     return {
       SubjectID: String(subjectId ?? ""),
@@ -89,7 +103,7 @@ export const getSubjectById = async (subjectId: string): Promise<SubjectInterfac
   };
 
   try {
-    const res = await axios.get(`${apiUrl}/subjects/${encodeURIComponent(code)}`);
+    const res = await axios.get(`${apiUrl}/subjects/${encodeURIComponent(code)}`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } });
     return normalize(res.data);
   } catch (e: any) {
     const err = e as AxiosError;
@@ -97,7 +111,7 @@ export const getSubjectById = async (subjectId: string): Promise<SubjectInterfac
     if (err.response && err.response.status === 404) return null;
     // ลอง fallback อีกฐาน
     try {
-      const res2 = await axios.get(`${rootBase}/subjects/${encodeURIComponent(code)}`);
+      const res2 = await axios.get(`${rootBase}/subjects/${encodeURIComponent(code)}`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } });
       return normalize(res2.data);
     } catch (e2: any) {
       const err2 = e2 as AxiosError;

@@ -4,15 +4,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"reg_system/config"
 	"reg_system/entity"
-	"reg_system/services"
 )
 
-// POST /api/registrations
 func CreateRegistration(c *gin.Context) {
-	var payload entity.Registration
-	if err := c.ShouldBindJSON(&payload); err != nil {
+	registration := new(entity.Registration)
+
+	if err := c.ShouldBind(&registration); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -28,24 +28,26 @@ func CreateRegistration(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Create registration success"})
 }
 func GetRegistrationAll(c *gin.Context) {
-	var registrations []entity.Registration
-	db := config.DB()
+    var registrations []entity.Registration
+    db := config.DB()
 
-	result := db.
-		Preload("Student").
-		Preload("Subject").
-		Preload("Subject.Semester").
-		Find(&registrations)
+    result := db.
+        Preload("Student").
+        Preload("Subject").
+        Preload("Subject.Semester").
+        Preload("Section").
+        Find(&registrations)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	svc := services.RegistrationService{DB: config.DB()}
-	if err := svc.CreateBulk(req.StudentID, req.Items); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No registrations found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Create registrations success", "count": len(req.Items)})
+
+	c.JSON(http.StatusOK, registrations)
 }
 
 func GetRegistrationByStudentID(c *gin.Context) {
@@ -112,10 +114,9 @@ func UpdateRegistration(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Registration updated successfully"})
 }
-
-// DELETE /api/registrations/:id
 func DeleteRegistration(c *gin.Context) {
 	id := c.Param("id")
 	var registration entity.Registration

@@ -3,7 +3,6 @@ package test
 import (
 	"reg_system/config"
 	"reg_system/entity"
-	"time"
 )
 
 func SubjectExample() {

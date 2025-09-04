@@ -139,8 +139,8 @@ func GetSubjectID(c *gin.Context) {
 		return
 	}
 
-	// เตรียม study_times
-	studyTimes := make([]map[string]interface{}, 0, len(sub.StudyTimes))
+    // เตรียม study_times
+    studyTimes := make([]map[string]interface{}, 0, len(sub.StudyTimes))
 	for _, t := range sub.StudyTimes {
 		studyTimes = append(studyTimes, map[string]interface{}{
 			"start_at": t.StartAt.Format("15:04:05"),
@@ -149,27 +149,29 @@ func GetSubjectID(c *gin.Context) {
 		})
 	}
 
-	// เตรียม sections
-	sections := make([]map[string]interface{}, 0, len(sub.Sections))
-	for _, s := range sub.Sections {
-		sections = append(sections, map[string]interface{}{
-			"section_id":    s.SectionID,
-			"group":         s.Group,
-			"date_teaching": s.DateTeaching.Format("Monday 15:04-16:04"),
-		})
-	}
+    // เตรียม sections
+    sections := make([]map[string]interface{}, 0, len(sub.Sections))
+    for _, s := range sub.Sections {
+        sections = append(sections, map[string]interface{}{
+            "section_id":    s.SectionID,
+            "group":         s.Group,
+            "date_teaching": s.DateTeaching,
+        })
+    }
 
-	resp := map[string]interface{}{
-		"subject_id":        sub.SubjectID,
-		"subject_name":      sub.SubjectName,
-		"credit":            sub.Credit,
-		"major_id":          sub.MajorID,
-		"faculty_id":        sub.FacultyID,
-		/*"teacher_id":        sub.TeacherID,
-		"teacher_firstname": sub.Teacher.FirstName,
-		"teacher_lastname":  sub.Teacher.LastName,*/
-		//"study_times":  sub.StudyTimes, // อ่านอย่างเดียว (CRUD แยกใน study time controller)
-	}
+    resp := map[string]interface{}{
+        "subject_id":        sub.SubjectID,
+        "subject_name":      sub.SubjectName,
+        "credit":            sub.Credit,
+        "major_id":          sub.MajorID,
+        "faculty_id":        sub.FacultyID,
+        /*"teacher_id":        sub.TeacherID,
+        "teacher_firstname": sub.Teacher.FirstName,
+        "teacher_lastname":  sub.Teacher.LastName,*/
+        // เพิ่มข้อมูลที่ frontend ต้องการใช้แสดง
+        "study_times": studyTimes,
+        "sections":    sections,
+    }
 	if sub.Major != nil {
 		resp["major_name"] = sub.Major.MajorName
 	}

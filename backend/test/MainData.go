@@ -28,6 +28,7 @@ func ExampleData() {
 	BookPathExample()
 	CurriculumExample()
 	SubjectExample()
+	SectionExample()
 	GradeExample()
 
 	student := entity.Students{
