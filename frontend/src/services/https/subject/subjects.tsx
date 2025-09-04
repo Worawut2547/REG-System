@@ -22,9 +22,6 @@ async function tryBoth<T>(primary: () => Promise<T>, fallback: () => Promise<T>)
   }
 }
 
-// Avoid 304/strong caching in dev proxies
-const noCache = { headers: { "Cache-Control": "no-cache" as const }, params: { _ts: () => Date.now() } } as const;
-
 // ---------- CRUD / Query ----------
 
 // ดึงรายวิชาทั้งหมด

@@ -8,15 +8,6 @@ const rootBase = apiUrl.startsWith("/")
   ? apiUrl
   : (apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl);
 
-interface RegistrationStudentInterface {
-    StudentID: string;
-    FirstName: string;
-    LastName: string;
-    MajorName: string;
-    FacultyName: string;
-    SubjectID?: string;
-}
-
 export const getStudentBySubjectID = async (subj_id: string) => {
     try {
         const response = await axios.get(`${apiUrl}/registrations/subjects/${subj_id}`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } });
