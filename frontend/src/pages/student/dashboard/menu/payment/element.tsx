@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Layout, Table, Cascader, Upload, Button, message, Spin } from 'antd';
 import type { CascaderProps, TableColumnsType, UploadProps } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-//import jsPDF from 'jspdf';
+import jsPDF from 'jspdf';
 import './payment.css';
 
 const { Content } = Layout;
