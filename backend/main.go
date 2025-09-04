@@ -82,6 +82,7 @@ func main() {
 
 		teacherGroup.GET("/:id/subjects", teachers.GetSubjectByTeacherID)
 		teacherGroup.POST("/grades", grade.CreateGrade)
+		teacherGroup.GET("/:id/students",teachers.GetStudentByTeacherID)
 	}
 
 	// -------------------- Majors --------------------
@@ -191,8 +192,8 @@ func main() {
 	billrGroup := r.Group("/bills")
 	{
 		billrGroup.GET("/", bill.GetBills)
-		billrGroup.GET("/:id", bill.GetBillByID)
-		billrGroup.POST("/", bill.CreateBill)
+		billrGroup.GET("/:id", bill.GetBillByStudentID)
+		billrGroup.POST("/:id", bill.CreateBill)
 		billrGroup.PUT("/:id", bill.UpdateBill)
 		billrGroup.DELETE("/:id", bill.DeleteBill)
 

@@ -1,7 +1,7 @@
 package entity
 // ตารางวิชา
 type Subject struct {
-	SubjectID   string `gorm:"unique" json:"SubjectID"`
+	SubjectID   string `gorm:"primaryKey;unique" json:"SubjectID"`
 	SubjectName string `json:"SubjectName"`
 	Credit      int    `json:"Credit"`
 	// ความสัมพันธ์กับ Semester (One-to-Many)

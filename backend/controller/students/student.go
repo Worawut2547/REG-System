@@ -5,7 +5,7 @@ import (
 
 	"reg_system/config"
 	"reg_system/entity"
-	"reg_system/services/grade"
+	"reg_system/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -76,7 +76,7 @@ func GetStudentID(c *gin.Context) {
 	}
 
 	// คำนวณ GPA
-	gpa := grade.CalculateGPA(students.Grade)
+	gpa := services.CalculateGPA(students.Grade)
 
 	// Step 3: สร้าง map สำหรับเก็บข้อมูลที่ต้องการส่งออก
 	//------------------------------------------------------------------

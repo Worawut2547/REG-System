@@ -39,6 +39,9 @@ type Students struct {
 
 	Grade []Grades `gorm:"foreignKey:StudentID;references:StudentID" json:"Grade"` // ระบุความสัมพันธ์เเบบ 1--many[Grade]
 
+	TeacherID string    `json:"TeacherID"`
+	Teacher   *Teachers `gorm:"foreignKey:TeacherID;references:TeacherID"`
+
 	Address     string `json:"Address"`
 	Nationality string `json:"Nationality"`
 	Ethnicity   string `json:"Ethnicity"`

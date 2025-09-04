@@ -5,6 +5,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { getStudentAll, deleteStudent } from '../../../../../../services/https/student/student';
 import type { StudentInterface } from '../../../../../../interfaces/Student';
+import Swal from 'sweetalert2';
 interface ShowStudentPageProps {
   onCreate?: () => void;
 }
@@ -95,14 +96,24 @@ const ShowStudentPage: React.FC<ShowStudentPageProps> = ({ onCreate }) => {
   const handleDelete = async (StudentID: string) => {
     try {
       await deleteStudent(StudentID)
-
       
+      // อัปเดต state เอาคนที่ถูกลบออก
+      setStudents(prev => prev.filter(student => student.StudentID !== StudentID));
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "ลบข้อมูลนักศึกษาสำเร็จ",
+        confirmButtonColor: "#3085d6",
+      })
     }
     catch (error) {
-      message.error('ลบข้อมูลไม่สำเร็จ');
       console.error(error);
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "ลบข้อมูลนักศึกษาไม่สำเร็จ"
+      })
     }
-
   }
   return (
     <>

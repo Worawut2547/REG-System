@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Col, Row, Table, Button, Space, Popconfirm, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import Swal from 'sweetalert2';
 import type { ColumnsType } from 'antd/es/table';
 import { getTeacherAll, deleteTeacher } from '../../../../../../services/https/teacher/teacher';
 import type { TeacherInterface } from '../../../../../../interfaces/Teacher';
@@ -89,43 +90,54 @@ const ShowTeacherPage: React.FC<ShowTeacherPageProps> = ({ onCreate }) => {
   const handleDelete = async (TeacherID: string) => {
     try {
       await deleteTeacher(TeacherID);
-      message.success('ลบข้อมูลสำเร็จ');
+
+      // อัปเดต State
       setTeachers(prev => prev.filter(teacher => teacher.TeacherID !== TeacherID));
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "ลบข้อมูลอาจารย์สำเร็จ",
+        confirmButtonColor: "#3085d6",
+      });
     }
     catch (error) {
-        message.error('ลบข้อมูลไม่สำเร็จ');
-        console.error(error);
+      console.error(error);
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "ลบข้อมูลอาจารย์ไม่สำเร็จ",
+      });
     }
   }
 
   return (
-      <>
-        <Row gutter={[16, 16]}>
-          <Col span={12}>
-            <h2>จัดการข้อมูลอาจารย์</h2>
-          </Col>
+    <>
+      <Row gutter={[16, 16]}>
+        <Col span={12}>
+          <h2>จัดการข้อมูลอาจารย์</h2>
+        </Col>
 
-          <Col span={12} style={{ textAlign: "end", alignSelf: "center" }}>
-            <Space>
-              <Button onClick={onCreate} type="primary" icon={<PlusOutlined />} >
-                สร้างข้อมูลอาจารย์ใหม่
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+        <Col span={12} style={{ textAlign: "end", alignSelf: "center" }}>
+          <Space>
+            <Button onClick={onCreate} type="primary" icon={<PlusOutlined />} >
+              สร้างข้อมูลอาจารย์ใหม่
+            </Button>
+          </Space>
+        </Col>
+      </Row>
 
-        <div style={{ marginTop: 20 }}>
-          <Table
-            rowKey="ID"
-            columns={columns(handleDelete)}
-            dataSource={teacher}
-            style={{ width: "100%", overflow: "scroll" }}
-          >
-          </Table>
-        </div>
-      </>
-    );
+      <div style={{ marginTop: 20 }}>
+        <Table
+          rowKey="ID"
+          columns={columns(handleDelete)}
+          dataSource={teacher}
+          style={{ width: "100%", overflow: "scroll" }}
+        >
+        </Table>
+      </div>
+    </>
+  );
 }
 
 
-  export default ShowTeacherPage;
+export default ShowTeacherPage;

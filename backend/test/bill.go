@@ -11,17 +11,17 @@ func BillExample() {
 	// สร้างตัวอย่างบิล
 	bills := []entity.Bill{
 		{
-			BillID:     "BIL001",
+			//BillID:     "BIL001",
 			TotalPrice:     1500.00,
 			//StudentID:  "STU001",
-			RegistrationID: "REG001",
+			StudentID: "B6616052",
 			Date:       time.Now(),
 		},
 		{
-			BillID:     "BIL002",
+			//BillID:     "BIL002",
 			TotalPrice:     2000.00,
-			//StudentID:  "STU002",
-			RegistrationID: "REG002",
+			StudentID:  "STU002",
+			//RegistrationID: "REG002",
 			Date:       time.Now(),
 		},
 

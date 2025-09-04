@@ -70,7 +70,6 @@ func GetTeacherID(c *gin.Context) {
 		"MajorName":   majorName,
 		"Position":    positionName,
 	}
-
 	c.JSON(http.StatusOK, response)
 }
 
@@ -211,6 +210,36 @@ func UpdateTeacher(c *gin.Context) {
 	c.JSON(http.StatusOK, teacher)
 }
 
+func GetStudentByTeacherID(c *gin.Context) {
+	tid := c.Param("id")
+	var teacher entity.Teachers
+
+	db := config.DB()
+	result := db.Preload("Student").
+		Preload("Student.Degree").
+		Find(&teacher, "teacher_id = ?", tid)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK , teacher)
+}
+
+type Output struct {
+	StudentID   string `json:"StudentID"`
+	FirstName   string `json:"FirstName"`
+	LastName    string `json:"LastName"`
+	FacultyName string `json:"FacultyName"`
+	MajorName   string `json:"MajorName"`
+	Degree      string `json:"Degree"`
+}
+
 func GetSubjectByTeacherID(c *gin.Context) {
 	tid := c.Param("id")
 	var teacher entity.Teachers
@@ -237,10 +266,10 @@ func GetSubjectByTeacherID(c *gin.Context) {
 	var response []SubjectTeacherResponse
 	for _, subj := range teacher.Subject {
 		response = append(response, SubjectTeacherResponse{
-			SubjectID:   subj.SubjectID,
-			SubjectName: subj.SubjectName,
-			Credit:      subj.Credit,
-			Term: subj.Semester.Term,
+			SubjectID:    subj.SubjectID,
+			SubjectName:  subj.SubjectName,
+			Credit:       subj.Credit,
+			Term:         subj.Semester.Term,
 			AcademicYear: subj.Semester.AcademicYear,
 		})
 	}

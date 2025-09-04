@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { Form, Input, Button, Row, Col, Space, Card, Divider, message, Select } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-
+import Swal from "sweetalert2";
 
 import type { StudentInterface } from "../../../../../../interfaces/Student";
 import { createStudent } from "../../../../../../services/https/student/student";
@@ -68,10 +68,6 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
     setMajorOptions(filteredMajors);
 
     setSelectedMajor(null);
-
-    // เมื่อเลือก Faculty ให้ดึง Major ที่ตรงกับ Faculty นั้น
-    /*const faculty = facultyOptions.find(f => f.FacultyID === value);
-    setMajorOptions(faculty?.Majors || []);*/
   }
 
   const onFinish = async (values: StudentInterface) => {
@@ -84,11 +80,20 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
     setLoading(true);
     try {
       await createStudent(values);
-      message.success("สร้างข้อมูลนักศึกษาเรียบร้อยแล้ว");
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "เพิ่มข้อมูลนักศึกษาสำเร็จ",
+        confirmButtonColor: "#3085d6",
+      });
     }
     catch (error) {
       console.error("เกิดข้อผิดพลาดในการสร้างนักศึกษา:", error);
-      message.error("เกิดข้อผิดพลาดในการสร้างนักศึกษา");
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "ไม่สามารถเพิ่มข้อมูลนักศึกษาได้",
+      });
     }
     finally {
       setLoading(false);

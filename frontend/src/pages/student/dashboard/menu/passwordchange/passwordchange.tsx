@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layout, Button, Form, Input, message, Typography, Card, Avatar } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import Swal from 'sweetalert2'
 import { changePassword } from '../../../../../services/auth/change';
 import './passwordchange.css';
 
@@ -48,7 +49,7 @@ const footerStyle: React.CSSProperties = {
 const PasswordChange: React.FC = () => {
   const [form] = Form.useForm();
 
-  const onFinish = async(values: any) => {
+  const onFinish = async (values: any) => {
     if (values.NewPassword !== values.ConfirmPassword) {
       message.error("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
       return;
@@ -59,14 +60,23 @@ const PasswordChange: React.FC = () => {
       NewPassword: values.NewPassword,
     };
 
-    try{
+    try {
       await changePassword(payload);
-      message.success("เเก้ไขรหัสผ่านสำเร็จ")
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "เปลี่ยนรหัสผ่านสำเร็จ",
+        confirmButtonColor: "#3085d6",
+      });
     }
-    catch(error){
-      message.success("เปลี่ยนรหัสผ่านสำเร็จ!");
+    catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "เปลี่ยนรหัสผ่านไม่สำเร็จ",
+      });
     }
-    finally{
+    finally {
       form.resetFields();
     }
   };

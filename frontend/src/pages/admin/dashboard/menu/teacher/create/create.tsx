@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Form, Input, Button, Row, Col, Space, Card, Divider, message, Select } from 'antd';
 import { PlusOutlined } from "@ant-design/icons";
-
+import Swal from "sweetalert2";
 
 import { type TeacherInterface } from '../../../../../../interfaces/Teacher';
 import { createTeacher } from '../../../../../../services/https/teacher/teacher';
@@ -64,7 +64,7 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
 
   const handleFacultyChange = (value: string) => {
     setSelectFaculty(value);
-    
+
     // กรองสาขาที่ตรงกับคณะ
     const filtermajors = allMajors.filter(m => m.FacultyID == value);
     setMajorOptions(filtermajors);
@@ -82,11 +82,20 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
     setLoading(true);
     try {
       await createTeacher(values);
-      message.success("สร้างข้อมูลอาจารย์เรียบร้อยแล้ว");
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "เพิ่มข้อมูลอาจารย์สำเร็จ",
+        confirmButtonColor: "#3085d6",
+      });
     }
     catch (error) {
       console.error("เกิดข้อผิดพลาดในการสร้างอาจารย์:", error);
-      message.error("เกิดข้อผิดพลาดในการสร้างอาจารย์");
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "ไม่สามารถเพิ่มข้อมูลนักศึกษาได้",
+      });
     }
     finally {
       setLoading(false);
