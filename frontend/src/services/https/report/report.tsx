@@ -67,13 +67,20 @@ export type CreateReportPayload = {
   ReportType_id: string;
   Report_details: string;
   ReportSubmission_date?: string; // ISO
-  attachments?: any[];            // optional
+  file?: File | Blob | null;      // optional single file
 };
 
+// Always submit multipart form because backend expects PostForm fields
 export const createReport = async (payload: CreateReportPayload): Promise<ReportInterface> => {
-  // Backend ใช้คีย์แบบเดียวกันใน entity → ส่งตรง
   try {
-    const res = await axios.post(`${apiUrl}/reports/`, payload);
+    const form = new FormData();
+    form.append("student_id", payload.StudentID);
+    form.append("report_type_id", payload.ReportType_id);
+    form.append("reviewer_id", payload.Reviewer_id);
+    form.append("details", payload.Report_details);
+    if (payload.ReportSubmission_date) form.append("submittion_date", payload.ReportSubmission_date);
+    if (payload.file) form.append("file", payload.file);
+    const res = await axios.post(`${apiUrl}/reports/`, form, { headers: { "Content-Type": "multipart/form-data" } });
     return res.data as ReportInterface;
   } catch (error) {
     console.error("Error creating report:", error);
@@ -107,7 +114,8 @@ export const findReviewerIdByUsername = async (username: string): Promise<string
 export type ReviewerOption = { value: string; label: string };
 export const listReviewerOptions = async (): Promise<ReviewerOption[]> => {
   try {
-    const res = await axios.get(`${apiUrl}/reviewers`);
+    // Use trailing slash to avoid backend redirect that drops the /api prefix
+    const res = await axios.get(`${apiUrl}/reviewers/`);
     const arr = Array.isArray(res.data) ? res.data : [];
     return arr.map((x: any) => ({ value: x.value ?? x.Value ?? x.reviewer_id ?? x.Reviewer_id, label: x.label ?? x.Label ?? x.username ?? "" }));
   } catch (error) {

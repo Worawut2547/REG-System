@@ -29,13 +29,15 @@
 .rq-tab { flex: 1; }
 
 /* ---------- Table-like Grid ---------- */
-.rq-inner { display: flex; flex-direction: column; }
+.rq-inner { display: flex; flex-direction: column; overflow-x: auto; }
 .rq-headrow, .rq-grid-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr; /* เรื่อง / จาก / วันที่ยื่น / รายละเอียด */
+  /* เรื่อง / จาก / วันที่ยื่น / สถานะ / รายละเอียด */
+  grid-template-columns: 1.6fr 1.1fr 1fr .9fr 1fr;
   gap: 8px;
   padding: 8px 16px;
   align-items: center;
+  min-width: 720px; /* ทำให้เลื่อนแนวนอนได้เมื่อจอแคบ */
 }
 .rq-headrow { background: #f0f0f0; font-weight: bold; }
 .rq-grid-row:nth-child(even) { background: #fafafa; }
@@ -53,3 +55,13 @@
 .rq-cell--clickable { color: #1890ff; cursor: pointer; text-align: center; }
 .rq-cell--clickable:hover { text-decoration: underline; }
 .rq-cell-label { font-size: 14px; font-weight: 500; }
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 992px) {
+  .rq-container { max-width: 100%; }
+  .rq-title { font-size: 16px; }
+  .rq-cell, .rq-coltitle { font-size: 13px; }
+}
+@media (max-width: 576px) {
+  .rq-cell, .rq-coltitle { font-size: 12px; }
+}

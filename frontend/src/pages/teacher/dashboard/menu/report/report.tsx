@@ -1,65 +1,68 @@
+// src/pages/teacher/dashboard/menu/report/report.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Layout, Modal, Typography, Empty, message, Spin, Button } from "antd";
+import { Layout, Card, Table, Tag, Button, Modal, Typography, message, Spin } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { apiUrl } from "../../../../../services/api";
 import "./report.css";
 
 const { Header, Content, Footer } = Layout;
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
+type AnyObj = Record<string, any>;
 
-/* ---------- Types ---------- */
-type Attachment = {
-  attachment_id?: string;
-  Attachment_id?: string;
+// register.tsx  – only wrapperStyle changed
+const wrapperStyle: React.CSSProperties = {
+  /* keep your corner-rounding / shadow if you like */
+  borderRadius: 8,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 
-  // ชื่อไฟล์จาก backend มีได้หลายคีย์
-  file_name?: string;
-  File_name?: string;
-  Attachment_File_Name?: string;
-
-  // path จาก backend มีได้หลายคีย์
-  file_path?: string;
-  File_path?: string;
-  Attachment_File_Path?: string;
-
-  uploaded_date?: string;
-  Uploaded_date?: string;
+  /* 👇 stretch full size of parent Content */
+  width: '100%',          // fill X
+  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
+  display: 'flex',        // so Header/Content/Footer stack vertically
+  flexDirection: 'column',
+  overflow: 'hidden',
 };
 
-type ReportRow = {
-  Report_id: string;
-  report_id?: string;
-
-  Report_details?: string;
-  report_details?: string;
-
-  StudentID?: string;
-  student_id?: string;
-
-  Reviewer_id?: string;
-  reviewer_id?: string;
-
-  ReportType_id?: string;
-  ReportType?: { ReportType_Name?: string } | null;
-
-  Submittion_date?: string;
-  Submission_date?: string;
-  submittion_date?: string;
-  created_at?: string;
-  CreatedAt?: string;
-
-  Status?: string;
-  status?: string;
-  ReportStatus?: string;
-
-  Attachment?: Attachment | Attachment[] | null;
-  Attachments?: Attachment[] | null;
-  attachments?: Attachment[] | null;
+const headerStyle: React.CSSProperties = {
+  background: '#2e236c',            // ม่วงเข้ม
+  color: 'white',
+  textAlign: 'center',
+  padding: 16,
+  fontSize: 20,
 };
 
-/* ---------- HTTP helpers ---------- */
+const contentStyle: React.CSSProperties = {
+  background: '#f5f5f5',            // เทาอ่อน
+  padding: 24,
+  minHeight: 400,
+  color: '#333',
+  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
+};
+
+const footerStyle: React.CSSProperties = {
+  background: '#1890ff',            // ฟ้า Ant Design
+  color: 'white',
+  textAlign: 'center',
+  padding: 12,
+};
+
+// Helpers
+const toApi = (p: string) => (!p ? "" : p.startsWith("http") ? p : p.startsWith("/") ? `${apiUrl}${p}` : `${apiUrl}/${p}`);
+const pickDate = (r: AnyObj): Date | null => {
+  const s = r.Submittion_date || r.Submission_date || r.submittion_date || r.created_at || r.Created_at || r.CreatedAt;
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(+d) ? null : d;
+};
+const fmtDate = (d: Date | null) => (d ? d.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) : "-");
+const pickStatus = (r: AnyObj): string => r.Status || r.ReportStatus || r.status || "รอดำเนินการ";
+const normalizeAttachments = (a: any): AnyObj[] => (!a ? [] : Array.isArray(a) ? a : Array.isArray(a.attachments) ? a.attachments : [a]);
+const attName = (a: AnyObj) => a.File_Name || a.file_name || a.Attachment_File_Name || a.Attachment_id || a.attachment_id || "ไฟล์แนบ";
+const attPath = (a: AnyObj) => a.File_Path || a.file_path || a.Attachment_File_Path || "";
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, init);
+  const res = await fetch(`${apiUrl}${path}`, init);
   const isJSON = res.headers.get("content-type")?.includes("application/json");
   if (!res.ok) {
     const body = isJSON ? await res.json().catch(() => ({})) : await res.text();
@@ -67,347 +70,142 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return (isJSON ? await res.json() : ((await res.text()) as T)) as T;
 }
-async function httpPut<T>(path: string, body: any): Promise<T> {
-  return http<T>(path, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
 
-/* ---------- helpers ---------- */
-function pickDate(r: ReportRow): string | undefined {
-  return (
-    r.Submittion_date ||
-    r.Submission_date ||
-    r.submittion_date ||
-    r.created_at ||
-    (r as any).Created_at ||
-    r.CreatedAt
-  );
-}
-function fmtDate(s?: string) {
-  if (!s) return "—";
-  const d = new Date(s);
-  if (isNaN(+d)) return "—";
-  return d.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
-}
-function normalizeAttachments(a: any): Attachment[] {
-  if (!a) return [];
-  if (Array.isArray(a)) return a;
-  if (Array.isArray(a.attachments)) return a.attachments;
-  return [a];
-}
-function attName(a: Attachment) {
-  return (
-    a.file_name ||
-    a.File_name ||
-    a.Attachment_File_Name ||
-    a.attachment_id ||
-    a.Attachment_id ||
-    "ไฟล์แนบ"
-  );
-}
-function attPath(a: Attachment) {
-  return a.file_path || a.File_path || a.Attachment_File_Path || "";
-}
-function toHref(p: string) {
-  if (!p) return "";
-  if (p.startsWith("http://") || p.startsWith("https://")) return p;
-  if (!p.startsWith("/")) return `${API_BASE}/${p}`;
-  return `${API_BASE}${p}`;
-}
-
-/* ---------- Page ---------- */
 const TeacherReport: React.FC = () => {
-  // รวม candidate หลายค่าเพื่อหา reviewer ให้เจอแม่นขึ้น
+  // ตัวช่วยหา reviewer ของผู้ใช้ปัจจุบัน
   const candidates = useMemo(() => {
     if (typeof window === "undefined") return [] as string[];
-    const vals = [
-      localStorage.getItem("reviewer_id") || "",
-      localStorage.getItem("username") || "",
-      localStorage.getItem("teacher_id") || "",
-      localStorage.getItem("email") || "",
-    ]
-      .map((s) => s.trim())
-      .filter(Boolean);
-    return Array.from(new Set(vals));
+    return Array.from(new Set([
+      localStorage.getItem("reviewer_id"),
+      localStorage.getItem("username"),
+      localStorage.getItem("teacher_id"),
+      localStorage.getItem("email"),
+    ].filter(Boolean).map((s) => s!.trim())));
   }, []);
 
-  const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<ReportRow[]>([]);
+  const [rows, setRows] = useState<AnyObj[]>([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<ReportRow | null>(null);
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [sel, setSel] = useState<AnyObj | null>(null);
+  const [atts, setAtts] = useState<AnyObj[]>([]);
   const [attLoading, setAttLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-
-        // เดาว่า reviewer_id เก็บไว้ใน localStorage (หรือหาได้จาก /reviewers/by-username/<username>)
+        // หา reviewer_id
         let rid = localStorage.getItem("reviewer_id") || "";
         if (!rid && candidates.length) {
           for (const cand of candidates) {
             try {
-              const r = await http<{ reviewer_id: string }>(
-                `/reviewers/by-username/${encodeURIComponent(cand)}`
-              );
-              if (r?.reviewer_id) {
-                rid = r.reviewer_id;
-                localStorage.setItem("reviewer_id", rid);
-                break;
-              }
+              const r = await http<{ reviewer_id: string }>(`/reviewers/by-username/${encodeURIComponent(cand)}`);
+              if (r?.reviewer_id) { rid = r.reviewer_id; localStorage.setItem("reviewer_id", rid); break; }
             } catch {}
           }
         }
 
-        // โหลดรายการสำหรับ reviewer
-        let data: ReportRow[] = [];
+        // ดึงรายการของ reviewer
+        let list: AnyObj[] = [];
         if (rid) {
+          try { list = await http<AnyObj[]>(`/reviewers/${encodeURIComponent(rid)}/reports`); } catch {}
+        }
+        if (!list?.length) {
+          // fallback: ผู้ใช้บทบาท teacher ทั้งหมด
+          try { list = await http<AnyObj[]>(`/reports/?role=teacher`); } catch {}
+        }
+        if (!list?.length) {
+          // fallback สุดท้าย: ดึงทั้งหมดแล้วกรองด้วย username ปัจจุบัน
           try {
-            data = await http<ReportRow[]>(`/reviewers/${encodeURIComponent(rid)}/reports`);
+            const all = await http<AnyObj[]>(`/reports/`);
+            const lowers = candidates.map((s) => s.toLowerCase());
+            list = (all || []).filter((r) => {
+              if (rid && (r.Reviewer_id === rid || r.reviewer_id === rid)) return true;
+              const u = r?.Reviewer?.User?.Username || r?.Reviewer?.user?.username || "";
+              return u && lowers.includes(String(u).toLowerCase());
+            });
           } catch {}
         }
-        if (!data?.length) {
-          // fallback: ดึงทั้งหมดแล้วกรอง
-          const all = await http<ReportRow[]>(`/reports`);
-          const lowers = candidates.map((c) => c.toLowerCase());
-          data = (all || []).filter((r) => {
-            if (rid && (r.Reviewer_id === rid || (r as any).reviewer_id === rid)) return true;
-            const u = (r as any)?.Reviewer?.User?.Username || "";
-            return u && lowers.includes(u.toLowerCase());
-          });
-        }
 
-        setRows(
-          [...(data || [])].sort((a, b) => {
-            const ta = new Date(pickDate(a) ?? 0).getTime();
-            const tb = new Date(pickDate(b) ?? 0).getTime();
-            return tb - ta;
-          })
-        );
+        const ordered = [...(list || [])].sort((a, b) => (pickDate(b)?.getTime() ?? 0) - (pickDate(a)?.getTime() ?? 0));
+        setRows(ordered);
       } catch (e: any) {
         message.error(e?.message || "โหลดข้อมูลล้มเหลว");
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
+      } finally { setLoading(false); }
     })();
   }, [candidates]);
 
-  const refreshList = async () => {
+  const columns: ColumnsType<AnyObj> = [
+    { title: "เรื่อง", key: "type", render: (_: any, r: AnyObj) => r?.ReportType?.ReportType_Name ?? r?.ReportType_id ?? "-" },
+    { title: "จาก", key: "from", render: (_: any, r: AnyObj) => r.StudentID || r.student_id || "-", width: 160 },
+    {
+      title: "วันที่ยื่น", key: "date", width: 200, sorter: (a, b) => (pickDate(a)?.getTime() ?? 0) - (pickDate(b)?.getTime() ?? 0), defaultSortOrder: "descend",
+      render: (_: any, r: AnyObj) => fmtDate(pickDate(r)),
+    },
+    { title: "สถานะ", key: "status", width: 140, render: (_: any, r: AnyObj) => {
+      const s = pickStatus(r); const color = s === "อนุมัติ" ? "green" : s === "ไม่อนุมัติ" ? "red" : "gold"; return <Tag color={color}>{s}</Tag>;
+    }},
+    { title: "รายละเอียดทั้งหมด", key: "action", width: 160, render: (_: any, r: AnyObj) => (<Button type="link" onClick={() => openModal(r)}>ดูรายละเอียด</Button>) },
+  ];
+
+  const openModal = async (r: AnyObj) => {
+    setSel(r); setOpen(true);
+    const pre = normalizeAttachments(r.Attachments || r.attachments || r.Attachment);
+    if (pre.length) { setAtts(pre); return; }
+    setAttLoading(true);
     try {
-      setLoading(true);
-      const rid = localStorage.getItem("reviewer_id") || "";
-      let data: ReportRow[] = [];
-      if (rid) {
-        try {
-          data = await http<ReportRow[]>(`/reviewers/${encodeURIComponent(rid)}/reports`);
-        } catch {}
-      }
-      if (!data?.length) {
-        const all = await http<ReportRow[]>(`/reports`);
-        const lowers = candidates.map((c) => c.toLowerCase());
-        data = (all || []).filter((r) => {
-          if (rid && (r.Reviewer_id === rid || (r as any).reviewer_id === rid)) return true;
-          const u = (r as any)?.Reviewer?.User?.Username || "";
-          return u && lowers.includes(u.toLowerCase());
-        });
-      }
-      setRows(
-        [...(data || [])].sort((a, b) => {
-          const ta = new Date(pickDate(a) ?? 0).getTime();
-          const tb = new Date(pickDate(b) ?? 0).getTime();
-          return tb - ta;
-        })
-      );
-    } finally {
-      setLoading(false);
-    }
+      const id = r.Report_id || r.report_id;
+      const one = await http<AnyObj>(`/reports/${encodeURIComponent(String(id))}`);
+      setAtts(normalizeAttachments(one?.Attachments || one?.attachments || one?.Attachment));
+    } catch { setAtts([]); } finally { setAttLoading(false); }
   };
 
-  const openModal = async (item: ReportRow) => {
-    setSelected(item);
-    setOpen(true);
-
-    const inline =
-      normalizeAttachments(item.Attachment) ||
-      normalizeAttachments(item.Attachments) ||
-      normalizeAttachments(item.attachments);
-    if (inline.length) {
-      setAttachments(inline);
-      return;
-    }
-
-    // fallback: ยิง API ไปดึงไฟล์ตาม report
+  const changeStatus = async (status: string) => {
+    if (!sel) return;
+    const id = sel.Report_id || sel.report_id;
+    setSaving(true);
     try {
-      setAttLoading(true);
-      const id = item.Report_id || item.report_id!;
-      let atts: Attachment[] = [];
-      try {
-        atts = await http<Attachment[]>(`/attachments/by-report/${encodeURIComponent(id)}`);
-      } catch {
-        try {
-          atts = await http<Attachment[]>(`/attachments?report_id=${encodeURIComponent(id)}`);
-        } catch {
-          atts = [];
-        }
-      }
-      setAttachments(atts || []);
-    } finally {
-      setAttLoading(false);
-    }
-  };
-
-  const changeStatus = async (status: "อนุมัติ" | "ไม่อนุมัติ") => {
-    if (!selected) return;
-    try {
-      setSaving(true);
-      const id = selected.Report_id || selected.report_id!;
-      await httpPut(`/reports/${encodeURIComponent(id)}/status`, { status });
-      message.success(`อัปเดตสถานะเป็น "${status}" แล้ว`);
-      setOpen(false);
-      setSelected(null);
-      await refreshList();
+      await http(`/reports/${encodeURIComponent(String(id))}/status`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+      setRows(prev => prev.map(r => (String(r.Report_id || r.report_id) === String(id) ? { ...r, Status: status } : r)));
+      message.success("อัปเดตสถานะสำเร็จ");
+      setOpen(false); setSel(null);
     } catch (e: any) {
       message.error(e?.message || "อัปเดตสถานะไม่สำเร็จ");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   return (
-    <Layout
-      style={{
-        borderRadius: 8,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-        width: "100%",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      <Header
-        style={{
-          background: "#2e236c",
-          color: "white",
-          textAlign: "center",
-          padding: 16,
-          fontSize: 20,
-          fontWeight: 700,
-        }}
-      >
-        ระบบคำร้อง (ผู้พิจารณา)
-      </Header>
 
-      <Content style={{ background: "#f5f5f5", padding: 24, minHeight: 400, color: "#333", overflowY: "auto" }}>
-        <div className="rq-center">
-          <div className="rq-container">
-            <div className="rq-panel">
-              <div className="rq-head">
-                <div className="rq-title">รายการคำร้องที่มอบหมายให้ฉัน</div>
-                <div className="rq-tab" />
-              </div>
+    <Layout style={wrapperStyle}>
+          <Header style={headerStyle}>ระบบคำร้อง</Header>
+          <Content style={contentStyle}>
+            <Card title="รายการคำร้องที่ส่งให้ฉัน" style={{ borderRadius: 8 }}>
+          <Table rowKey={(r) => r.Report_id || r.report_id} columns={columns as any} dataSource={rows} loading={loading} pagination={{ pageSize: 6 }} />
+        </Card>
 
-              <div className="rq-inner">
-                <div className="rq-headrow">
-                  <div className="rq-coltitle" style={{ minWidth: 220 }}>เรื่อง</div>
-                  <div className="rq-coltitle" style={{ minWidth: 160 }}>จาก</div>
-                  <div className="rq-coltitle" style={{ minWidth: 160 }}>วันที่ยื่น</div>
-                  <div className="rq-coltitle" style={{ minWidth: 180 }}>รายละเอียดทั้งหมด</div>
-                </div>
-
-                {loading ? (
-                  <div style={{ padding: 32, textAlign: "center" }}>
-                    <Spin />
-                  </div>
-                ) : rows.length === 0 ? (
-                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่มีคำร้อง" />
-                ) : (
-                  rows.map((item) => (
-                    <div key={item.Report_id || item.report_id} className="rq-grid rq-grid-row">
-                      <div className="rq-cell" style={{ minWidth: 220 }}>
-                        <Text className="rq-text">
-                          {item.ReportType?.ReportType_Name ?? item.ReportType_id ?? "—"}
-                        </Text>
-                      </div>
-                      <div className="rq-cell" style={{ minWidth: 160 }}>
-                        <Text className="rq-text">
-                          {item.StudentID || item.student_id || "—"}
-                        </Text>
-                      </div>
-                      <div className="rq-cell" style={{ minWidth: 160 }}>
-                        <Text className="rq-text">{fmtDate(pickDate(item))}</Text>
-                      </div>
-                      <div
-                        className="rq-cell rq-cell--clickable"
-                        style={{ minWidth: 180 }}
-                        onClick={() => openModal(item)}
-                      >
-                        <span className="rq-cell-label">ดูรายละเอียด</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal รายละเอียด */}
         <Modal open={open} onCancel={() => setOpen(false)} footer={null} centered title="รายละเอียดคำร้อง">
-          {selected ? (
+          {sel && (
             <div>
-              <Title level={5} style={{ marginBottom: 4 }}>
-                {selected.ReportType?.ReportType_Name ?? selected.ReportType_id ?? "—"}
-              </Title>
-
-              <div style={{ marginBottom: 6 }}>
-                <Text type="secondary">จาก: </Text>
-                <Text>{selected.StudentID || selected.student_id || "—"}</Text>
-              </div>
-
-              <div style={{ marginBottom: 6 }}>
-                <Text type="secondary">วันที่ยื่น: </Text>
-                <Text>{fmtDate(pickDate(selected))}</Text>
-              </div>
-
-              <div style={{ marginBottom: 10 }}>
-                <Text type="secondary">รายละเอียด: </Text>
-                <div>{selected.Report_details || selected.report_details || "—"}</div>
-              </div>
-
+              <Title level={5} style={{ marginBottom: 4 }}>{sel.ReportType?.ReportType_Name ?? sel.ReportType_id ?? "-"}</Title>
+              <div style={{ marginBottom: 6 }}><Text type="secondary">จาก: </Text><Text>{sel.StudentID || sel.student_id || "-"}</Text></div>
+              <div style={{ marginBottom: 6 }}><Text type="secondary">วันที่ยื่น: </Text><Text>{fmtDate(pickDate(sel))}</Text></div>
+              <div style={{ marginBottom: 10 }}><Text type="secondary">รายละเอียด: </Text><div>{sel.Report_details || sel.report_details || "-"}</div></div>
               <div style={{ marginBottom: 12 }}>
                 <Text type="secondary">ไฟล์แนบ: </Text>
-                {attLoading ? (
-                  <div style={{ display: "inline-block", marginLeft: 8 }}><Spin size="small" /></div>
-                ) : attachments.length === 0 ? (
-                  <Text>—</Text>
-                ) : (
+                {attLoading ? (<span style={{ marginLeft: 8 }}><Spin size="small" /></span>) : (atts.length === 0 ? (<Text>—</Text>) : (
                   <ul style={{ marginTop: 8 }}>
-                    {attachments.map((a, idx) => {
-                      const href = toHref(attPath(a));
+                    {atts.map((a, i) => {
+                      const href = toApi(attPath(a));
                       return (
-                        <li key={a.attachment_id || a.Attachment_id || String(idx)}>
-                          {href ? (
-                            <a href={href} target="_blank" rel="noreferrer">
-                              {attName(a)}
-                            </a>
-                          ) : (
-                            <span>{attName(a)}</span>
-                          )}
+                        <li key={a.attachment_id || a.Attachment_id || String(i)}>
+                          {href ? <a href={href} target="_blank" rel="noreferrer">{attName(a)}</a> : <span>{attName(a)}</span>}
                         </li>
                       );
                     })}
                   </ul>
-                )}
+                ))}
               </div>
-
-              {/* ปุ่มสถานะ */}
               <div style={{ marginTop: 16, display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <Button disabled={saving} onClick={() => changeStatus("ไม่อนุมัติ")}>
                   ไม่อนุมัติ
@@ -417,14 +215,12 @@ const TeacherReport: React.FC = () => {
                 </Button>
               </div>
             </div>
-          ) : null}
+          )}
         </Modal>
-      </Content>
+          </Content>
+          <Footer style={footerStyle}>Footer © 2025</Footer>
+        </Layout>
 
-      <Footer style={{ background: "#1890ff", color: "white", textAlign: "center", padding: 12 }}>
-        Footer © 2025
-      </Footer>
-    </Layout>
   );
 };
 

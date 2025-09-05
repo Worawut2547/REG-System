@@ -1,13 +1,13 @@
 package test
 
 import (
-	"log"
-	"time"
+    "log"
+    "time"
 
-	"reg_system/config"
-	"reg_system/entity"
+    "reg_system/config"
+    "reg_system/entity"
 
-	"github.com/google/uuid"
+    "github.com/google/uuid"
 )
 
 
@@ -25,17 +25,36 @@ func ReportExampleData() {
 		}
 	}
 
-	// ---------- Reviewer ----------
-	// สมมติ Reviewer มี User ที่ผูก Username ไว้แล้ว (จาก test ผู้สอน/แอดมินเดิม)
-	reviewers := []entity.Reviewer{
-		{Reviewer_id: "RV001", UserID: 1},
-		{Reviewer_id: "RV002", UserID: 2},
-	}
-	for _, r := range reviewers {
-		if err := db.FirstOrCreate(&r, entity.Reviewer{Reviewer_id: r.Reviewer_id}).Error; err != nil {
-			log.Printf("error seeding reviewer %s: %v", r.Reviewer_id, err)
-		}
-	}
+    // ---------- Reviewer ----------
+    // หา user_id ของ admin และ teacher จากตาราง users แบบไม่เดาเลข id
+    type userRow struct{ ID uint; Role string; Username string }
+    var users []userRow
+    _ = db.Table("users").Select("id, role, username").Where("role IN ('admin','teacher')").Find(&users).Error
+    var adminID uint
+    var teacherID uint
+    for _, u := range users {
+        if u.Role == "admin" && adminID == 0 { adminID = u.ID }
+        if u.Role == "teacher" && teacherID == 0 { teacherID = u.ID }
+    }
+    // ถ้ายังหาไม่ได้ ให้ fallback เป็น 1 และ 3 (กรณีฐานข้อมูลใหม่ที่ id เริ่มต้น)
+    if adminID == 0 { adminID = 1 }
+    if teacherID == 0 { teacherID = 3 }
+
+    reviewers := []entity.Reviewer{
+        {Reviewer_id: "RV001", UserID: adminID},
+        {Reviewer_id: "RV002", UserID: teacherID},
+    }
+    for _, r := range reviewers {
+        var exist entity.Reviewer
+        if err := db.Where("reviewer_id = ?", r.Reviewer_id).First(&exist).Error; err == nil {
+            // อัปเดตให้ตรงกับที่คาด (กันกรณีเคย seed ผิด user_id มาก่อน)
+            _ = db.Model(&exist).Updates(map[string]any{"user_id": r.UserID}).Error
+        } else {
+            if err := db.Create(&r).Error; err != nil {
+                log.Printf("error seeding reviewer %s: %v", r.Reviewer_id, err)
+            }
+        }
+    }
 
 	// ---------- Attachment ----------
 	att := entity.Attachment{

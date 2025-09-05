@@ -4,6 +4,8 @@ import type { UploadFile, UploadProps } from "antd/es/upload/interface";
 import axios from "axios";
 import { getReportTypes, listReviewerOptions, getReportsByStudent, createReport } from "../../../../../services/https/report/report";
 import { apiUrl } from "../../../../../services/api";
+import { getNameTeacher } from "../../../../../services/https/teacher/teacher";
+import { getNameAdmin } from "../../../../../services/https/admin/admin";
 import "./report.css";
 
 const { Header, Content, Footer } = Layout;
@@ -23,9 +25,14 @@ const pickStatus = (r: AnyObj): string => (r.Status ?? r.ReportStatus ?? r.statu
 const normalize = (r: AnyObj) => ({ ...r, _date: pickDate(r), _status: pickStatus(r) });
 
 const ReportPage: React.FC = () => {
-  const studentId =
-    (typeof window !== "undefined" && (localStorage.getItem("studentId") || localStorage.getItem("username"))) ||
-    "";
+  const studentId = ((): string => {
+    if (typeof window === "undefined") return "";
+    const existing = localStorage.getItem("student_id");
+    if (existing && existing.trim()) return existing;
+    const sid = "B6616052";
+    localStorage.setItem("student_id", sid);
+    return sid;
+  })();
 
   const [typeOptions, setTypeOptions] = useState<Option[]>([]);
   const [reviewerOptions, setReviewerOptions] = useState<Option[]>([]);
@@ -39,30 +46,108 @@ const ReportPage: React.FC = () => {
 
   const [rows, setRows] = useState<AnyObj[]>([]);
   const [loading, setLoading] = useState(false);
+  const [nameMap, setNameMap] = useState<Record<string, string>>({}); // username -> Full Name
 
   const uploadProps: UploadProps = {
     beforeUpload: () => false,
-    onChange: (info) => setFileList(info.fileList),
+    onChange: (info) => {
+      if (info.fileList.length > 1) {
+        message.error("แนบไฟล์ได้สูงสุด 1 ไฟล์เท่านั้น");
+        info.fileList = info.fileList.slice(-1);
+      }
+      setFileList(info.fileList);
+    },
     multiple: false,
     fileList,
     listType: "text",
+    // antd v5 supports maxCount
+    ...(typeof ({} as any).maxCount !== 'undefined' ? { maxCount: 1 } : {}),
+  } as UploadProps;
+
+  const hydrateNames = async (items: AnyObj[]) => {
+    // ดึงชื่อเต็มจากบริการ teacher/admin ตาม role ของผู้ใช้ที่เป็น reviewer
+    const wanted: { username: string; role: string }[] = [];
+    const seen = new Set<string>();
+    for (const r of items) {
+      const u = r?.Reviewer?.User;
+      const username = u?.Username || u?.username;
+      const role = (u?.Role || u?.role || "").toLowerCase();
+      if (!username || !role) continue;
+      if (nameMap[username]) continue;
+      const key = role + ":" + username;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      wanted.push({ username, role });
+    }
+    if (wanted.length === 0) return;
+    const updates: Record<string, string> = {};
+    await Promise.all(
+      wanted.map(async ({ username, role }) => {
+        try {
+          if (role === "teacher") {
+            const t = await getNameTeacher(username);
+            const full = [t?.FirstName, t?.LastName].filter(Boolean).join(" ");
+            if (full) updates[username] = full;
+          } else if (role === "admin") {
+            const a = await getNameAdmin(username);
+            const full = [a?.FirstName, a?.LastName].filter(Boolean).join(" ");
+            if (full) updates[username] = full;
+          }
+        } catch {}
+      })
+    );
+    if (Object.keys(updates).length) setNameMap((m) => ({ ...m, ...updates }));
   };
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const rtypes = await getReportTypes();
-      setTypeOptions((rtypes || []).map((t: any) => ({ value: t.ReportType_id, label: t.ReportType_Name ?? t.ReportType_id })));
+      // โหลดประเภทคำร้อง (ไม่ให้ล้ม fetch ทั้งหมด)
+      try {
+        const rtypes = await getReportTypes();
+        setTypeOptions((rtypes || []).map((t: any) => ({ value: t.ReportType_id, label: t.ReportType_Name ?? t.ReportType_id })));
+      } catch (e: any) {
+        console.warn("report types error:", e?.message);
+      }
 
-      const reviewers = await listReviewerOptions();
-      // ผู้พิจารณาเป็นอาจารย์และเจ้าหน้าที่ → filter label ที่ลงท้าย role
-      const filtered = reviewers.filter((r) => /\b(teacher|admin)\b/i.test(r.label || ""));
-      setReviewerOptions(filtered);
+      // โหลดผู้พิจารณา (สำคัญ) พร้อม enrich ชื่อเต็ม ถ้าดึงชื่อไม่สำเร็จจะใช้ label เดิม
+      try {
+        const reviewers = await listReviewerOptions();
+        const enriched = await Promise.all(
+          (reviewers || []).map(async (o) => {
+            const m = String(o.label || "").match(/^(.*?)\s*\((.*?)\)\s*$/);
+            const username = (m?.[1] || String(o.label || "")).trim();
+            const role = (m?.[2] || "").toLowerCase();
+            try {
+              if (role === "teacher") {
+                const t = await getNameTeacher(username);
+                const full = [t?.FirstName, t?.LastName].filter(Boolean).join(" ");
+                if (full) return { value: o.value, label: full };
+                return { value: o.value, label: username };
+              } else if (role === "admin") {
+                // แสดงเป็นคำว่า "เจ้าหน้าที่" แทนชื่อบุคคล
+                return { value: o.value, label: "เจ้าหน้าที่" };
+              }
+            } catch {}
+            return o;
+          })
+        );
+        setReviewerOptions(enriched);
+      } catch (e: any) {
+        console.warn("reviewers error:", e?.message);
+        setReviewerOptions([]);
+      }
 
-      const history = await getReportsByStudent(studentId);
-      setRows((history || []).map(normalize));
-    } catch (e: any) {
-      message.error(e?.message || "โหลดข้อมูลล้มเหลว");
+      // โหลดประวัติคำร้องของฉัน (ไม่ให้ล้ม fetch ทั้งหมด)
+      try {
+        const history = await getReportsByStudent(studentId);
+        const normalized = (history || []).map(normalize);
+        setRows(normalized);
+        await hydrateNames(normalized);
+      } catch (e: any) {
+        console.warn("student reports error:", e?.message);
+        setRows([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -92,7 +177,12 @@ const ReportPage: React.FC = () => {
       {
         title: "ผู้พิจารณา",
         key: "reviewer",
-        render: (_: any, r: AnyObj) => reviewerMap[r?.Reviewer_id] ?? r?.Reviewer?.User?.Username ?? "-",
+        render: (_: any, r: AnyObj) => {
+          const role = (r?.Reviewer?.User?.Role || "").toLowerCase();
+          const uname = r?.Reviewer?.User?.Username;
+          if (role === 'admin') return 'เจ้าหน้าที่';
+          return nameMap[uname] || reviewerMap[r?.Reviewer_id] || uname || "-";
+        },
         width: 220,
       },
       {
@@ -111,6 +201,7 @@ const ReportPage: React.FC = () => {
     if (!requestType) return message.warning("กรุณาเลือกประเภทคำร้อง");
     if (!assignee) return message.warning("กรุณาเลือกผู้รับผิดชอบ");
     if (!details.trim()) return message.warning("กรุณากรอกรายละเอียดคำร้อง");
+    if (fileList.length > 1) return message.error("แนบไฟล์ได้สูงสุด 1 ไฟล์เท่านั้น");
     setConfirmOpen(true);
   };
 
@@ -118,7 +209,7 @@ const ReportPage: React.FC = () => {
     try {
       const file = fileList[0]?.originFileObj as File | undefined;
       if (file) {
-        // แนบไฟล์ → ใช้ multipart form ตรงไปยัง backend
+        // ส่งแบบไฟล์เดียวผ่าน multipart ไปยัง /reports/
         const form = new FormData();
         form.append("student_id", studentId);
         form.append("report_type_id", requestType!);
@@ -127,13 +218,14 @@ const ReportPage: React.FC = () => {
         form.append("file", file);
         await axios.post(`${apiUrl}/reports/`, form, { headers: { "Content-Type": "multipart/form-data" } });
       } else {
-        // ไม่แนบไฟล์ → ใช้ service JSON
+        // ไม่แนบไฟล์ → ใช้ service multipart (ไม่มีไฟล์)
         await createReport({
           StudentID: studentId,
           ReportType_id: requestType!,
           Reviewer_id: assignee!,
           Report_details: details,
           ReportSubmission_date: new Date().toISOString(),
+          file: null,
         });
       }
       message.success("ส่งคำร้องเรียบร้อย");
@@ -159,12 +251,12 @@ const ReportPage: React.FC = () => {
       <Content style={{ background: "#f5f5f5", padding: 24, minHeight: 400, color: "#333", overflowY: "auto" }}>
         <div style={{ display: "flex", gap: 100, flexWrap: "wrap", justifyContent: "center" }}>
           <Select style={{ width: 260 }} placeholder="เลือกคำร้อง" options={typeOptions} value={requestType} onChange={setRequestType} />
-          <Select style={{ width: 260 }} placeholder="เลือกผู้รับผิดชอบ" options={reviewerOptions} value={assignee} onChange={setAssignee} />
+          <Select style={{ width: 260 }} placeholder="เลือกผู้ที่ต้องการส่งคำร้องให้" options={reviewerOptions} value={assignee} onChange={setAssignee} />
         </div>
 
         <Card title="รายละเอียดคำร้อง" style={{ marginTop: 24 }}>
           <Input.TextArea rows={4} placeholder="กรุณาใส่รายละเอียดคำร้องของคุณที่นี่" style={{ marginBottom: 20, backgroundColor: "white" }} value={details} onChange={(e) => setDetails(e.target.value)} />
-          <p>คุณสามารถแนบไฟล์ที่เกี่ยวข้องได้ที่นี่...</p>
+          <p>คุณสามารถแนบไฟล์ได้หนึ่งไฟล์ที่เกี่ยวข้องได้ที่นี่...</p>
           <Upload {...uploadProps}><Button>เลือกไฟล์</Button></Upload>
         </Card>
 
@@ -182,6 +274,7 @@ const ReportPage: React.FC = () => {
             columns={columns as any}
             loading={loading}
             pagination={{ pageSize: 5 }}
+            scroll={{ x: 720 }}
           />
         </Card>
       </Content>

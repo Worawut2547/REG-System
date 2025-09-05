@@ -3,8 +3,12 @@ package reports
 import (
     "net/http"
     "path/filepath"
+    "regexp"
+    "fmt"
+    "strconv"
     "strings"
     "time"
+    "os"
 
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
@@ -17,7 +21,9 @@ import (
 func preloadReport(q *gorm.DB) *gorm.DB {
     return q.Preload("ReportType").Preload("Reviewer.User").Preload("Attachments")
 }
-func orderReport(q *gorm.DB) *gorm.DB { return q.Order("submittion_date DESC").Order("created_at DESC") }
+// บางสภาพแวดล้อมอาจยังไม่มีคอลัมน์ created_at จากฐานข้อมูลเก่า
+// เพื่อลดความเสี่ยง 500 ในการ Order ให้เรียงตาม submittion_date อย่างเดียว
+func orderReport(q *gorm.DB) *gorm.DB { return q.Order("submittion_date DESC") }
 
 // ---------- Reports ----------
 
@@ -34,10 +40,19 @@ func CreateReport(c *gin.Context) {
         return
     }
 
+    // Reject multiple files in create endpoint
+    if form, err := c.MultipartForm(); err == nil && form != nil {
+        if files := form.File["file"]; len(files) > 1 {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "only one file allowed"})
+            return
+        }
+    }
+
     var att *entity.Attachment
     if file, err := c.FormFile("file"); err == nil && file != nil {
         // Save upload under uploads/ folder
         // Note: ensure the folder exists in deployment
+        _ = os.MkdirAll("uploads", 0o755)
         filename := time.Now().Format("20060102_150405.000000000") + "_" + filepath.Base(file.Filename)
         savePath := filepath.Join("uploads", filename)
         if err := c.SaveUploadedFile(file, savePath); err != nil {
@@ -53,20 +68,43 @@ func CreateReport(c *gin.Context) {
     }
 
     now := time.Now()
-    rep := entity.Report{
-        Report_id:       "RPT-" + time.Now().Format("20060102150405.000000000"),
-        Report_details:  details,
-        Submittion_date: now,
-        Status:          "รอดำเนินการ",
-        StudentID:       studentID,
-        Reviewer_id:     reviewerID,
-        ReportType_id:   reportTypeID,
-        Created_at:      now,
-        Updated_at:      now,
+    // Generate sequential Report_id: REP001, REP002, ...
+    nextID := func(tx *gorm.DB) (string, error) {
+        // Find last id that starts with REP
+        var last string
+        // Order by length then lexicographically to keep REP1000 after REP0999
+        if err := tx.Raw("SELECT report_id FROM reports WHERE report_id LIKE 'REP%' ORDER BY LENGTH(report_id) DESC, report_id DESC LIMIT 1").Scan(&last).Error; err != nil {
+            return "", err
+        }
+        re := regexp.MustCompile(`(?i)^REP(\d+)$`)
+        if m := re.FindStringSubmatch(strings.TrimSpace(last)); m != nil {
+            n, _ := strconv.Atoi(m[1])
+            n++
+            if n < 1000 {
+                return "REP" + fmt.Sprintf("%03d", n), nil
+            }
+            return "REP" + strconv.Itoa(n), nil
+        }
+        // default start
+        return "REP001", nil
     }
 
     db := config.DB()
+    var rep entity.Report
     if err := db.Transaction(func(tx *gorm.DB) error {
+        nid, err := nextID(tx)
+        if err != nil { return err }
+        rep = entity.Report{
+            Report_id:       nid,
+            Report_details:  details,
+            Submittion_date: now,
+            Status:          "รอดำเนินการ",
+            StudentID:       studentID,
+            Reviewer_id:     reviewerID,
+            ReportType_id:   reportTypeID,
+            Created_at:      now,
+            Updated_at:      now,
+        }
         if err := tx.Create(&rep).Error; err != nil { return err }
         if att != nil {
             att.Report_id = rep.Report_id
@@ -88,11 +126,79 @@ func CreateReport(c *gin.Context) {
     c.JSON(http.StatusCreated, rep)
 }
 
+// POST /reports/:id/attachments
+// form field: file (single)
+func AddReportAttachment(c *gin.Context) {
+    reportID := strings.TrimSpace(c.Param("id"))
+    if reportID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "report id is required"})
+        return
+    }
+    // Reject multiple files for single-attach endpoint
+    if form, err := c.MultipartForm(); err == nil && form != nil {
+        if files := form.File["file"]; len(files) > 1 {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "only one file allowed"})
+            return
+        }
+    }
+    file, err := c.FormFile("file")
+    if err != nil || file == nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+        return
+    }
+
+    // save file under uploads/
+    _ = os.MkdirAll("uploads", 0o755)
+    filename := time.Now().Format("20060102_150405.000000000") + "_" + filepath.Base(file.Filename)
+    savePath := filepath.Join("uploads", filename)
+    if err := c.SaveUploadedFile(file, savePath); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "upload failed: " + err.Error()})
+        return
+    }
+
+    att := entity.Attachment{
+        Attachment_id: "ATT-" + time.Now().Format("150405000000000"),
+        File_Name:     file.Filename,
+        File_Path:     "/" + savePath,
+        Uploaded_date: time.Now(),
+        Report_id:     reportID,
+    }
+    db := config.DB()
+    if err := db.Create(&att).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusCreated, att)
+}
+
+// DELETE /reports/:id/attachments/:attId
+func DeleteReportAttachment(c *gin.Context) {
+    reportID := strings.TrimSpace(c.Param("id"))
+    attID := strings.TrimSpace(c.Param("attId"))
+    if reportID == "" || attID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "id and attId are required"})
+        return
+    }
+    db := config.DB()
+    if err := db.Where("report_id = ? AND attachment_id = ?", reportID, attID).Delete(&entity.Attachment{}).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
 // GET /reports
 func GetReports(c *gin.Context) {
     db := config.DB()
+    role := strings.ToLower(strings.TrimSpace(c.Query("role")))
     var items []entity.Report
-    if err := preloadReport(orderReport(db)).Find(&items).Error; err != nil {
+    q := preloadReport(orderReport(db))
+    if role == "admin" || role == "teacher" {
+        q = q.Joins("JOIN reviewers r ON r.reviewer_id = reports.reviewer_id").
+            Joins("JOIN users u ON u.id = r.user_id").
+            Where("LOWER(u.role) = ?", role)
+    }
+    if err := q.Find(&items).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
@@ -225,7 +331,7 @@ func GetReportsByStudent(c *gin.Context) {
     db := config.DB()
     var items []entity.Report
     if err := preloadReport(orderReport(db)).
-        Where("student_id = ? OR studentid = ?", sid, sid).
+        Where("student_id = ?", sid).
         Find(&items).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return

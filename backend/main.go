@@ -19,6 +19,7 @@ import (
 	"reg_system/controller/major"
 	"reg_system/controller/position"
 	"reg_system/controller/reports"
+	"reg_system/controller/reporttypes"
 	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
@@ -44,6 +45,9 @@ func main() {
 	r.RedirectTrailingSlash = true // ถ้า /path/ หรือ /path Gin จะ redirect อัตโนมัติให้ตรงกัน
 	r.Use(cors.Default())
 	r.Use(CORSMiddleware())
+
+	// Serve uploaded files (attachments)
+	r.Static("/uploads", "./uploads")
 
 	// -------------------- Auth --------------------
 	r.POST("/signin", users.SignIn)
@@ -199,12 +203,18 @@ func main() {
 		reportGroup.GET("/", reports.GetReportAll)
 		reportGroup.GET("/:id", reports.GetReportByID)
 		reportGroup.POST("/", reports.CreateReport)
+		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)
 		reportGroup.PUT("/:id/status", reports.UpdateStatus)
+		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment)
 		reportGroup.DELETE("/:id", reports.DeleteReportAlias)
 	}
 
 	// -------------------- Report Types --------------------
-	r.GET("/report-types", reports.ListReportTypes)
+	r.GET("/report-types", reporttypes.ListReportTypes)
+	r.GET("/report-types/:id", reporttypes.GetReportTypeByID)
+	r.POST("/report-types", reporttypes.CreateReportType)
+	r.PUT("/report-types/:id", reporttypes.UpdateReportType)
+	r.DELETE("/report-types/:id", reporttypes.DeleteReportType)
 
 	// -------------------- Reviewers --------------------
 	reviewerGroup := r.Group("/reviewers")
