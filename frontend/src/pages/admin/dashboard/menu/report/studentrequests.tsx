@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Typography, Empty, message, Spin, Button, Tag, Modal, Popconfirm, Card, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { apiUrl } from "../../../../../services/api";
@@ -51,8 +51,6 @@ type Props = { deleteMode?: boolean };
 const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Report[]>([]);
-  const [page, setPage] = useState(1);
-  const pageSize = 5;
   const [open, setOpen] = useState(false);
   const [sel, setSel] = useState<Report | null>(null);
   const [atts, setAtts] = useState<Attachment[]>([]);
@@ -65,14 +63,13 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
         const data = await http<Report[]>(`/reports/?role=admin`);
         const ordered = [...(data || [])].sort((a, b) => new Date(pickDate(b) ?? 0 as any).getTime() - new Date(pickDate(a) ?? 0 as any).getTime());
         setRows(ordered);
-        setPage(1);
       } catch (e: any) {
         message.error(e?.message || "โหลดข้อมูลล้มเหลว");
       } finally { setLoading(false); }
     })();
   }, []);
 
-  const paged = useMemo(() => rows.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize), [rows, page]);
+  
   const tableColumns: ColumnsType<any> = [
     { title: 'เรื่อง', key: 'type', render: (_: any, r: any) => r?.ReportType?.ReportType_Name ?? r?.ReportType_id ?? '—' },
     { title: 'จาก', key: 'from', width: 140, render: (_: any, r: any) => r?.StudentID || r?.student_id || '—' },

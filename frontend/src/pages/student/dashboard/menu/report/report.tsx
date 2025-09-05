@@ -14,6 +14,43 @@ const { Text } = Typography;
 type AnyObj = Record<string, any>;
 type Option = { value: string; label: string };
 
+// register.tsx  – only wrapperStyle changed
+const wrapperStyle: React.CSSProperties = {
+  /* keep your corner-rounding / shadow if you like */
+  borderRadius: 8,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+
+  /* 👇 stretch full size of parent Content */
+  width: '100%',          // fill X
+  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
+  display: 'flex',        // so Header/Content/Footer stack vertically
+  flexDirection: 'column',
+  overflow: 'hidden',
+};
+
+const headerStyle: React.CSSProperties = {
+  background: '#2e236c',            // ม่วงเข้ม
+  color: 'white',
+  textAlign: 'center',
+  padding: 16,
+  fontSize: 20,
+};
+
+const contentStyle: React.CSSProperties = {
+  background: '#f5f5f5',            // เทาอ่อน
+  padding: 24,
+  minHeight: 400,
+  color: '#333',
+  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
+};
+
+const footerStyle: React.CSSProperties = {
+  background: '#1890ff',            // ฟ้า Ant Design
+  color: 'white',
+  textAlign: 'center',
+  padding: 12,
+};
+
 // Helpers สำหรับ normalize แสดงผลในตาราง
 const pickDate = (r: AnyObj): Date | null => {
   const cand = r.Submittion_date || r.ReportSubmission_date || r.Submission_date || r.created_at || r.CreatedAt || r.Created_at;
@@ -243,13 +280,11 @@ const ReportPage: React.FC = () => {
   };
 
   return (
-    <Layout style={{ borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", width: "100%", minHeight: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <Header style={{ background: "#2e236c", color: "white", textAlign: "center", padding: 16, fontSize: 20, fontWeight: "bold" }}>
-        ระบบคำร้อง
-      </Header>
 
-      <Content style={{ background: "#f5f5f5", padding: 24, minHeight: 400, color: "#333", overflowY: "auto" }}>
-        <div style={{ display: "flex", gap: 100, flexWrap: "wrap", justifyContent: "center" }}>
+    <Layout style={wrapperStyle}>
+          <Header style={headerStyle}>ระบบคำร้อง</Header>
+          <Content style={contentStyle}>
+            <div style={{ display: "flex", gap: 100, flexWrap: "wrap", justifyContent: "center" }}>
           <Select style={{ width: 260 }} placeholder="เลือกคำร้อง" options={typeOptions} value={requestType} onChange={setRequestType} />
           <Select style={{ width: 260 }} placeholder="เลือกผู้ที่ต้องการส่งคำร้องให้" options={reviewerOptions} value={assignee} onChange={setAssignee} />
         </div>
@@ -277,13 +312,8 @@ const ReportPage: React.FC = () => {
             scroll={{ x: 720 }}
           />
         </Card>
-      </Content>
-
-      <Footer style={{ background: "#1890ff", color: "white", textAlign: "center", padding: 12 }}>
-        Footer © 2025
-      </Footer>
-
-      <Modal
+          </Content>
+        <Modal
         title="ยืนยันการส่งคำร้อง"
         open={confirmOpen}
         onOk={handleConfirmOk}
@@ -302,6 +332,7 @@ const ReportPage: React.FC = () => {
           <div><Text strong>ไฟล์แนบ: </Text><Text>{fileList.length === 0 ? "—" : `${fileList.length} ไฟล์ (${fileList.map((f) => f.name).join(", ")})`}</Text></div>
         </div>
       </Modal>
+      <Footer style={footerStyle}>Footer © 2025</Footer>
     </Layout>
   );
 };
