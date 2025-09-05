@@ -1,9 +1,9 @@
 export interface StudentInterface {
     ID?: number;
-    StudentID?: string;
-    FirstName?: string;
-    LastName?: string;
-    CitizenID?: string;
+    StudentID: string;
+    FirstName: string;
+    LastName: string;
+    CitizenID: string;
 
     Email?: string;
     Phone?: string;
@@ -12,6 +12,9 @@ export interface StudentInterface {
 
     DegreeID?: number;
     Degree?: string;
+
+    CurriculumID?: string;
+    CurriculumName?: string;
 
     FacultyID?: string;
     FacultyName?: string;
@@ -28,5 +31,7 @@ export interface StudentInterface {
     Religion?: string;
     BirthDay?: string;
     Parent?: string;
+
+    GPAX?: number;
 
 }

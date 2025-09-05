@@ -1,6 +1,7 @@
 package students
 
 import (
+	"errors"
 	"net/http"
 
 	"reg_system/config"
@@ -8,14 +9,19 @@ import (
 	"reg_system/services"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
+
 func GetStudentID(c *gin.Context) {
 	sid := c.Param("id")
 
 	students := entity.Students{}
-	db := config.DB()
 
-	result := db.
+	// เริ่มต้น transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	err := tx.
 		Preload("Faculty").
 		Preload("Major").
 		Preload("Degree").
@@ -24,18 +30,22 @@ func GetStudentID(c *gin.Context) {
 		Preload("Curriculum").
 		Preload("Grade").
 		Preload("Grade.Subject").
-		Preload("Registration").
-		First(&students, "student_id = ?", sid)
+		Preload("Teacher").
+		First(&students, "student_id = ?", sid).Error
 
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+	if err != nil {
+		tx.Rollback()
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// ไม่เจอ
+			c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
+		} else {
+			// database error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
 		return
 	}
-
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
-		return
-	}
+	tx.Commit()
 
 	// Step 2: เอาค่า {Gender , FacultyName , MajorName , Degree} ออกมาเเสดง
 	//--------------------------------------------------------------------------
@@ -83,6 +93,7 @@ func GetStudentID(c *gin.Context) {
 	response := map[string]interface{}{
 		"StudentID": students.StudentID,
 		"FirstName": students.FirstName,
+		"LastName":  students.LastName,
 		"CitizenID": students.CitizenID,
 
 		"MajorID":   majorID,
@@ -100,21 +111,19 @@ func GetStudentID(c *gin.Context) {
 
 		"CurriculumID":   students.CurriculumID,
 		"CurriculumName": curriculumName,
+		"Teacher":        students.Teacher,
+		"GPAX":           gpa,
 
-		"GPA":   gpa,
-		"Registration": students.Registration,
-
-		"Address": students.Address,
-		"Religion": students.Religion,
+		"Address":     students.Address,
+		"Religion":    students.Religion,
 		"Nationality": students.Nationality,
-		"Ethnicity": students.Ethnicity,
-		"BirthDay": students.BirthDay,
-		"Parent": students.Parent,
+		"Ethnicity":   students.Ethnicity,
+		"BirthDay":    students.BirthDay,
+		"Parent":      students.Parent,
 	}
 
 	c.JSON(http.StatusOK, response)
 }
-
 
 func CreateStudent(c *gin.Context) {
 	student := new(entity.Students)
@@ -123,31 +132,52 @@ func CreateStudent(c *gin.Context) {
 		return
 	}
 
+	// สร้าง transaction เพื่อความปลอดภัย
+	db := config.DB()
+	tx := db.Begin()
+
+	// ตรวจสอบว่ามี username นี้ในระบบเเล้วหรือยัง เพื่อกัน username ซ้ำกัน
+	// โดยเช็คจากตาราง Users
+	existingUser := &entity.Users{}
+	err := tx.First(&existingUser, "username = ?", student.StudentID).Error
+	if err == nil {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Student ID already exists in Users table"})
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
 	// ถ้า Status ว่าง ให้กำหนด ค่า 10
 	if student.StatusStudentID == "" {
 		student.StatusStudentID = "10"
 	}
 
-	db := config.DB()
-
-	result := db.Create(&student)
-
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+	// เพิ่ม student ลงฐานข้อมูล
+	if err := tx.Create(&student).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create student"})
 		return
 	}
 
-	// เพิ่ม รหัสนักศึกษา , เลขบัตรปชช ลงตาราง Users หลังเพิ่มข้อมูลนักเรียนเเล้ว
+	// กำหนด Username: รหัสนักศึกษา , Password: เลขบัตรปชช
 	hashPassword, _ := config.HashPassword(student.CitizenID)
 	user := &entity.Users{
 		Username: student.StudentID, // ดึงรหัสนักศึกษาออกมา
 		Password: hashPassword,
 		Role:     "student", //กำหนด Role
 	}
-	if err := db.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	if err := tx.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user (possibly duplicate username)"})
 		return
 	}
+
+	// commit transaction
+	tx.Commit()
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":    "Create student success",
 		"Student_id": student.StudentID,
@@ -161,23 +191,32 @@ func GetStudentAll(c *gin.Context) {
 	// Step 1: โหลดข้อมูล student ขึ้นมา
 	//--------------------------------------------------------------------------
 	var students []entity.Students
-	db := config.DB()
 
-	results := db.
+	// สร้าง transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	err := tx.
 		Preload("Degree").
 		Preload("Faculty").
 		Preload("Major").
 		Preload("StatusStudent").
-		Find(&students)
-	if results.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": results.Error.Error()})
-		return
-	}
+		Find(&students).Error
 
-	if results.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+	if err != nil {
+		tx.Rollback()
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// หาไม่เจอ
+			c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+		} else {
+			// database error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
 		return
 	}
+	tx.Commit()
+
 	//--------------------------------------------------------------------------
 
 	// Step 2: เเปลงข้อมูล Struct -> Map Slice
@@ -235,101 +274,67 @@ func GetStudentAll(c *gin.Context) {
 
 func UpdateStudent(c *gin.Context) {
 	sid := c.Param("id")
-	db := config.DB()
 
-	student := new(entity.Students)
-	if err := c.ShouldBind(&student); err != nil {
+	// สร้าง transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	input := new(entity.Students)
+	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// อัพเดทข้อมูลนักเรียน
-	result := db.Model(&student).Where("student_id = ?", sid).Updates(&student)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+	// หา Student ก่อนจะ update
+	student := &entity.Students{}
+	if err := tx.First(&student , "student_id = ?",sid).Error; err != nil {
+		tx.Rollback()
+		
+		if errors.Is(err , gorm.ErrRecordNotFound){
+			// หาไม่เจอ
+			c.JSON(http.StatusNotFound , gin.H{"error": "student not found"})
+		}else{
+			// database error
+			c.JSON(http.StatusInternalServerError , gin.H{"error": "database error"})
+		}
 		return
 	}
 
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+	// อัพเดทข้อมูลนักเรียน
+	err := tx.Model(&student).Updates(&input).Error
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError , gin.H{"error": "Failed to update student"})
 		return
 	}
+	
+	// commit transaction
+	tx.Commit()
 
 	c.JSON(http.StatusOK, student)
 }
 
 func DeleteStudent(c *gin.Context) {
 	sid := c.Param("id")
-	student := new(entity.Students)
 
+	// สร้าง transaction
 	db := config.DB()
-	result := db.Delete(&student, "student_id = ?", sid)
+	tx := db.Begin()
 
+	result := tx.Delete(&entity.Students{}, "student_id = ?", sid)
 	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError , gin.H{"error": result.Error.Error()})
 		return
 	}
+
+	// เช็คว่ามี student จริงหรือไม่
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		c.JSON(http.StatusNotFound , gin.H{"error":"student not found"})
+		return
+	}
+	tx.Commit()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Delete student success"})
 }
-
-/*func CreateStudent(c *gin.Context) {
-	student := new(entity.Students)
-	if err := c.ShouldBind(&student); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	db := config.DB()
-
-	// 👉 Step 1: ตรวจสอบก่อนว่ามี username นี้ใน Users แล้วหรือยัง
-	var existingUser entity.Users
-	if err := db.Where("username = ?", student.Student_id).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Student ID already exists in Users table"})
-		return
-	}
-
-	// 👉 Step 2: สร้าง password จากเลขบัตร
-	hashPassword, err := config.HashPassword(student.Citizen_id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	// 👉 Step 3: สร้าง transaction เพื่อความปลอดภัย
-	tx := db.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	// 👉 Step 4: Insert ลงตาราง Students
-	if err := tx.Create(&student).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create student"})
-		return
-	}
-
-	// 👉 Step 5: Insert ลงตาราง Users
-	user := &entity.Users{
-		Username: student.Student_id,
-		Password: hashPassword,
-		Role:     "student",
-	}
-	if err := tx.Create(&user).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user (possibly duplicate username)"})
-		return
-	}
-
-	// 👉 Step 6: Commit transaction
-	tx.Commit()
-
-	c.JSON(http.StatusOK, gin.H{
-		"message":    "Create student success",
-		"Student_id": student.Student_id,
-		"FirstName":  student.FirstName,
-		"LastName":   student.LastName,
-	})
-}*/

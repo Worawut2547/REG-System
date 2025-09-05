@@ -1,23 +1,24 @@
-// src/pages/dashboard/menu/register.tsx
-import { useState, useEffect } from 'react';
-import { Form, Input, Button, Row, Col, Space, Card, Divider, message, Select } from 'antd';
+import { useState, useEffect } from "react";
+
+import { Form, Input, Button, Row, Col, Space, Card, Divider, message, Select, Radio } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import Swal from "sweetalert2";
 
-import { type TeacherInterface } from '../../../../../../interfaces/Teacher';
-import { createTeacher } from '../../../../../../services/https/teacher/teacher';
+import type { TeacherInterface } from "../../../../../../interfaces/Teacher";
+import { createTeacher } from "../../../../../../services/https/teacher/teacher";
 
-import { type MajorInterface } from '../../../../../../interfaces/Major';
-import { getMajorAll } from '../../../../../../services/https/major/major';
+import type { MajorInterface } from "../../../../../../interfaces/Major";
+import { getMajorAll } from "../../../../../../services/https/major/major";
 
-import { type FacultyInterface } from '../../../../../../interfaces/Faculty';
-import { getFacultyAll } from '../../../../../../services/https/faculty/faculty';
 
-import { type PositionInterface } from '../../../../../../interfaces/Position';
-import { getPositionAll } from '../../../../../../services/https/position/position';
+import type { FacultyInterface } from "../../../../../../interfaces/Faculty";
+import { getFacultyAll } from "../../../../../../services/https/faculty/faculty";
 
-import { type GenderInterface } from '../../../../../../interfaces/Gender';
-import { getGenderAll } from '../../../../../../services/https/gender/gender';
+import type { GenderInterface } from "../../../../../../interfaces/Gender";
+import { getGenderAll } from "../../../../../../services/https/gender/gender";
+
+import type { PositionInterface } from "../../../../../../interfaces/Position";
+import { getPositionAll } from "../../../../../../services/https/position/position";
 
 
 interface CreateTeacherProps {
@@ -26,16 +27,12 @@ interface CreateTeacherProps {
 
 const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
-
-  const [facultyOptions, setFacultyOptions] = useState<FacultyInterface[]>([]);
-  const [selectFaculty, setSelectFaculty] = useState<string | null>(null);
-
   const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
   const [allMajors, setAllMajors] = useState<MajorInterface[]>([]);
   const [majorOptions, setMajorOptions] = useState<MajorInterface[]>([]);
-
+  const [facultyOptions, setFacultyOptions] = useState<FacultyInterface[]>([]);
+  const [selectFaculty, setSelectFaculty] = useState<string | null>(null)
   const [positionOptions, setPositionOptions] = useState<PositionInterface[]>([]);
-
   const [genderOptions, setGenderOptions] = useState<GenderInterface[]>([]);
 
 
@@ -44,33 +41,33 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
   // ถ้า Promise ใด ล้มเหลว ก็จะล้มเหลวทั้งหมด
   useEffect(() => {
     Promise.all([
-      getFacultyAll(),
       getMajorAll(),
+      getFacultyAll(),
       getPositionAll(),
-      getGenderAll(),
+      getGenderAll()
     ])
-      .then(([faculties, majors, positions, genders]) => {
-        setFacultyOptions(faculties);
-        setAllMajors(majors);
+      .then(([majors, faculties, position, genders]) => {
+        setAllMajors(majors)
         setMajorOptions(majors);
-        setPositionOptions(positions);
+        setFacultyOptions(faculties);
+        setPositionOptions(position);
         setGenderOptions(genders);
       })
       .catch((error) => {
         console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
         message.error("ไม่สามารถโหลดข้อมูลได้");
-      })
+      });
   }, []);
 
   const handleFacultyChange = (value: string) => {
     setSelectFaculty(value);
 
     // กรองสาขาที่ตรงกับคณะ
-    const filtermajors = allMajors.filter(m => m.FacultyID == value);
-    setMajorOptions(filtermajors);
+    const filteredMajors = allMajors.filter(m => m.FacultyID == value);
+    setMajorOptions(filteredMajors);
+
     setSelectedMajor(null);
   }
-
 
   const onFinish = async (values: TeacherInterface) => {
     if (!selectedMajor) {
@@ -78,7 +75,7 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
       return;
     }
     console.log("Form values:", values);
-
+    // TODO: เรียก API create student
     setLoading(true);
     try {
       await createTeacher(values);
@@ -94,31 +91,56 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
       Swal.fire({
         icon: "error",
         title: "ผิดพลาด",
-        text: "ไม่สามารถเพิ่มข้อมูลนักศึกษาได้",
+        text: "ไม่สามารถเพิ่มข้อมูลอาจารย์ได้",
       });
     }
     finally {
       setLoading(false);
-      onBack();
+      onBack(); // กลับไปยังหน้าก่อนหน้า
     }
-  }
+  };
 
   return (
-    <Card>
-      <h2>เพิ่มข้อมูลอาจารย์</h2>
+    <Card className="p-6 rounded-2xl shadow-md">
+      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+        เพิ่มข้อมูลนักศึกษา
+      </h2>
       <Divider />
-      <Form name="create_teacher" layout="vertical" onFinish={onFinish}>
+
+      <Form
+        name="create_teacher"
+        layout="vertical"
+        onFinish={onFinish}
+        scrollToFirstError
+      >
+
+        {/* ---------------------- Personal Info ---------------------- */}
+        <h3 style={{ fontWeight: 500, marginBottom: 8 }}>ข้อมูลส่วนตัว</h3>
         <Row gutter={[16, 0]}>
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24} md={12}>
             <Form.Item
-              label="รหัสประจำตัว"
+              label="รหัสอาจารย์"
               name="TeacherID"
-              rules={[{ required: true, message: "กรุณากรอกรหัสประจำตัว!" }]}
+              rules={[{ required: true, message: "กรุณากรอกรหัสอาจารย์!" }]}
             >
               <Input />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={24} md={12}>
+
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="เลขบัตรประชาชน"
+              name="CitizenID"
+              rules={[
+                { required: true, message: "กรุณากรอกเลขบัตรประชาชน!" },
+                { len: 13, message: "เลขบัตรต้องมี 13 หลัก!" },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={12}>
             <Form.Item
               label="ชื่อ"
               name="FirstName"
@@ -128,7 +150,7 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="นามสกุล"
               name="LastName"
@@ -138,44 +160,44 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          {/* Gender */}
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24}>
             <Form.Item
               label="เพศ"
               name="gender_id"
               rules={[{ required: true, message: "กรุณาเลือกเพศ!" }]}
             >
-              <Select placeholder="เลือกเพศ">
+            
+              <Radio.Group>
                 {genderOptions.map((g) => (
-                  <Select.Option key={g.ID} value={g.ID}>
+                  <Radio key={g.ID} value={g.ID}>
                     {g.Gender}
-                  </Select.Option>
+                  </Radio>
                 ))}
-              </Select>
+              </Radio.Group>
+            
             </Form.Item>
           </Col>
+        </Row>
 
-          <Col xs={24} sm={24} md={12}>
-            <Form.Item
-              label="เลขบัตรประชาชน"
-              name="CitizenID"
-              rules={[{ required: true, message: "กรุณากรอกเลขบัตรประชาชน!" }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
+        <Divider />
 
-          <Col xs={24} sm={24} md={12}>
+        {/* ---------------------- Contact Info ---------------------- */}
+        <h3 style={{ fontWeight: 500, marginBottom: 8 }}>ข้อมูลการติดต่อ</h3>
+        <Row gutter={[16, 0]}>
+          <Col xs={24}>
             <Form.Item
-              label="เบอร์โทร"
+              label="เบอร์โทรศัพท์"
               name="Phone"
-              rules={[{ required: true, message: "กรุณากรอกเบอร์โทร!" }]}
+              rules={[
+                { required: true, message: "กรุณากรอกเบอร์โทร!" },
+                { pattern: /^[0-9]{10}$/, message: "กรุณากรอกเบอร์โทร 10 หลัก!" },
+              ]}
             >
               <Input />
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24}>
             <Form.Item
               label="อีเมล"
               name="Email"
@@ -187,16 +209,20 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
               <Input />
             </Form.Item>
           </Col>
+        </Row>
 
-          {/* Position */}
+        <Divider />
 
-          <Col xs={24} sm={24} md={12}>
+        {/* ---------------------- Education Info ---------------------- */}
+        <h3 style={{ fontWeight: 500, marginBottom: 8 }}>ข้อมูลการศึกษา</h3>
+        <Row gutter={[16, 0]}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="ตำเเหน่งทางวิชาการ"
               name="PositionID"
               rules={[{ required: true, message: "กรุณาเลือกตำเเหน่งทางวิชาการ!" }]}
             >
-              <Select placeholder="เลือกตำเเหน่งทางวิชาการ">
+              <Select placeholder="เลือกตำเเหน่งทางวิชาการ" showSearch>
                 {positionOptions.map((p) => (
                   <Select.Option key={p.ID} value={p.ID}>
                     {p.Position}
@@ -206,14 +232,15 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          {/* Faculty */}
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24} md={12}>
             <Form.Item
-              label="คณะ"
+              label="สำนักวิชา"
               name="FacultyID"
-              rules={[{ required: true, message: "กรุณาเลือกคณะ!" }]}
+              rules={[{ required: true, message: "กรุณาเลือกสำนักวิชา!" }]}
             >
-              <Select placeholder="เลือกคณะ"
+              <Select
+                placeholder="เลือกสำนักวิชา"
+                showSearch
                 value={selectFaculty}
                 onChange={handleFacultyChange}
               >
@@ -226,15 +253,15 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          {/* Major */}
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24}>
             <Form.Item
-              label="สาขา"
+              label="สาขาวิชา"
               name="MajorID"
-              rules={[{ required: true, message: "กรุณาเลือกสาขา!" }]}
+              rules={[{ required: true, message: "กรุณาเลือกสาขาวิชา!" }]}
             >
               <Select
-                placeholder="เลือกสาขา"
+                placeholder="เลือกสาขาวิชา"
+                showSearch
                 value={selectedMajor ?? undefined}
                 onChange={(value) => setSelectedMajor(value)}
               >
@@ -248,14 +275,18 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
           </Col>
         </Row>
 
+        {/* ---------------------- Action Buttons ---------------------- */}
         <Row justify="end">
           <Col>
             <Space style={{ marginTop: 16 }}>
-              <Button type="default" onClick={onBack}>
-                ยกเลิก
-              </Button>
-              <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={loading}>
-                ยืนยัน
+              <Button onClick={onBack}>ยกเลิก</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<PlusOutlined />}
+                loading={loading}
+              >
+                บันทึกข้อมูล
               </Button>
             </Space>
           </Col>
@@ -263,6 +294,7 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
       </Form>
     </Card>
   );
+
 };
 
 export default CreateTeacher;
