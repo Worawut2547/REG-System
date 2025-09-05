@@ -2,10 +2,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Layout, Modal, Typography, Empty, message, Spin, Button, Tag } from "antd";
 import "./report.css";
+import { apiUrl } from "../../../../../services/api";
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
+const API_BASE = apiUrl;
 
 type ReviewerUser = { Username?: string; username?: string };
 type Reviewer = { Reviewer_id?: string; reviewer_id?: string; User?: ReviewerUser | null };
@@ -56,8 +57,9 @@ async function getReportsOnlyAdmin(rid: string) {
 const pickDate = (r: Report) => r.Submittion_date || (r as any).submittion_date || r.Created_at || (r as any).created_at;
 const fmtDate = (s?: string) => (!s ? "—" : (d => isNaN(+d) ? "—" : d.toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"}))(new Date(s)));
 const normalizeAttachments = (a: any): Attachment[] => !a ? [] : Array.isArray(a) ? a : Array.isArray(a.attachments) ? a.attachments : [a];
-const attName = (a: Attachment) => a.File_Name || a.file_name || a.Attachment_id || a.attachment_id || "ไฟล์แนบ";
-const attPath = (a: Attachment) => a.File_Path || a.file_path || "";
+// รองรับชื่อคีย์หลายรูปแบบจาก backend
+const attName = (a: any) => a.File_Name || a.file_name || a.Attachment_File_Name || a.attachment_file_name || a.Attachment_id || a.attachment_id || "ไฟล์แนบ";
+const attPath = (a: any) => a.File_Path || a.file_path || a.Attachment_File_Path || a.attachment_file_path || "";
 const statusTag = (s?: string) => (s||"").trim()==="อนุมัติ" ? <Tag color="green">อนุมัติ</Tag> : (s||"").trim()==="ไม่อนุมัติ" ? <Tag color="red">ไม่อนุมัติ</Tag> : <Tag color="gold">รอดำเนินการ</Tag>;
 
 const AdminReportPage: React.FC = () => {
@@ -94,10 +96,10 @@ const AdminReportPage: React.FC = () => {
 
         // (2) โหลดเฉพาะงานที่ reviewer นี้เป็น admin จริง ๆ
         let data = await getReportsOnlyAdmin(rid);  // → ถ้าไม่ใช่ admin จะได้ []
-        // (3) Fallback: ถ้า [] ให้ดึง /reports แล้วกรองด้วย reviewer ของเรา/username เพื่อให้เห็นรายการอย่างน้อย
+        // (3) Fallback: ถ้า [] ให้ดึงทั้งหมดแล้วกรองด้วย reviewer ของเรา/username (ไม่ fix เฉพาะ admin)
         if (!data?.length) {
           try {
-            const all = await http<Report[]>('/reports');
+            const all = await http<Report[]>('/reports/');
             const lowers = candidates.map(c => c.toLowerCase());
             data = (all || []).filter(r => {
               const rvrId = r.Reviewer_id || (r as any).reviewer_id;
@@ -139,6 +141,14 @@ const AdminReportPage: React.FC = () => {
     finally { setSaving(false); }
   };
 
+  // เปิด modal และเตรียมรายการไฟล์แนบให้แสดง
+  const handleOpenModal = (r: Report) => {
+    setSel(r);
+    const list = normalizeAttachments((r as any)?.Attachments ?? (r as any)?.attachments ?? (r as any)?.Attachment ?? []);
+    setAtts(list);
+    setOpen(true);
+  };
+
   return (
     <Layout style={{borderRadius:8,boxShadow:"0 4px 12px rgba(0,0,0,0.08)",width:"100%",minHeight:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <Header style={{background:"#2e236c",color:"#fff",textAlign:"center",padding:16,fontSize:20,fontWeight:700}}>
@@ -150,7 +160,7 @@ const AdminReportPage: React.FC = () => {
           <div className="rq-container">
             <div className="rq-panel">
               <div className="rq-head">
-                <div className="rq-title">รายการคำร้องที่ส่งให้ฉัน (Admin)</div>
+                <div className="rq-title">รายการคำร้องที่ส่งให้ฉัน</div>
                 <div className="rq-tab" />
               </div>
 
@@ -181,7 +191,7 @@ const AdminReportPage: React.FC = () => {
                     <div className="rq-cell" style={{minWidth:140}}>
                       {statusTag(item.Status || (item as any).status)}
                     </div>
-                    <div className="rq-cell rq-cell--clickable" style={{minWidth:160}} onClick={()=>openModal(item)}>
+                    <div className="rq-cell rq-cell--clickable" style={{minWidth:160}} onClick={()=>handleOpenModal(item)}>
                       <span className="rq-cell-label">ดูรายละเอียด</span>
                     </div>
                   </div>
