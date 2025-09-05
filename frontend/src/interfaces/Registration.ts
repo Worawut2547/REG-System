@@ -1,14 +1,9 @@
-import type { SubjectInterface } from "./Subjects";
-import type { StudentInterface } from "./Student";
-
 export interface RegistrationInterface {
-  RegistrationID?: number | string;
-  Date: string;         // ISO string
-  SubjectID: string;
-  SectionID?: number;
-  StudentID: string;
+  ID?: number;             // Primary key (auto increment)
+  RegistrationID?: string; // e.g., "REG001"
 
-  Subject?: SubjectInterface;
-  Section?: any;
-  Student?: StudentInterface;
+  Date?: string;           // ISO string (time of registration)
+  SubjectID?: string;      // FK to Subject
+  SectionID?: number;      // FK to Section
+  StudentID?: string;      // FK to Student
 }

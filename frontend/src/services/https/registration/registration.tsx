@@ -1,93 +1,71 @@
+// src/services/https/registration/registration.tsx
 import axios from "axios";
-
 import { apiUrl } from "../../api";
 import type { RegistrationInterface } from "../../../interfaces/Registration";
 
-// Helper base URL for optional fallback when apiUrl ends with /api
-const rootBase = apiUrl.startsWith("/")
-  ? apiUrl
-  : (apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl);
-
-export const getStudentBySubjectID = async (subj_id: string) => {
-    try {
-        const response = await axios.get(`${apiUrl}/registrations/subjects/${subj_id}`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } });
-        console.log("api get student by subject id",response);
-        return response
-    }
-    catch (error) {
-        console.error("Error fetching get student by subject id:", error);
-        throw error;
-    }
-}
-
-// ---------------- Student registration helpers (frontend only) ----------------
-
-export type RegistrationCreateItem = { SubjectID: string; SectionID?: number };
-
-export const createRegistration = async (payload: RegistrationInterface) => {
-  // Match backend json tags defined in entity.Registration
-  const body = {
-    Date: payload.Date,
-    StudentID: payload.StudentID,
-    SubjectID: payload.SubjectID,
-    SectionID: payload.SectionID ?? 0,
-  };
+// ดึงรายการลงทะเบียนของนักศึกษาแต่ละคน
+export const getMyRegistrations = async (studentId: string) => {
+  if (!studentId) throw new Error("studentId is required");
   try {
-    // Use trailing slash to avoid 301/307 redirect on POST
-    return (await axios.post(`${apiUrl}/registrations/`, body)).data;
-  } catch (e) {
-    // fallback base when not using Vite proxy
-    return (await axios.post(`${rootBase}/registrations/`, body)).data;
+    const res = await axios.get(`${apiUrl}/registrations/${encodeURIComponent(studentId)}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching registrations:", error);
+    throw error;
   }
 };
 
+// สร้างข้อมูลลงทะเบียนแบบรายการเดียว
+export const createRegistration = async (data: RegistrationInterface) => {
+  try {
+    const res = await axios.post(`${apiUrl}/registrations/`, data);
+    return res.data;
+  } catch (error) {
+    console.error("Error creating registration:", error);
+    throw error;
+  }
+};
+
+// สร้างข้อมูลลงทะเบียนแบบหลายรายการ (อาจไม่รองรับที่ backend ปัจจุบัน)
+// หน้า UI มี fallback เรียก createRegistration ทีละรายการอยู่แล้ว
 export const createRegistrationBulk = async (
   studentId: string,
-  items: RegistrationCreateItem[],
+  items: Array<{ SubjectID: string; SectionID: number }>
 ) => {
-  for (const it of items) {
-    const payload: RegistrationInterface = {
-      Date: new Date().toISOString(),
-      StudentID: studentId,
-      SubjectID: it.SubjectID,
-      SectionID: it.SectionID ?? 0,
-    };
-    await createRegistration(payload);
-  }
-  return true;
-};
-
-export const getMyRegistrations = async (studentId: string) => {
-  const sid = (studentId || "").trim();
-  // Use full list to obtain ID/RegistrationID, then filter by student
+  if (!studentId) throw new Error("studentId is required");
+  if (!items || items.length === 0) throw new Error("items is required");
   try {
-    // Trailing slash to avoid 301 from Gin RedirectTrailingSlash
-    const all = (await axios.get(`${apiUrl}/registrations/`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } })).data;
-    const arr = Array.isArray(all) ? all : [];
-    return arr.filter((r: any) => (r.StudentID ?? r.student_id) === sid);
-  } catch (e: any) {
-    // Treat 404 (no registrations) as empty list instead of throwing
-    if (e?.response?.status === 404) {
-      return [] as any[];
-    }
-    try {
-      const all2 = (await axios.get(`${rootBase}/registrations/`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } })).data;
-      const arr2 = Array.isArray(all2) ? all2 : [];
-      return arr2.filter((r: any) => (r.StudentID ?? r.student_id) === sid);
-    } catch (e2: any) {
-      if (e2?.response?.status === 404) return [] as any[];
-      throw e2;
-    }
+    const payload = { student_id: studentId, items };
+    const res = await axios.post(`${apiUrl}/registrations/bulk`, payload);
+    return res.data;
+  } catch (error) {
+    // ให้ throw ต่อเพื่อให้หน้า UI ทำ fallback เอง
+    console.error("Error creating registrations (bulk):", error);
+    throw error;
   }
 };
 
+// ลบรายการลงทะเบียนตาม id ภายใน (ตัวเลข) หรือรหัส REGxxx ถ้ารองรับ
 export const deleteRegistration = async (id: number | string) => {
-  // Backend DeleteRegistration expects numeric primary key id
-  const key = String(id);
+  if (id === undefined || id === null || id === "") throw new Error("id is required");
   try {
-    return (await axios.delete(`${apiUrl}/registrations/${encodeURIComponent(key)}`)).data;
-  } catch (e) {
-    return (await axios.delete(`${rootBase}/registrations/${encodeURIComponent(key)}`)).data;
+    const res = await axios.delete(`${apiUrl}/registrations/${encodeURIComponent(String(id))}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting registration:", error);
+    throw error;
   }
 };
 
+// สำหรับอาจารย์: ดึงรายชื่อนักศึกษาที่ลงทะเบียนในวิชาตามรหัสวิชา
+// หมายเหตุ: คืนทั้ง axios response เพื่อให้ผู้ใช้เลือก .data เอง (ให้ตรงกับโค้ดผู้ใช้ปัจจุบัน)
+export const getStudentBySubjectID = async (subjectId: string) => {
+  if (!subjectId) throw new Error("subjectId is required");
+  try {
+    const res = await axios.get(`${apiUrl}/registrations/subjects/${encodeURIComponent(subjectId)}`);
+    return res; // ผู้ใช้ที่เรียกจะ .data ต่อเอง
+  } catch (error) {
+    console.error("Error fetching students by subject:", error);
+    throw error;
+  }
+};

@@ -28,15 +28,14 @@ func CreateRegistration(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Create registration success"})
 }
 func GetRegistrationAll(c *gin.Context) {
-    var registrations []entity.Registration
-    db := config.DB()
+	var registrations []entity.Registration
+	db := config.DB()
 
-    result := db.
-        Preload("Student").
-        Preload("Subject").
-        Preload("Subject.Semester").
-        Preload("Section").
-        Find(&registrations)
+	result := db.
+		Preload("Student").
+		Preload("Subject").
+		Preload("Subject.Semester").
+		Find(&registrations)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return

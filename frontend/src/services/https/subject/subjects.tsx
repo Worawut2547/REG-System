@@ -1,171 +1,143 @@
-// src/services/https/subject/subjects.tsx
-import axios, { AxiosError } from "axios";
+// services/https/subject/subjects.ts
+import axios from "axios";
 import { apiUrl } from "../../api";
-import type { SubjectInterface, SectionInterface, StudyTimeInterface } from "../../../interfaces/Subjects";
+import { type SubjectInterface } from "../../../interfaces/Subjects";
 
-// คืน base แบบไม่มี /api (ไว้ fallback)
-const rootBase = apiUrl.startsWith("/")
-  ? apiUrl // when using Vite proxy ('/api'), keep same
-  : (apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl);
+type SubjectCreateDTO = {
+  subject_id: string;
+  subject_name: string;
+  credit: number;
+  major_id: string;
+  faculty_id: string;
+  term?: string;
+  academic_year?: string;
+};
 
-/** helper: ลองเรียก primary → ถ้าพังลอง fallback */
-async function tryBoth<T>(primary: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
-  try {
-    return await primary();
-  } catch (e: any) {
-    const err = e as AxiosError;
-    // ลอง fallback เมื่อ 404/Network/หรือ 5xx
-    if (!err.response || err.response.status >= 400) {
-      return await fallback();
-    }
-    throw e;
+type SubjectAPI = {
+  subject_id?: string; SubjectID?: string; id?: string;
+  subject_name?: string; SubjectName?: string; name?: string;
+  credit?: number | string;
+  major_id?: string; MajorID?: string;
+  faculty_id?: string; FacultyID?: string;
+  term?: string;
+  academic_year?: string;
+};
+
+const mapSubjectFromAPI = (s: SubjectAPI): SubjectInterface => ({
+  SubjectID:   s.subject_id ?? s.SubjectID ?? s.id ?? "",
+  SubjectName: s.subject_name ?? s.SubjectName ?? s.name ?? "",
+  Credit:      Number(s.credit ?? 0),
+  MajorID:     s.major_id ?? s.MajorID ?? "",
+  FacultyID:   s.faculty_id ?? s.FacultyID ?? "",
+  Term:        s.term,
+  AcademicYear: s.academic_year,
+});
+
+export const createSubject = async (
+  data: SubjectInterface
+): Promise<SubjectInterface> => {
+  // Guard ให้แน่ใจว่าค่าจำเป็นครบและเป็นชนิดถูกต้อง
+  const { SubjectID, SubjectName, MajorID, FacultyID, Credit } = data;
+
+  if (!SubjectID)   throw new Error("SubjectID is required");
+  if (!SubjectName) throw new Error("SubjectName is required");
+  if (!MajorID)     throw new Error("MajorID is required");
+  if (!FacultyID)   throw new Error("FacultyID is required");
+
+  const creditNum = Number(Credit);
+  if (!Number.isFinite(creditNum) || creditNum < 1 || creditNum > 5) {
+    throw new Error("Credit must be a number between 1 and 5");
   }
-}
 
-// ---------- CRUD / Query ----------
+  const payload: SubjectCreateDTO = {
+    subject_id:   SubjectID,
+    subject_name: SubjectName,
+    credit:       creditNum,
+    major_id:     MajorID,
+    faculty_id:   FacultyID,
+    term:         data.Term,
+    academic_year: data.AcademicYear,
+  };
 
-// ดึงรายวิชาทั้งหมด
+  try {
+    // ✅ ต้องมีสแลชท้ายให้ตรงกับ route: POST "/subjects/"
+    const res = await axios.post<SubjectAPI>(
+      `${apiUrl}/subjects/`,
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return mapSubjectFromAPI(res.data);
+  } catch (err: unknown) {
+    // ช่วยดีบัก: โชว์ response จาก server ถ้ามี
+    if (axios.isAxiosError(err)) {
+      console.error("createSubject error:", {
+        url: `${apiUrl}/subjects/`,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+    } else {
+      console.error("createSubject error:", err);
+    }
+    throw err;
+  }
+};
+
 export const getSubjectAll = async (): Promise<SubjectInterface[]> => {
-  const normalizeRow = (raw: any): SubjectInterface => {
-    const id = raw.SubjectID ?? raw.subject_id ?? raw.id ?? "";
-    const name = raw.SubjectName ?? raw.subject_name ?? raw.name ?? "";
-    const credit = Number(raw.Credit ?? raw.credit ?? 0);
-    return {
-      SubjectID: String(id),
-      SubjectName: String(name),
-      Credit: Number.isFinite(credit) ? credit : 0,
-      MajorID: raw.MajorID ?? raw.major_id,
-      FacultyID: raw.FacultyID ?? raw.faculty_id,
-    } as SubjectInterface;
-  };
-
-  const normalizeList = (data: any): SubjectInterface[] => {
-    const arr = Array.isArray(data) ? data : [];
-    return arr.map(normalizeRow);
-  };
-
-  return tryBoth(
-    async () => normalizeList((await axios.get(`${apiUrl}/subjects`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } })).data),
-    async () => normalizeList((await axios.get(`${rootBase}/subjects`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } })).data)
-  );
-};
-
-// ดึงรายวิชาตามรหัส (รวม Sections + StudyTimes)
-export const getSubjectById = async (subjectId: string): Promise<SubjectInterface | null> => {
-  const code = (subjectId || "").trim().toUpperCase();
-  if (!code) return null;
-
-  // ตัวช่วยแปลง key จาก backend (snake_case) -> interface ที่ frontend ใช้
-  const normalize = (raw: any): SubjectInterface => {
-    if (!raw || typeof raw !== "object") return raw as SubjectInterface;
-    const subjectId = raw.SubjectID ?? raw.subject_id ?? raw.id ?? code;
-    const subjectName = raw.SubjectName ?? raw.subject_name ?? raw.name ?? "";
-    const credit = Number(raw.Credit ?? raw.credit ?? 0);
-
-    const studyTimesSrc: any[] = raw.StudyTimes ?? raw.study_times ?? raw.schedule ?? [];
-    const studyTimes: StudyTimeInterface[] = studyTimesSrc.map((t: any) => ({
-      day: t.day ?? t.Day,
-      start_at: t.start_at ?? t.start_time ?? t.StartAt ?? t.start ?? "",
-      end_at: t.end_at ?? t.end_time ?? t.EndAt ?? t.end ?? "",
-    }));
-
-    const sectionsSrc: any[] = raw.Sections ?? raw.sections ?? [];
-    const sections: SectionInterface[] = sectionsSrc.map((s: any, idx: number) => {
-      const codeVal = s.SectionID ?? s.section_id ?? "";
-      const idVal = s.ID ?? s.id;
-      const numericFromCode = typeof codeVal === "string" && /^\d+$/.test(codeVal) ? Number(codeVal) : (typeof codeVal === "number" ? codeVal : 0);
-      let sectionId = Number(idVal ?? numericFromCode ?? 0);
-      if (!Number.isFinite(sectionId) || sectionId <= 0) {
-        // Backend ไม่ส่ง id เชิงตัวเลขมา → ใช้ลำดับ (idx+1) เป็นค่าแทนเพื่อให้ใช้งานเลือกได้
-        sectionId = idx + 1;
-      }
-      return {
-        SectionID: sectionId,
-        Group: Number(s.Group ?? s.group ?? 0),
-        DateTeaching: String(s.DateTeaching ?? s.date_teaching ?? ""),
-        SubjectID: subjectId,
-        SectionCode: String(codeVal || ""),
-      } as SectionInterface;
-    });
-
-    return {
-      SubjectID: String(subjectId ?? ""),
-      SubjectName: String(subjectName ?? ""),
-      Credit: Number.isFinite(credit) ? credit : 0,
-      MajorID: raw.MajorID ?? raw.major_id,
-      FacultyID: raw.FacultyID ?? raw.faculty_id,
-      StudyTimes: studyTimes,
-      Sections: sections,
-    } as SubjectInterface;
-  };
-
   try {
-    const res = await axios.get(`${apiUrl}/subjects/${encodeURIComponent(code)}`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } });
-    return normalize(res.data);
-  } catch (e: any) {
-    const err = e as AxiosError;
-    // ถ้า 404 ให้คืน null เพื่อให้หน้าแสดง "ไม่พบวิชา"
-    if (err.response && err.response.status === 404) return null;
-    // ลอง fallback อีกฐาน
-    try {
-      const res2 = await axios.get(`${rootBase}/subjects/${encodeURIComponent(code)}`, { headers: { "Cache-Control": "no-cache" }, params: { _ts: Date.now() } });
-      return normalize(res2.data);
-    } catch (e2: any) {
-      const err2 = e2 as AxiosError;
-      if (err2.response && err2.response.status === 404) return null;
-      throw e2;
+    // GET ฝั่ง Go เปิดไว้ที่ GET "/subjects/" → ใช้มีสแลชท้ายเช่นกัน
+    const res = await axios.get<SubjectAPI[]>(`${apiUrl}/subjects/`);
+    const arr = Array.isArray(res.data) ? res.data : [];
+    return arr.map(mapSubjectFromAPI);
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("getSubjectAll error:", {
+        url: `${apiUrl}/subjects/`,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+    } else {
+      console.error("getSubjectAll error:", err);
     }
+    throw err;
   }
 };
 
-// สร้างรายวิชา (ถ้าคุณใช้หน้า add)
-export type SubjectCreatePayload = {
-  SubjectID: string;
-  SubjectName: string;
-  Credit: number;
-  MajorID: string;
-  FacultyID: string;
-};
-export const createSubject = async (payload: SubjectCreatePayload) => {
-  const body = {
-    subject_id: payload.SubjectID,
-    subject_name: payload.SubjectName,
-    credit: payload.Credit,
-    major_id: payload.MajorID,
-    faculty_id: payload.FacultyID,
-  };
-  return tryBoth(
-    async () => (await axios.post(`${apiUrl}/subjects`, body)).data,
-    async () => (await axios.post(`${rootBase}/subjects`, body)).data,
-  );
+// GET one subject with sections (backend returns `sections` array)
+export const getSubjectById = async (subjectId: string): Promise<(SubjectInterface & { Sections?: any[]; StudyTimes?: any[] }) | null> => {
+  const sid = (subjectId || "").trim();
+  if (!sid) return null;
+  try {
+    const res = await axios.get(`${apiUrl}/subjects/${encodeURIComponent(sid)}`);
+    const raw = res.data || {};
+    const base: SubjectInterface = {
+      SubjectID: raw.subject_id ?? raw.SubjectID ?? sid,
+      SubjectName: raw.subject_name ?? raw.SubjectName ?? "",
+      Credit: typeof raw.credit === "number" ? raw.credit : Number(raw.credit ?? 0),
+      MajorID: raw.major_id ?? raw.MajorID,
+      FacultyID: raw.faculty_id ?? raw.FacultyID,
+      Term: raw.term ?? raw.Term,
+      AcademicYear: raw.academic_year ?? raw.AcademicYear,
+    };
+    const Sections = Array.isArray(raw.sections) ? raw.sections : (Array.isArray(raw.Sections) ? raw.Sections : undefined);
+    const StudyTimes = Array.isArray(raw.study_times) ? raw.study_times : (Array.isArray(raw.StudyTimes) ? raw.StudyTimes : undefined);
+    return { ...base, Sections, StudyTimes } as any;
+  } catch (err) {
+    console.error("getSubjectById error:", err);
+    return null;
+  }
 };
 
-// อัปเดตรายวิชา (รองรับหลาย key ชื่อ)
-export type SubjectUpdatePayload = {
-  subject_name?: string;
-  credit?: number;
-  major_id?: string;
-  faculty_id?: string;
-  // สำหรับกรณีเปลี่ยนรหัสวิชา
-  subject_id?: string; // บาง backend อาจใช้ key นี้
-  new_subject_id?: string; // บาง backend อาจใช้ key นี้
-};
 export const updateSubject = async (
   subjectId: string,
-  payload: SubjectUpdatePayload
-) => {
-  const sid = (subjectId || "").trim();
-  return tryBoth(
-    async () => (await axios.put(`${apiUrl}/subjects/${encodeURIComponent(sid)}`, payload)).data,
-    async () => (await axios.put(`${rootBase}/subjects/${encodeURIComponent(sid)}`, payload)).data,
-  );
+  data: Partial<{ subject_name: string; credit: number; major_id: string; faculty_id: string }>
+): Promise<void> => {
+  if (!subjectId) throw new Error("subjectId is required");
+  await axios.put(`${apiUrl}/subjects/${subjectId}`, data, {
+    headers: { "Content-Type": "application/json" },
+  });
 };
 
-// ลบรายวิชา
-export const deleteSubject = async (subjectId: string) => {
-  const sid = (subjectId || "").trim();
-  return tryBoth(
-    async () => (await axios.delete(`${apiUrl}/subjects/${encodeURIComponent(sid)}`)).data,
-    async () => (await axios.delete(`${rootBase}/subjects/${encodeURIComponent(sid)}`)).data,
-  );
+export const deleteSubject = async (subjectId: string): Promise<void> => {
+  if (!subjectId) throw new Error("subjectId is required");
+  await axios.delete(`${apiUrl}/subjects/${subjectId}`);
 };

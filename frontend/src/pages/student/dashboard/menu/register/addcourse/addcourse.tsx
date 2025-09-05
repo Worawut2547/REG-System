@@ -1,17 +1,20 @@
 // src/pages/student/dashboard/menu/register/addcourse.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Layout, Input, Table, Button, message, Typography, Space, Divider, Card, Modal } from "antd";
+import { Layout, Input, Table, Button, message, Space, Divider, Card, Modal, Typography } from "antd";
 import { SearchOutlined, DeleteOutlined, SendOutlined } from "@ant-design/icons";
-import dayjs from "dayjs";
 
-import { getSubjectById, getSubjectAll } from "../../../../../../services/https/subject/subjects";
-import { createRegistration, createRegistrationBulk, getMyRegistrations } from "../../../../../../services/https/registration/registration";
-import type { SubjectInterface, SectionInterface } from "../../../../../../interfaces/Subjects";
+import { getSubjectAll, getSubjectById } from "../../../../../../services/https/subject/subjects";
+import { getNameStudent } from "../../../../../../services/https/student/student";
+import { createRegistration } from "../../../../../../services/https/registration/registration";
+import type { SubjectInterface } from "../../../../../../interfaces/Subjects";
 import type { RegistrationInterface } from "../../../../../../interfaces/Registration";
 import AddCourseReview from "./AddCourseReview";
 
 const { Content } = Layout;
-const { Text } = Typography;
+
+// Local types for sections from backend
+type SectionLite = { ID?: number; SectionID?: string; Group?: number; DateTeaching?: string; SubjectID?: string };
+type SubjectWithSections = SubjectInterface & { Sections?: SectionLite[] };
 
 type Step = "select" | "review" | "done";
 
@@ -39,8 +42,8 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
 
   const [basket, setBasket] = useState<BasketRow[]>([]);
-  const [subjectDetail, setSubjectDetail] = useState<SubjectInterface | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [subjectDetail, setSubjectDetail] = useState<SubjectWithSections | null>(null);
+  const [sectionModalOpen, setSectionModalOpen] = useState(false);
 
   // รายการของฉัน ใช้ตรวจซ้ำ/ชน
   const [myRows, setMyRows] = useState<BasketRow[]>([]);
@@ -71,36 +74,17 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
 
   const isRegistered = (sid: string) => myRows.some((r) => (r.SubjectID || "").toUpperCase() === sid.toUpperCase());
 
+  // แปลงข้อความเวลาเรียนให้ขึ้นบรรทัดใหม่เมื่อมีหลายช่วงเวลา
   const normalizeDateTeaching = (val?: string) => {
-    const s = (val || "").trim();
+    const s = String(val || "").trim();
     if (!s) return "";
-    if (/[A-Za-zก-๙]+:\s*\d{1,2}:\d{2}/.test(s)) {
-      if (s.includes(",")) return s.split(",").map((p) => p.trim()).filter(Boolean).join("\n");
-      return s;
+    if (s.includes(",")) {
+      return s.split(",").map(p => p.trim()).filter(Boolean).join("\n");
     }
-    const parts = s.split(",").map((p) => p.trim()).filter(Boolean);
-    const out = parts.map((p) => p).filter(Boolean).join("\n");
-    return out || s;
+    return s;
   };
 
-  const scheduleFromStudyTimes = (times?: SubjectInterface["StudyTimes"]) => {
-    const hhmm = (str?: string) => {
-      const s = String(str || "").trim();
-      const m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-      if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
-      return s;
-    };
-    return (times || [])
-      .map((t) => {
-        const st = dayjs(t.start_at); const en = dayjs(t.end_at);
-        const dayName = st.isValid() ? st.format("dddd") : String(t.day ?? "");
-        const ts = st.isValid() ? st.format("HH:mm") : hhmm(t.start_at);
-        const te = en.isValid() ? en.format("HH:mm") : hhmm(t.end_at);
-        if (!dayName || !ts || !te) return "";
-        return `${dayName}: ${ts}-${te}`;
-      })
-      .filter(Boolean).join("\n");
-  };
+  // no study time normalization needed without section/time data
 
   const parseScheduleToBlocks = (text?: string) => {
     const lines = String(text || "").split(/\n|,/).map((s) => s.trim()).filter(Boolean);
@@ -126,14 +110,14 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
 
     setLoading(true);
     try {
-      const sub = await getSubjectById(code);
-      if (!sub) {
+      const full = await getSubjectById(code);
+      if (!full) {
         message.warning(`ไม่พบวิชา ${code} ในระบบ`);
         await openBrowseSubjects();
         return;
       }
-      setSubjectDetail(sub);
-      setModalOpen(true);
+      setSubjectDetail(full as SubjectWithSections);
+      setSectionModalOpen(true);
     } catch (e) {
       console.error(e);
       message.error("โหลดข้อมูลวิชาไม่สำเร็จ");
@@ -148,27 +132,23 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
     openPickSection(code);
   };
 
-  const makeRowFromSection = (sub: SubjectInterface, sec: SectionInterface): BasketRow => {
-    const schedule = (sec.DateTeaching && String(sec.DateTeaching).trim()) ? normalizeDateTeaching(String(sec.DateTeaching)) : (scheduleFromStudyTimes(sub.StudyTimes) || "");
-    const blocks = parseScheduleToBlocks(schedule);
+  const makeRowFromSection = (sub: SubjectWithSections, sec: SectionLite): BasketRow => {
+    const sched = normalizeDateTeaching(String(sec.DateTeaching || "").trim());
+    const blocks = parseScheduleToBlocks(sched);
     return {
-      key: `${sub.SubjectID}-${sec.SectionID}`,
-      SubjectID: sub.SubjectID,
+      key: `${sub.SubjectID}-${sec.ID ?? sec.SectionID ?? "0"}`,
+      SubjectID: String(sub.SubjectID || ""),
       SubjectName: sub.SubjectName,
       Credit: sub.Credit,
-      SectionID: sec.SectionID,
+      SectionID: Number(sec.ID ?? 0),
       Group: sec.Group,
-      Schedule: schedule,
+      Schedule: sched,
       Blocks: blocks,
     };
   };
 
-  const quickPickSection = (sec: SectionInterface) => {
+  const quickPickSection = (sec: SectionLite) => {
     if (!subjectDetail) return;
-    if (isRegistered(subjectDetail.SubjectID)) {
-      message.info(`วิชา ${subjectDetail.SubjectID} ถูกลงทะเบียนแล้ว`);
-      return;
-    }
     const row = makeRowFromSection(subjectDetail, sec);
     setBasket((prev) => {
       if (prev.some((b) => b.SubjectID === row.SubjectID)) {
@@ -178,7 +158,7 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
       return [...prev, row];
     });
     setCodeInput("");
-    setModalOpen(false);
+    setSectionModalOpen(false);
   };
 
   const handleRemove = (key: string) => setBasket((prev) => prev.filter((b) => b.key !== key));
@@ -230,30 +210,23 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
     const items = basket.map((b) => ({ SubjectID: b.SubjectID, SectionID: b.SectionID }));
     setLoading(true);
     try {
-      await createRegistrationBulk(studentId, items);
+      // ไม่เรียก bulk (backend ไม่มี) → สร้างทีละรายการแทน
+      for (const it of items) {
+        const payload: RegistrationInterface = {
+          Date: new Date().toISOString(),
+          StudentID: studentId,
+          SubjectID: it.SubjectID,
+          SectionID: it.SectionID,
+        };
+        await createRegistration(payload);
+      }
       message.success("ลงทะเบียนสำเร็จ");
       setBasket([]);
       await reloadMyList();
       setStep("select");
     } catch (e) {
-      try {
-        for (const it of items) {
-          const payload: RegistrationInterface = {
-            Date: new Date().toISOString(),
-            StudentID: studentId,
-            SubjectID: it.SubjectID,
-            SectionID: it.SectionID,
-          };
-          await createRegistration(payload);
-        }
-        message.success("ลงทะเบียนสำเร็จ");
-        setBasket([]);
-        await reloadMyList();
-        setStep("select");
-      } catch (e2) {
-        console.error(e2);
-        message.error("บันทึกล้มเหลว");
-      }
+      console.error(e);
+      message.error("บันทึกล้มเหลว");
     } finally {
       setLoading(false);
     }
@@ -282,15 +255,48 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
   const reloadMyList = async () => {
     setMyLoading(true);
     try {
-      const regs = await getMyRegistrations(studentId);
-      const rows: BasketRow[] = regs.map((r: any) => ({
+      // โหลดโปรไฟล์เพื่อดึง Registration (รูปแบบตรงกับ interfaces/Registration)
+      const profile = await getNameStudent(studentId);
+      const regs = Array.isArray(profile?.Registration) ? profile.Registration : [];
+      const baseRows: BasketRow[] = regs.map((r: any) => ({
         key: String(r.ID ?? r.id ?? `${r.SubjectID}-${r.SectionID}-${r.Date}`),
-        SubjectID: r.SubjectID ?? r.subject_id,
-        SectionID: r.SectionID ?? r.section_id ?? 0,
-        Group: r.Section?.Group ?? r.section?.group,
-        Schedule: r.Section?.DateTeaching || r.section?.date_teaching || "",
+        SubjectID: String(r.SubjectID ?? r.subject_id ?? ''),
+        SectionID: Number(r.SectionID ?? r.section_id ?? 0),
+        Group: undefined,
+        Schedule: "",
+        Blocks: [],
       }));
-      setMyRows(rows);
+
+      // เติมรายละเอียดจากวิชาเพื่อได้ Group/Schedule ครบ
+      const uniqueSids = Array.from(new Set(baseRows.map((x) => x.SubjectID).filter(Boolean)));
+      const subMap: Record<string, SubjectWithSections | null> = {} as any;
+      for (const sid of uniqueSids) {
+        try {
+          subMap[sid] = (await getSubjectById(sid)) as SubjectWithSections | null;
+        } catch {
+          subMap[sid] = null;
+        }
+      }
+
+      const enriched: BasketRow[] = baseRows.map((r) => {
+        const sub = subMap[r.SubjectID || ""];
+        let groupVal: number | undefined = r.Group;
+        let sched = String(r.Schedule || "").trim();
+        if (sub) {
+          const secExact = (sub.Sections || []).find((s) => Number(s.ID ?? 0) === Number(r.SectionID));
+          const secByGroup = secExact || (sub.Sections || []).find((s) => Number(s.Group ?? 0) === Number(r.Group ?? 0));
+          const dt = secByGroup?.DateTeaching ? normalizeDateTeaching(String(secByGroup.DateTeaching)) : "";
+          if (dt) sched = dt;
+          if (!groupVal && secByGroup && typeof secByGroup.Group !== 'undefined') {
+            const g = Number(secByGroup.Group);
+            if (Number.isFinite(g) && g > 0) groupVal = g;
+          }
+        }
+        const blocks = parseScheduleToBlocks(sched);
+        return { ...r, Group: groupVal, Schedule: sched, Blocks: blocks } as BasketRow;
+      });
+
+      setMyRows(enriched);
     } catch (e) {
       console.error(e);
     } finally {
@@ -378,32 +384,32 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
       {/* Modal เลือกกลุ่มเรียน */}
       <Modal
         title={subjectDetail ? `เลือกกลุ่มเรียน: ${subjectDetail.SubjectID} - ${subjectDetail.SubjectName}` : "เลือกกลุ่มเรียน"}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
+        open={sectionModalOpen}
+        onCancel={() => setSectionModalOpen(false)}
         footer={null}
         width={900}
       >
         {subjectDetail?.Sections?.length ? (
           <Table
-            rowKey={(r: any) => r.SectionID}
+            rowKey={(r: any) => r.ID ?? r.SectionID}
             dataSource={subjectDetail.Sections as any}
             pagination={false}
             columns={[
-              { title: "เลือก", key: "pick", width: 90, render: (_: any, s: SectionInterface) => (
+              { title: "เลือก", key: "pick", width: 90, render: (_: any, s: SectionLite) => (
                   <Button type="link" onClick={() => quickPickSection(s)} disabled={!s.Group || Number(s.Group) === 0}>เลือก</Button>
                 ),
               },
               { title: "กลุ่ม", dataIndex: "Group", key: "Group", width: 100 },
               { title: "รหัสวิชา", key: "SubjectID", width: 140, render: () => subjectDetail.SubjectID },
               { title: "ชื่อวิชา", key: "SubjectName", render: () => subjectDetail.SubjectName },
-              { title: "เวลาเรียน", key: "Schedule", width: 260, render: (_: any, s: SectionInterface) => (
+              { title: "เวลาเรียน", key: "Schedule", width: 260, render: (_: any, s: SectionLite) => (
                   <span style={{ whiteSpace: 'pre-line' }}>{normalizeDateTeaching(String(s.DateTeaching || '-'))}</span>
                 ) },
               { title: "หมายเหตุ", key: "remark", render: () => <span>-</span> },
             ] as any}
           />
         ) : (
-          <Text>วิชานี้ยังไม่มีกลุ่มเรียน</Text>
+          <Typography.Text>วิชานี้ยังไม่มีกลุ่มเรียน</Typography.Text>
         )}
       </Modal>
 
@@ -412,14 +418,22 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
         <Space style={{ marginBottom: 12, width: "100%", justifyContent: "space-between" }}>
           <Input.Search placeholder="ค้นหา: รหัสวิชา / ชื่อวิชา" allowClear style={{ width: 360 }} onChange={(e) => setBrowseQuery(e.target.value)} />
         </Space>
-        <Table dataSource={filteredBrowseRows} loading={browseLoading} rowKey={(r) => r.SubjectID} pagination={{ pageSize: 8 }}
+        <Table dataSource={filteredBrowseRows}
+          loading={browseLoading}
+          rowKey={(r: SubjectInterface) => String(r.SubjectID || r.SubjectName || "")}
+          pagination={{ pageSize: 8 }}
           columns={[
             { title: "รหัสวิชา", dataIndex: "SubjectID", key: "SubjectID", width: 140 },
             { title: "ชื่อวิชา", dataIndex: "SubjectName", key: "SubjectName" },
             { title: "หน่วยกิต", dataIndex: "Credit", key: "Credit", width: 100 },
-            { title: "", key: "action", width: 120, render: (_: any, rec: SubjectInterface) => (
-                <Button type="link" onClick={() => pickFromBrowse(rec.SubjectID)} disabled={isRegistered(rec.SubjectID) || basket.some((b) => b.SubjectID === rec.SubjectID)}>เลือกวิชานี้</Button>
-              )},
+            { title: "", key: "action", width: 120, render: (_: any, rec: SubjectInterface) => {
+                const sid = String(rec.SubjectID || "");
+                const inBasket = basket.some((b) => b.SubjectID === sid);
+                const disabled = !sid || isRegistered(sid) || inBasket;
+                return (
+                  <Button type="link" onClick={() => pickFromBrowse(sid)} disabled={disabled}>เลือกวิชานี้</Button>
+                );
+              }},
           ] as any}
         />
       </Modal>

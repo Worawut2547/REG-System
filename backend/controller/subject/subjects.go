@@ -31,6 +31,7 @@ type SubjectCreateReq struct {
 	Credit      int    `json:"credit"       binding:"required,min=1,max=5"`
 	MajorID     string `json:"major_id"     binding:"required"`
 	FacultyID   string `json:"faculty_id"   binding:"required"`
+	SemesterID  int    `json:"semester_id"  binding:"required"`
 }
 
 // SubjectUpdateReq ใช้รับข้อมูลตอนแก้ไขรายวิชา
@@ -39,6 +40,7 @@ type SubjectUpdateReq struct {
 	Credit      *int    `json:"credit,omitempty"    binding:"omitempty,min=1,max=5"`
 	MajorID     *string `json:"major_id,omitempty"`
 	FacultyID   *string `json:"faculty_id,omitempty"`
+	SemesterID  *int    `json:"semester_id,omitempty"`
 }
 
 // ======================================================================
@@ -98,6 +100,7 @@ func CreateSubject(c *gin.Context) {
 		Credit:      req.Credit,
 		MajorID:     req.MajorID,
 		FacultyID:   req.FacultyID,
+		SemesterID:  req.SemesterID,
 	}
 
 	if err := db.Create(&sub).Error; err != nil {
@@ -113,6 +116,9 @@ func CreateSubject(c *gin.Context) {
 		"credit":       sub.Credit,
 		"major_id":     sub.MajorID,
 		"faculty_id":   sub.FacultyID,
+		"semester_id":  sub.SemesterID,
+		"term":  sub.Semester.Term,
+		"academic_year": sub.Semester.AcademicYear,
 	})
 }
 
@@ -127,8 +133,8 @@ func GetSubjectID(c *gin.Context) {
         Preload("Major").
         Preload("Faculty").
         Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
-        // หลีกเลี่ยงคำสงวน SQL โดยเรียงตาม section_id แทน
-        Preload("Sections", func(tx *gorm.DB) *gorm.DB { return tx.Order("section_id ASC") }).
+        Preload("Semester").
+        Preload("Sections").
         First(&sub, "subject_id = ?", id).Error; err != nil {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -139,38 +145,18 @@ func GetSubjectID(c *gin.Context) {
 		return
 	}
 
-    // เตรียม study_times
-    studyTimes := make([]map[string]interface{}, 0, len(sub.StudyTimes))
-	for _, t := range sub.StudyTimes {
-		studyTimes = append(studyTimes, map[string]interface{}{
-			"start_at": t.StartAt.Format("15:04:05"),
-			"end_at":   t.EndAt.Format("15:04:05"),
-			"day":      t.StartAt.Weekday().String(),
-		})
-	}
-
-    // เตรียม sections
-    sections := make([]map[string]interface{}, 0, len(sub.Sections))
-    for _, s := range sub.Sections {
-        sections = append(sections, map[string]interface{}{
-            "section_id":    s.SectionID,
-            "group":         s.Group,
-            "date_teaching": s.DateTeaching,
-        })
-    }
-
     resp := map[string]interface{}{
-        "subject_id":        sub.SubjectID,
-        "subject_name":      sub.SubjectName,
-        "credit":            sub.Credit,
-        "major_id":          sub.MajorID,
-        "faculty_id":        sub.FacultyID,
-        /*"teacher_id":        sub.TeacherID,
-        "teacher_firstname": sub.Teacher.FirstName,
-        "teacher_lastname":  sub.Teacher.LastName,*/
-        // เพิ่มข้อมูลที่ frontend ต้องการใช้แสดง
-        "study_times": studyTimes,
-        "sections":    sections,
+        "subject_id":   sub.SubjectID,
+        "subject_name": sub.SubjectName,
+        "credit":       sub.Credit,
+        "major_id":     sub.MajorID,
+        "faculty_id":   sub.FacultyID,
+        "semester_id":  sub.SemesterID,
+        "term":  sub.Semester.Term,
+        "academic_year": sub.Semester.AcademicYear,
+        // include sections for frontend selection
+        "sections":      sub.Sections,
+        //"study_times":  sub.StudyTimes,
     }
 	if sub.Major != nil {
 		resp["major_name"] = sub.Major.MajorName
@@ -191,9 +177,10 @@ func GetSubjectAll(c *gin.Context) {
 	if err := db.
 		Preload("Major").
 		Preload("Faculty").
+		Preload("Semester").
 		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
 		Find(&subs).Error; err != nil {
-
+		
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -201,15 +188,17 @@ func GetSubjectAll(c *gin.Context) {
 	out := make([]map[string]interface{}, 0, len(subs))
 	for i, s := range subs {
 		row := map[string]interface{}{
-			"index":             i + 1, // ใช้สำหรับแสดงลำดับในตาราง (ถ้าไม่ใช้จะลบออกก็ได้)
-			"subject_id":        s.SubjectID,
-			"subject_name":      s.SubjectName,
-			"credit":            s.Credit,
-			"major_id":          s.MajorID,
-			"faculty_id":        s.FacultyID,
+			"index":        i + 1, // ใช้สำหรับแสดงลำดับในตาราง (ถ้าไม่ใช้จะลบออกก็ได้)
+			"subject_id":   s.SubjectID,
+			"subject_name": s.SubjectName,
+			"credit":       s.Credit,
+			"major_id":     s.MajorID,
+			"faculty_id":   s.FacultyID,
+			"term":  s.Semester.Term,
+			"academic_year": s.Semester.AcademicYear,
 			/*"teacher_id":        s.TeacherID,
 			"teacher_firstname": s.Teacher.FirstName,
-			"teacher_lastname":  s.Teacher.LastName,*/
+			"teacher_lastname":  s.Teacher.LastName,*/	
 			//"study_times":  s.StudyTimes,
 		}
 		if s.Major != nil {
@@ -291,8 +280,9 @@ func UpdateSubject(c *gin.Context) {
 		"credit":       sub.Credit,
 		"major_id":     sub.MajorID,
 		"faculty_id":   sub.FacultyID,
+		"term":  sub.Semester.Term,
+		"academic_year": sub.Semester.AcademicYear,
 	})
-
 }
 
 // DELETE /subjects/:subjectId

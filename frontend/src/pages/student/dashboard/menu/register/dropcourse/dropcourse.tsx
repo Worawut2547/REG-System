@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from "react";
 import { Layout, Table, Button, Typography, Card, Popconfirm, message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
-import { getMyRegistrations, deleteRegistration } from "../../../../../../services/https/registration/registration";
+import { deleteRegistration } from "../../../../../../services/https/registration/registration";
+import { getNameStudent } from "../../../../../../services/https/student/student";
 import { getSubjectById } from "../../../../../../services/https/subject/subjects";
-import dayjs from "dayjs";
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -27,79 +27,60 @@ const DropCoursePage: React.FC<Props> = ({ onBack }) => {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // แปลงข้อความเวลาเรียนให้ขึ้นบรรทัดใหม่เมื่อมีหลายช่วงเวลา
   const normalizeDateTeaching = (val?: string) => {
     const s = String(val || "").trim();
     if (!s) return "";
-    if (/[A-Za-zก-๙]+:\s*\d{1,2}:\d{2}/.test(s)) {
-      return s.includes(",") ? s.split(",").map((p) => p.trim()).filter(Boolean).join("\n") : s;
+    if (s.includes(",")) {
+      return s.split(",").map(p => p.trim()).filter(Boolean).join("\n");
     }
     return s;
-  };
-
-  const scheduleFromStudyTimes = (times?: any[]) => {
-    const hhmm = (str?: string) => {
-      const t = String(str || "").trim();
-      const m = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-      if (m) return `${m[1].padStart(2,'0')}:${m[2]}`;
-      return t;
-    };
-    return (times || [])
-      .map((t) => {
-        const st = dayjs(t.start_at); const en = dayjs(t.end_at);
-        const dayName = st.isValid() ? st.format("dddd") : String(t.day || "");
-        const ts = st.isValid() ? st.format("HH:mm") : hhmm(t.start_at);
-        const te = en.isValid() ? en.format("HH:mm") : hhmm(t.end_at);
-        if (!dayName || !ts || !te) return "";
-        return `${dayName}: ${ts}-${te}`;
-      })
-      .filter(Boolean)
-      .join("\n");
   };
 
   const reload = async () => {
     setLoading(true);
     try {
-      const regs = await getMyRegistrations(studentId);
-      const list: Row[] = regs.map((r: any) => ({
-        key: String(r.ID ?? r.id ?? `${r.SubjectID}-${r.SectionID}-${r.Date}`),
-        SubjectID: r.SubjectID ?? r.subject_id,
-        SubjectName: r.Subject?.SubjectName ?? r.subject?.subject_name ?? "",
-        Credit: r.Subject?.Credit ?? r.subject?.credit ?? undefined,
-        SectionID: r.SectionID ?? r.section_id ?? 0,
-        Group: r.Section?.Group ?? r.section?.group,
-        // Schedule เติมภายหลังจากรายละเอียดวิชา
-        Schedule: String(r.Section?.DateTeaching || r.section?.date_teaching || ""),
-        RegistrationID: r.RegistrationID ?? r.registration_id,
-        InternalID: r.ID ?? r.id,
-      }));
-      // เติมเวลาเรียนจากรายละเอียดวิชา (Section.DateTeaching) หาก Schedule ยังว่าง
-      const uniqueSids = Array.from(new Set(list.map((x) => x.SubjectID).filter(Boolean)));
+      // ดึงโปรไฟล์นักศึกษาที่มีรายการ Registration (มี ID ครบ) เพื่อให้ลบได้
+      const profile = await getNameStudent(studentId);
+      const regs = Array.isArray(profile?.Registration) ? profile.Registration : [];
+      const uniqueSids = Array.from(new Set(regs.map((r: any) => String(r.SubjectID ?? r.subject_id ?? '')).filter(Boolean)));
       const subMap: Record<string, any> = {};
-      const details = await Promise.all(uniqueSids.map(async (sid) => {
-        try { return await getSubjectById(sid); } catch { return null; }
-      }));
-      details.forEach((sub, i) => { subMap[uniqueSids[i]] = sub; });
-
-      const enriched = list.map((row) => {
-        const sub = subMap[row.SubjectID];
-        let sched = String(row.Schedule || "").trim();
-        let groupVal: number | undefined = (typeof row.Group === 'number' && row.Group > 0) ? row.Group : undefined;
+      for (const sid of uniqueSids) {
+        const sidStr = String(sid);
+        try {
+          subMap[sidStr] = await getSubjectById(sidStr);
+        } catch (err) {
+          subMap[sidStr] = null;
+        }
+      }
+      const list: Row[] = regs.map((r: any) => {
+        const sid = String(r.SubjectID ?? r.subject_id ?? '');
+        const sub = subMap[sid];
+        let groupVal: number | undefined = r.Section?.Group ?? r.section?.group;
+        let sched = String(r.Section?.DateTeaching || r.section?.date_teaching || "").trim();
         if (sub) {
-          // match by SectionID; if not found, fallback by Group
-          const secExact = (sub.Sections || []).find((s: any) => Number(s.SectionID) === Number(row.SectionID));
-          const secByGroup = secExact || (sub.Sections || []).find((s: any) => Number(s.Group) === Number(row.Group));
-          const dt = secByGroup?.DateTeaching ? normalizeDateTeaching(secByGroup.DateTeaching) : "";
-          const fromTimes = scheduleFromStudyTimes(sub.StudyTimes);
-          if (dt) sched = dt; else if (!sched && fromTimes) sched = fromTimes;
+          const secExact = (sub.Sections || []).find((s: any) => Number(s.ID ?? 0) === Number(r.SectionID ?? r.section_id ?? 0));
+          const secByGroup = secExact || (sub.Sections || []).find((s: any) => Number(s.Group ?? 0) === Number(groupVal ?? 0));
+          const dt = secByGroup?.DateTeaching ? normalizeDateTeaching(String(secByGroup.DateTeaching)) : "";
+          if (dt) sched = dt;
           if (!groupVal && secByGroup && typeof secByGroup.Group !== 'undefined') {
             const g = Number(secByGroup.Group);
             if (Number.isFinite(g) && g > 0) groupVal = g;
           }
         }
-        return { ...row, Schedule: sched, Group: groupVal ?? row.Group } as Row;
+        return {
+          key: String(r.ID ?? r.id ?? `${r.SubjectID}-${r.SectionID}-${r.Date}`),
+          SubjectID: r.SubjectID ?? r.subject_id,
+          SubjectName: String(sub?.SubjectName ?? ""),
+          Credit: sub?.Credit ?? undefined,
+          SectionID: r.SectionID ?? r.section_id ?? 0,
+          Group: groupVal,
+          Schedule: sched,
+          RegistrationID: r.RegistrationID ?? r.registration_id,
+          InternalID: r.ID ?? r.id,
+        } as Row;
       });
-
-      setRows(enriched);
+      setRows(list);
     } catch (e) {
       console.error(e);
       message.error("โหลดรายการไม่สำเร็จ");

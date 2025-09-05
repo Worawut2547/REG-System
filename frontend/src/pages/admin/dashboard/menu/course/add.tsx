@@ -96,7 +96,8 @@ type SubjectAPI = {
   subjectName?: string;
   SubjectName?: string;
   name?: string;
-  credit?: number | string; Credit?: number | string;   // <-- เพิ่ม Credit
+  credit?: number | string;
+  Credit?: number | string; // <-- เพิ่ม Credit
   study_times?: SubjectTimeAPI[];
   schedule?: SubjectTimeAPI[];
   major_id?: string;
@@ -111,6 +112,8 @@ type SubjectAPI = {
   faculty_name?: string;
   facultyName?: string;
   FacultyName?: string;
+  term?: string;
+  academic_year?: string;
 };
 
 /* -----------------------------------------
@@ -230,7 +233,6 @@ const ADD: React.FC = () => {
       setLoadingMajors(false);
     }
   };
-
   /* -----------------------------------------
    * โหลดรายวิชา:
    * 1) ดึงรายการวิชา
@@ -614,7 +616,9 @@ const ADD: React.FC = () => {
                 title: "หน่วยกิต",
                 dataIndex: "Credit",
                 width: 100,
-                render: (val: number | string | undefined) => <span>{Number(val ?? 0)}</span>, // กันกรณีเป็น string
+                render: (val: number | string | undefined) => (
+                  <span>{Number(val ?? 0)}</span>
+                ), // กันกรณีเป็น string
               },
               {
                 title: "เวลาเรียน",
@@ -654,6 +658,19 @@ const ADD: React.FC = () => {
                 render: (_: unknown, row: SubjectRow) =>
                   row.MajorName ??
                   (majors.find((m) => m.id === row.MajorID)?.name || ""),
+              },
+              {
+                title: "เทอม",
+                dataIndex: "term",
+                render: (_: unknown, row: SubjectRow) => row.Term || "-",
+                width: 80,
+              },
+              {
+                title: "ปีการศึกษา",
+                dataIndex: "academic_year",
+                render: (_: unknown, row: SubjectRow) =>
+                  row.AcademicYear || "-",
+                width: 120,
               },
             ]}
             dataSource={tableRows}
