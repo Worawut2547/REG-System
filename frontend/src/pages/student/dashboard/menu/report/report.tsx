@@ -1,49 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Layout, Select, Card, Button, Upload, Input, Modal, message, Typography, Table, Tag, Space } from "antd";
 import type { UploadFile, UploadProps } from "antd/es/upload/interface";
+import axios from "axios";
+import { getReportTypes, listReviewerOptions, getReportsByStudent, createReport } from "../../../../../services/https/report/report";
+import { apiUrl } from "../../../../../services/api";
 import "./report.css";
 
 const { Header, Content, Footer } = Layout;
 const { Text } = Typography;
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
-
 type AnyObj = Record<string, any>;
 type Option = { value: string; label: string };
 
-// แปลงวันที่จากหลายคีย์
-function pickDate(r: AnyObj): Date | null {
-  const cand =
-    r.Submittion_date ||
-    r.ReportSubmission_date ||
-    r.Submission_date ||
-    r.created_at ||
-    r.CreatedAt ||
-    r.Created_at;
+// Helpers สำหรับ normalize แสดงผลในตาราง
+const pickDate = (r: AnyObj): Date | null => {
+  const cand = r.Submittion_date || r.ReportSubmission_date || r.Submission_date || r.created_at || r.CreatedAt || r.Created_at;
   if (!cand) return null;
   const d = new Date(cand);
   return isNaN(+d) ? null : d;
-}
-function pickStatus(r: AnyObj): string {
-  return r.Status ?? r.ReportStatus ?? r.status ?? "รอดำเนินการ";
-}
-function normalize(r: AnyObj) {
-  return {
-    ...r,
-    _date: pickDate(r),
-    _status: pickStatus(r),
-  };
-}
-
-async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, init);
-  const isJSON = res.headers.get("content-type")?.includes("application/json");
-  if (!res.ok) {
-    const body = isJSON ? await res.json().catch(() => ({})) : await res.text();
-    throw new Error((isJSON ? (body as any)?.error : (body as string)) || `HTTP ${res.status}`);
-  }
-  return (isJSON ? await res.json() : ((await res.text()) as T)) as T;
-}
+};
+const pickStatus = (r: AnyObj): string => (r.Status ?? r.ReportStatus ?? r.status ?? "รอดำเนินการ");
+const normalize = (r: AnyObj) => ({ ...r, _date: pickDate(r), _status: pickStatus(r) });
 
 const ReportPage: React.FC = () => {
   const studentId =
@@ -74,14 +51,15 @@ const ReportPage: React.FC = () => {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const rtypes = await http<any[]>(`/report-types`);
+      const rtypes = await getReportTypes();
       setTypeOptions((rtypes || []).map((t: any) => ({ value: t.ReportType_id, label: t.ReportType_Name ?? t.ReportType_id })));
 
-      const reviewers = await http<any[]>(`/reviewers`);
-      setReviewerOptions(reviewers || []);
+      const reviewers = await listReviewerOptions();
+      // ผู้พิจารณาเป็นอาจารย์และเจ้าหน้าที่ → filter label ที่ลงท้าย role
+      const filtered = reviewers.filter((r) => /\b(teacher|admin)\b/i.test(r.label || ""));
+      setReviewerOptions(filtered);
 
-      // เส้นทางฝั่ง backend: /students/reports/:sid
-      const history = await http<any[]>(`/students/reports/${encodeURIComponent(studentId)}`);
+      const history = await getReportsByStudent(studentId);
       setRows((history || []).map(normalize));
     } catch (e: any) {
       message.error(e?.message || "โหลดข้อมูลล้มเหลว");
@@ -138,15 +116,26 @@ const ReportPage: React.FC = () => {
 
   const handleConfirmOk = async () => {
     try {
-      const form = new FormData();
-      form.append("student_id", studentId);
-      form.append("report_type_id", requestType!);
-      form.append("reviewer_id", assignee!);
-      form.append("details", details);
       const file = fileList[0]?.originFileObj as File | undefined;
-      if (file) form.append("file", file);
-
-      await http(`/reports/`, { method: "POST", body: form });
+      if (file) {
+        // แนบไฟล์ → ใช้ multipart form ตรงไปยัง backend
+        const form = new FormData();
+        form.append("student_id", studentId);
+        form.append("report_type_id", requestType!);
+        form.append("reviewer_id", assignee!);
+        form.append("details", details);
+        form.append("file", file);
+        await axios.post(`${apiUrl}/reports/`, form, { headers: { "Content-Type": "multipart/form-data" } });
+      } else {
+        // ไม่แนบไฟล์ → ใช้ service JSON
+        await createReport({
+          StudentID: studentId,
+          ReportType_id: requestType!,
+          Reviewer_id: assignee!,
+          Report_details: details,
+          ReportSubmission_date: new Date().toISOString(),
+        });
+      }
       message.success("ส่งคำร้องเรียบร้อย");
 
       setConfirmOpen(false);

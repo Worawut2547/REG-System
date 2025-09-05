@@ -1,17 +1,6 @@
-export interface UserInterface {
-  ID?: number;
-  username?: string;
-  role?: "student" | "teacher" | "admin" | string;
-}
-
 export interface ReviewerInterface {
-  Reviewer_id: string;
-  UserID?: number;
-  User?: UserInterface | null;
-}
+  Reviewer_id?: string; // primary key (string)
 
-// ใช้กับ Select
-export interface ReviewerOption {
-  value: string; // reviewer_id
-  label: string; // ชื่ออาจารย์ (หรือ username) + (role)
+  UserID?: number;      // FK to Users.ID
+  User?: any;           // optional embedded user object (ตาม backend ส่งมา)
 }

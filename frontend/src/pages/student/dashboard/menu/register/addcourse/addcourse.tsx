@@ -377,6 +377,7 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
             loading={loading}
             onBack={() => setStep("select")}
             onSubmit={handleConfirmSubmit}
+            registeredRows={myRows}
           />
         )}
       </Content>

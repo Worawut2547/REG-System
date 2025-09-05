@@ -19,9 +19,11 @@ type Props = {
   loading?: boolean;
   onBack: () => void;
   onSubmit: () => void;
+  // รายวิชาที่ลงทะเบียนแล้วของนักศึกษา (ใช้ตรวจชน)
+  registeredRows?: BasketRow[];
 };
 
-const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit }) => {
+const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit, registeredRows = [] }) => {
   // helper: แปลงข้อความเวลาเป็นบล็อกเพื่อใช้ตรวจชน
   const parseScheduleToBlocks = (text?: string) => {
     const lines = String(text || "").split(/\n|,/).map((s) => s.trim()).filter(Boolean);
@@ -64,6 +66,26 @@ const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit }) =
     }
     return keys;
   }, [rows]);
+
+  // ตรวจชนกับรายวิชาที่ลงทะเบียนแล้ว
+  const conflictWithRegisteredKeys = useMemo(() => {
+    const keys = new Set<string>();
+    const regBlocks = (registeredRows || []).flatMap((r) => {
+      const src = (r.Blocks && r.Blocks.length > 0) ? r.Blocks : parseScheduleToBlocks(r.Schedule);
+      return (src || []).map((b) => ({ ownerKey: r.key, ...b }));
+    });
+    for (const r of rows) {
+      const blocks = (r.Blocks && r.Blocks.length > 0) ? r.Blocks : parseScheduleToBlocks(r.Schedule);
+      for (const a of (blocks || [])) {
+        for (const b of regBlocks) {
+          if ((a.day || "").toLowerCase() !== String(b.day || "").toLowerCase()) continue;
+          const overlap = a.start < b.end && b.start < a.end;
+          if (overlap) keys.add(r.key);
+        }
+      }
+    }
+    return keys;
+  }, [rows, registeredRows]);
   const totalCredit = rows.reduce((sum, b) => sum + (b.Credit || 0), 0);
   const columns = [
     { title: "กลุ่ม", dataIndex: "Group", key: "Group", width: 80 },
@@ -71,11 +93,14 @@ const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit }) =
     { title: "ชื่อวิชา", dataIndex: "SubjectName", key: "SubjectName" , width: 240 },
     { title: "หน่วยกิต", dataIndex: "Credit", key: "Credit", width: 80  },
     { title: "เวลาเรียน", dataIndex: "Schedule", key: "Schedule", width: 260, render: (t: any) => (<span style={{ whiteSpace: 'pre-line' }}>{String(t || '')}</span>) },
-    { title: "หมายเหตุ", key: "remark", width: 200, render: (_: any, rec: BasketRow) => (
-        <span style={{ color: conflictKeys.has(rec.key) ? '#cf1322' : undefined }}>
-          {conflictKeys.has(rec.key) ? 'ตารางเรียนทับซ้อน' : '-'}
-        </span>
-      ) },
+    { title: "หมายเหตุ", key: "remark", width: 220, render: (_: any, rec: BasketRow) => {
+        const conflicted = conflictKeys.has(rec.key) || conflictWithRegisteredKeys.has(rec.key);
+        return (
+          <span style={{ color: conflicted ? '#cf1322' : undefined }}>
+            {conflicted ? 'ตารางเรียนทับซ้อน' : '-'}
+          </span>
+        );
+      } },
   ] as any;
 
   return (

@@ -1,108 +1,117 @@
+// src/services/https/report/report.tsx
 import axios from "axios";
+import { apiUrl } from "../../api";
 import type { ReportInterface } from "../../../interfaces/Report";
 import type { ReportTypeInterface } from "../../../interfaces/ReportType";
-import type { ReviewerOption } from "../../../interfaces/Reviewer";
 
-const apiUrl = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
-
-
-/** ---------- Master lists ---------- */
-export const listReportTypes = async (): Promise<ReportTypeInterface[]> => {
-  const { data } = await axios.get(`${apiUrl}/report-types`);
-  return data;
-};
-
-export const listAssignableReviewers = async (): Promise<ReviewerOption[]> => {
-  // คืน value=reviewer_id, label=ชื่อ (Teacher/Admin)
-  const { data } = await axios.get(`${apiUrl}/reviewers`);
-  return data;
-};
-
-/** ---------- Reports ---------- */
-export const getReports = async (): Promise<ReportInterface[]> => {
-  const { data } = await axios.get(`${apiUrl}/reports/`);
-  return data;
-};
-
-export const getReportById = async (id: string): Promise<ReportInterface> => {
-  const { data } = await axios.get(`${apiUrl}/reports/${id}`);
-  return data;
-};
-
-export const getReportsByStudent = async (sid: string): Promise<ReportInterface[]> => {
-  // main.go กำหนด /students/reports/:sid
-  const { data } = await axios.get(`${apiUrl}/students/reports/${encodeURIComponent(sid)}`);
-  return data;
-};
-
-export const getReviewerIdByUsername = async (username: string): Promise<string | null> => {
-  if (!username) return null;
+// -------- Report Types --------
+export const getReportTypes = async (): Promise<ReportTypeInterface[]> => {
   try {
-    const { data } = await axios.get<{ reviewer_id: string }>(
-      `${apiUrl}/reviewers/by-username/${encodeURIComponent(username)}`
-    );
-    return data?.reviewer_id ?? null;
-  } catch {
-    return null;
+    const res = await axios.get(`${apiUrl}/report-types`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (error) {
+    console.error("Error fetching report types:", error);
+    throw error;
   }
 };
 
-export const getReportsByReviewer = async (rid: string): Promise<ReportInterface[]> => {
-  const { data } = await axios.get(`${apiUrl}/reviewers/${encodeURIComponent(rid)}/reports`);
-  return data;
+// -------- Reports (lists) --------
+export const getReportsAll = async (): Promise<ReportInterface[]> => {
+  try {
+    const res = await axios.get(`${apiUrl}/reports/`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    throw error;
+  }
 };
 
-export const createReport = async (formData: FormData, onProgress?: (p: number) => void) => {
-  const { data } = await axios.post(`${apiUrl}/reports`, formData, {
-    // อย่าใส่ Content-Type เอง ให้ axios จัดการ boundary
-    onUploadProgress: (e) => {
-      if (!onProgress || !e.total) return;
-      onProgress(Math.round((e.loaded * 100) / e.total));
-    },
-    // ถ้าใช้ cookie auth:
-    // withCredentials: true,
-  });
-  return data;
+export const getReportsByStudent = async (studentId: string): Promise<ReportInterface[]> => {
+  if (!studentId) throw new Error("studentId is required");
+  try {
+    const res = await axios.get(`${apiUrl}/students/reports/${encodeURIComponent(studentId)}`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (error) {
+    console.error("Error fetching student reports:", error);
+    throw error;
+  }
 };
 
-export const updateReport = async (id: string, patch: Partial<ReportInterface>) => {
-  const { data } = await axios.put(`${apiUrl}/reports/${id}`, patch);
-  return data;
+export const getReportsByReviewer = async (reviewerId: string): Promise<ReportInterface[]> => {
+  if (!reviewerId) throw new Error("reviewerId is required");
+  try {
+    const res = await axios.get(`${apiUrl}/reviewers/${encodeURIComponent(reviewerId)}/reports`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (error) {
+    console.error("Error fetching reviewer reports:", error);
+    throw error;
+  }
 };
 
-export const updateReportStatus = async (id: string, status: string) => {
-  // body: { status: "อนุมัติ" | "ไม่อนุมัติ" | "รอดำเนินการ" }
-  const { data } = await axios.put(`${apiUrl}/reports/${id}/status`, { status });
-  return data;
+export const getReportById = async (reportId: string): Promise<ReportInterface | null> => {
+  if (!reportId) return null;
+  try {
+    const res = await axios.get(`${apiUrl}/reports/${encodeURIComponent(reportId)}`);
+    return res.data as ReportInterface;
+  } catch (error) {
+    console.error("Error fetching report by id:", error);
+    throw error;
+  }
 };
 
-export const deleteReport = async (id: string) => {
-  const { data } = await axios.delete(`${apiUrl}/reports/${id}`);
-  return data;
+// -------- Reports (create / update) --------
+export type CreateReportPayload = {
+  Report_id?: string;
+  StudentID: string;
+  Reviewer_id: string;
+  ReportType_id: string;
+  Report_details: string;
+  ReportSubmission_date?: string; // ISO
+  attachments?: any[];            // optional
 };
 
-/** ---------- Helper: path -> public link (/uploads) ---------- */
-export const toPublicHref = (pathOrUrl: string): string => {
-  if (!pathOrUrl) return "";
-  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) return pathOrUrl;
-  if (!pathOrUrl.startsWith("/")) return `${apiUrl}/${pathOrUrl}`;
-  return `${apiUrl}${pathOrUrl}`;
+export const createReport = async (payload: CreateReportPayload): Promise<ReportInterface> => {
+  // Backend ใช้คีย์แบบเดียวกันใน entity → ส่งตรง
+  try {
+    const res = await axios.post(`${apiUrl}/reports/`, payload);
+    return res.data as ReportInterface;
+  } catch (error) {
+    console.error("Error creating report:", error);
+    throw error;
+  }
 };
 
-export async function listReviewers() {
-  const res = await fetch(`${apiUrl}/reviewers`);
-  if (!res.ok) throw new Error("load reviewers failed");
-  return (await res.json()) as { value: string; label: string }[];
-}
+export const updateReportStatus = async (reportId: string, status: string): Promise<void> => {
+  if (!reportId) throw new Error("reportId is required");
+  try {
+    await axios.put(`${apiUrl}/reports/${encodeURIComponent(reportId)}/status`, { status });
+  } catch (error) {
+    console.error("Error updating report status:", error);
+    throw error;
+  }
+};
 
-export async function listMyReports(studentId: string) {
-  const res = await fetch(`${apiUrl}/students/reports/${studentId}`);
-  if (!res.ok) throw new Error("load student reports failed");
-  return await res.json();
-}
+// -------- Reviewer helpers --------
+export const findReviewerIdByUsername = async (username: string): Promise<string | null> => {
+  if (!username) return null;
+  try {
+    const res = await axios.get(`${apiUrl}/reviewers/by-username/${encodeURIComponent(username)}`);
+    const id = res?.data?.reviewer_id ?? res?.data?.Reviewer_id ?? res?.data?.id;
+    return id ?? null;
+  } catch (error) {
+    console.error("Error finding reviewer id by username:", error);
+    throw error;
+  }
+};
 
-export async function listAdminReports(reviewerId: string) {
-  const res = await fetch(`${apiUrl}/reviewers/${reviewerId}/reports?only=admin`);
-  if (!res.ok) throw new Error("load admin reports failed");
-  return await res.json();
-}
+export type ReviewerOption = { value: string; label: string };
+export const listReviewerOptions = async (): Promise<ReviewerOption[]> => {
+  try {
+    const res = await axios.get(`${apiUrl}/reviewers`);
+    const arr = Array.isArray(res.data) ? res.data : [];
+    return arr.map((x: any) => ({ value: x.value ?? x.Value ?? x.reviewer_id ?? x.Reviewer_id, label: x.label ?? x.Label ?? x.username ?? "" }));
+  } catch (error) {
+    console.error("Error listing reviewer options:", error);
+    throw error;
+  }
+};

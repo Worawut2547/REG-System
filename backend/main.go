@@ -18,6 +18,7 @@ import (
 	"reg_system/controller/faculty"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
+	"reg_system/controller/reports"
 	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
@@ -70,6 +71,8 @@ func main() {
 		studentGroup.DELETE("/:id", students.DeleteStudent)
 
 		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID)
+		// คำร้องของนักศึกษา
+		studentGroup.GET("/reports/:sid", reports.GetReportsByStu)
 	}
 
 	// -------------------- Teachers --------------------
@@ -188,6 +191,27 @@ func main() {
 				times.DELETE("/:timeId", subjectstudytime.Delete)
 			}
 		}
+	}
+
+	// -------------------- Reports --------------------
+	reportGroup := r.Group("/reports")
+	{
+		reportGroup.GET("/", reports.GetReportAll)
+		reportGroup.GET("/:id", reports.GetReportByID)
+		reportGroup.POST("/", reports.CreateReport)
+		reportGroup.PUT("/:id/status", reports.UpdateStatus)
+		reportGroup.DELETE("/:id", reports.DeleteReportAlias)
+	}
+
+	// -------------------- Report Types --------------------
+	r.GET("/report-types", reports.ListReportTypes)
+
+	// -------------------- Reviewers --------------------
+	reviewerGroup := r.Group("/reviewers")
+	{
+		reviewerGroup.GET("/", reports.ListReviewers) // dropdown options
+		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername)
+		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)
 	}
 
 	//---------------------------------------------------------
