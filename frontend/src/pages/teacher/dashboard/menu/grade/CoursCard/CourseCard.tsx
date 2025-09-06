@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Typography } from "antd";
+import { Card, Typography} from "antd";
 
 const { Title, Text } = Typography;
 
@@ -12,6 +12,7 @@ type Props = {
 };
 
 const CourseCard: React.FC<Props> = ({ code, name, credit, color, onClick }) => (
+  
   <Card
     hoverable
     onClick={onClick}
@@ -28,7 +29,7 @@ const CourseCard: React.FC<Props> = ({ code, name, credit, color, onClick }) => 
       boxShadow: "0 4px 12px rgba(0,0,0,0.15)", // เงา
       transition: "transform 0.2s",
     }}
-    bodyStyle={{ padding: 50 }}
+    bodyStyle={{ padding: 30 }}
     onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.03)")}
     onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
   >

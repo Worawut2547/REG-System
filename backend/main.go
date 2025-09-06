@@ -10,6 +10,7 @@ import (
 	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
+	"reg_system/controller/score"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,7 @@ func main() {
 
 	// -------------------- Seed/Test Data --------------------
 	test.ExampleData()
+	test.ScoresExample()
 
 	// -------------------- Gin Setup --------------------
 	r := gin.Default()
@@ -49,8 +51,8 @@ func main() {
 	// -------------------- Users --------------------
 	userGroup := r.Group("/users")
 	{
-		userGroup.PUT("/reset/",users.ResetPassword)
-		userGroup.PUT("/:id",users.ChangePassword)
+		userGroup.PUT("/reset/", users.ResetPassword)
+		userGroup.PUT("/:id", users.ChangePassword)
 	}
 
 	// -------------------- Admin --------------------
@@ -126,7 +128,7 @@ func main() {
 		registrationGroup.PUT("/:id", registration.UpdateRegistration)
 		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
 
-		registrationGroup.GET("/subjects/:id" ,registration.GetStudentBySubjectID)
+		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)
 	}
 
 	// -------------------- Curriculums --------------------
@@ -208,9 +210,20 @@ func main() {
 	// -------------------- Genders --------------------
 	r.GET("/genders", gender.GetGenderAll)
 
+	// -------------------- Scores --------------------
+	scoreGroup := r.Group("/scores")
+	{
+		scoreGroup.GET("/", scores.GetAllScores)                    // ดึงคะแนนทั้งหมด
+		scoreGroup.GET("/student/:id", scores.GetScoresByStudentID) // ดึงคะแนนของนักเรียนเฉพาะคน
+		scoreGroup.POST("/", scores.CreateScores)                   // เพิ่มคะแนน
+		scoreGroup.PUT("/", scores.UpdateScore)                     // อัปเดตคะแนน
+		scoreGroup.DELETE("/:id", scores.DeleteScore)               // ลบคะแนน
+	}
+
 	// -------------------- Run Server --------------------
 	// เปิดให้บริการที่ localhost:8000
 	r.Run("localhost:" + port)
+
 }
 
 func CORSMiddleware() gin.HandlerFunc {
