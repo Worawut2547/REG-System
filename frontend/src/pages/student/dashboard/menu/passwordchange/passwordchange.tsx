@@ -1,7 +1,7 @@
 import React from 'react';
-import { Layout, Button, Form, Input, message, Typography, Card, Avatar } from 'antd';
+import { Layout, Button, Form, Input, Typography, Card, Avatar } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
 import { changePassword } from '../../../../../services/auth/change';
 import './passwordchange.css';
 
@@ -10,7 +10,7 @@ const { Title, Text } = Typography;
 
 const wrapperStyle: React.CSSProperties = {
   minHeight: '100vh',
-  background: 'linear-gradient(135deg, #fff 0%, #f5f5f5 100%)',
+  background: 'linear-gradient(135deg, #f9f9fb 0%, #f1f2f7 100%)',
 };
 
 const headerStyle: React.CSSProperties = {
@@ -20,22 +20,23 @@ const headerStyle: React.CSSProperties = {
   padding: 16,
   fontSize: 22,
   letterSpacing: 1,
+  fontWeight: 600,
 };
 
 const contentStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  paddingTop: '0px',
   minHeight: '80vh',
+  padding: '24px',
 };
 
 const cardStyle: React.CSSProperties = {
   maxWidth: 480,
   width: '100%',
   borderRadius: 16,
-  boxShadow: '0 8px 32px rgba(44, 44, 84, 0.10)',
-  padding: '32px 32px 24px 32px',
+  boxShadow: '0 8px 24px rgba(46, 35, 108, 0.15)',
+  padding: '32px',
   background: '#fff',
 };
 
@@ -44,6 +45,7 @@ const footerStyle: React.CSSProperties = {
   color: 'white',
   textAlign: 'center',
   padding: 12,
+  fontSize: 14,
 };
 
 const PasswordChange: React.FC = () => {
@@ -51,7 +53,12 @@ const PasswordChange: React.FC = () => {
 
   const onFinish = async (values: any) => {
     if (values.NewPassword !== values.ConfirmPassword) {
-      message.error("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
+      Swal.fire({
+        icon: 'error',
+        title: 'ผิดพลาด',
+        text: 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน',
+        confirmButtonColor: "#3085d6",
+      });
       return;
     }
 
@@ -63,20 +70,18 @@ const PasswordChange: React.FC = () => {
     try {
       await changePassword(payload);
       Swal.fire({
-        icon: "success",
-        title: "สำเร็จ",
-        text: "เปลี่ยนรหัสผ่านสำเร็จ",
+        icon: 'success',
+        title: 'สำเร็จ',
+        text: 'เปลี่ยนรหัสผ่านสำเร็จ',
         confirmButtonColor: "#3085d6",
       });
-    }
-    catch (error) {
+    } catch (error) {
       Swal.fire({
-        icon: "error",
-        title: "ผิดพลาด",
-        text: "เปลี่ยนรหัสผ่านไม่สำเร็จ",
+        icon: 'error',
+        title: 'ผิดพลาด',
+        text: 'เปลี่ยนรหัสผ่านไม่สำเร็จ',
       });
-    }
-    finally {
+    } finally {
       form.resetFields();
     }
   };
@@ -86,19 +91,37 @@ const PasswordChange: React.FC = () => {
       <Header style={headerStyle}>เปลี่ยนรหัสผ่าน</Header>
       <Content style={contentStyle}>
         <Card style={cardStyle}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16 }}>
-            <Avatar size={64} icon={<UserOutlined />} style={{ background: '#2e236c', marginBottom: 8 }} />
-            <Title level={3} style={{ margin: 0 }}>เปลี่ยนรหัสผ่าน</Title>
-            <Text type="secondary" style={{ fontSize: 14 }}>
-              กรุณากรอกรหัสผ่านใหม่ที่ปลอดภัยและยืนยันรหัสผ่านอีกครั้ง
+          {/* ส่วนหัว */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              marginBottom: 24,
+            }}
+          >
+            <Avatar
+              size={72}
+              icon={<UserOutlined />}
+              style={{
+                background: '#2e236c',
+                marginBottom: 12,
+              }}
+            />
+            <Title level={3} style={{ margin: 0 }}>
+              เปลี่ยนรหัสผ่าน
+            </Title>
+            <Text type="secondary" style={{ fontSize: 14, textAlign: 'center' }}>
+              กรุณากรอกรหัสผ่านปัจจุบันและตั้งรหัสผ่านใหม่เพื่อความปลอดภัย
             </Text>
           </div>
+
+          {/* ฟอร์ม */}
           <Form
             form={form}
             name="change-password-form"
             layout="vertical"
             onFinish={onFinish}
-            style={{ marginTop: 16 }}
           >
             <Form.Item
               name="OldPassword"
@@ -117,9 +140,9 @@ const PasswordChange: React.FC = () => {
               label="รหัสผ่านใหม่"
               rules={[
                 { required: true, message: 'กรุณากรอกรหัสผ่านใหม่' },
-                { min: 6, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' },
+                { min: 8, message: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร' },
               ]}
-              tooltip="รหัสผ่านควรมีตัวอักษร ตัวเลข และสัญลักษณ์พิเศษเพื่อความปลอดภัย"
+              tooltip="ควรมีตัวอักษร ตัวเลข และสัญลักษณ์พิเศษ"
             >
               <Input.Password
                 placeholder="รหัสผ่านใหม่"
@@ -152,14 +175,24 @@ const PasswordChange: React.FC = () => {
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" htmlType="submit" block size="large" style={{ borderRadius: 8 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                size="large"
+                style={{
+                  borderRadius: 8,
+                  backgroundColor: '#1890ff',
+                  borderBlockColor: '#1890ff'
+                }}
+              >
                 เปลี่ยนรหัสผ่าน
               </Button>
             </Form.Item>
           </Form>
         </Card>
       </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
+      <Footer style={footerStyle}>footer © 2025</Footer>
     </Layout>
   );
 };

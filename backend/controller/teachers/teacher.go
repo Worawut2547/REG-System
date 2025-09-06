@@ -82,6 +82,11 @@ func GetTeacherID(c *gin.Context) {
 		"FacultyName": facultyName,
 		"MajorName":   majorName,
 		"Position":    positionName,
+		"Address":     teacher.Address,
+		"Religion":    teacher.Religion,
+		"Nationality": teacher.Nationality,
+		"Ethnicity":   teacher.Ethnicity,
+		"BirthDay":    teacher.BirthDay,		
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -268,7 +273,7 @@ func UpdateTeacher(c *gin.Context) {
 	}
 
 	// อัพเดทข้อมูลอาจารย์
-	if err := tx.Model(&teacher).Updates(&input).Error; err != nil {
+	if err := tx.Model(teacher).Updates(input).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update teacher"})
 		return

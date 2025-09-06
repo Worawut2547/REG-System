@@ -12,18 +12,21 @@ import (
 )
 
 // ใช้สำหรับ GetBillByStudentID
-//----------------------------------------------------
+// ----------------------------------------------------
 type BillResponse struct {
-    ID         int              `json:"id"`
-    TotalPrice int               `json:"total_price"`
-    Subjects   []SubjectResponse `json:"subjects"`
+	ID         int               `json:"id"`
+	TotalPrice int               `json:"total_price"`
+	Subjects   []SubjectResponse `json:"subjects"`
 }
 
 type SubjectResponse struct {
-    SubjectID   string `json:"subject_id"`
-    SubjectName string `json:"subject_name"`
-    Credit      int    `json:"credit"`
+	SubjectID    string `json:"subject_id"`
+	SubjectName  string `json:"subject_name"`
+	Credit       int    `json:"credit"`
+	Term         int    `json:"term"`
+	AcademicYear int    `json:"academicYear"`
 }
+
 //----------------------------------------------------
 
 func GetBillByStudentID(c *gin.Context) {
@@ -34,6 +37,7 @@ func GetBillByStudentID(c *gin.Context) {
 	result := db.Preload("Student").
 		Preload("Student.Registration").
 		Preload("Student.Registration.Subject").
+		Preload("Student.Registration.Subject.Semester").
 		First(&bill, "student_id = ?", id)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
@@ -42,21 +46,22 @@ func GetBillByStudentID(c *gin.Context) {
 
 	// map subject
 	subjects := []SubjectResponse{}
-	for _,reg := range bill.Student.Registration {
+	for _, reg := range bill.Student.Registration {
 		if reg.Subject != nil {
-			subjects = append(subjects , SubjectResponse{
-				SubjectID: reg.SubjectID,
-				SubjectName: reg.Subject.SubjectName,
-				Credit: reg.Subject.Credit,
+			subjects = append(subjects, SubjectResponse{
+				SubjectID:    reg.SubjectID,
+				SubjectName:  reg.Subject.SubjectName,
+				Credit:       reg.Subject.Credit,
+				Term:         reg.Subject.Semester.Term,
+				AcademicYear: reg.Subject.Semester.AcademicYear,
 			})
 		}
 	}
 
-	response := BillResponse {
-		ID: bill.ID,
+	response := BillResponse{
+		ID:         bill.ID,
 		TotalPrice: bill.TotalPrice,
-		Subjects: subjects,
-
+		Subjects:   subjects,
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -87,7 +92,7 @@ func CreateBill(c *gin.Context) {
 			Credit:      reg.Subject.Credit,
 		})
 	}
-	log.Println("subject:",subjects)
+	log.Println("subject:", subjects)
 
 	// คำนวณ TotalPrice
 	// กำหนดราคาหน่วยกิตละ 800 บาท
@@ -127,7 +132,6 @@ func GetBills(c *gin.Context) {
 	c.JSON(http.StatusOK, bills)
 }
 
-
 func UpdateBill(c *gin.Context) {
 	id := c.Param("id")
 	var bill entity.Bill
@@ -164,4 +168,3 @@ func DeleteBill(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Delete bill success"})
 }
-

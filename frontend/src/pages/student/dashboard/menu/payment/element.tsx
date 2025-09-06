@@ -146,7 +146,6 @@ const Element: React.FC = () => {
     }
     return btoa(binary);
   };
-
   const handleOpenPDF = async () => {
     if (!student) return;
 

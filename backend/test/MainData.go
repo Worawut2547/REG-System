@@ -19,9 +19,9 @@ func ExampleData() {
 	BookPathExample()
 	CurriculumExample()
 
-	//RegistrationExample()
+	RegistrationExample()
 	StudentExample()
-	//BillExample()
+	BillExample()
 
 	BookPathExample()
 	CurriculumExample()
