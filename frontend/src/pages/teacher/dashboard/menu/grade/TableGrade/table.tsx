@@ -30,7 +30,7 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
       setLoading(true);
       try {
         const res = await getStudentBySubjectID(subjectCode);
-        const mapped = res.data.map((item: any) => ({
+        const mapped = res.map((item: any) => ({
           StudentID: item.StudentID,
           FirstName: item.FirstName,
           LastName: item.LastName,
@@ -39,7 +39,7 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
         }));
         setStudents(mapped);
       } catch (err) {
-        console.error(err);
+        console.error("เกิดข้อผิดพลาด",err);
         message.error("ไม่สามารถโหลดข้อมูลนักศึกษาได้");
       } finally {
         setLoading(false);

@@ -21,6 +21,7 @@ func StudentExample() {
 		MajorID:         "ENG23",
 		StatusStudentID: "10",
 		CurriculumID:    "curr23",
+		TeacherID:       "T2900364",
 	}
 	db.FirstOrCreate(&student)
 

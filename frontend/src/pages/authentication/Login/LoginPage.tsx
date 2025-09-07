@@ -12,6 +12,7 @@ import logo from "../../../assets/logo.png"
 import userIcon from "../../../assets/user-icon.png"
 import lockIcon from "../../../assets/lock-icon.png"
 import building from "../../../assets/building.png"
+import Swal from "sweetalert2";
 
 import "./LoginPage.css"
 
@@ -22,11 +23,6 @@ function LoginPage() {
     const onFinish = async (values: any) => {
         try {
             const response = await SignIn(values);
-            console.log("Login response:", response);
-            /*console.log("FirstName:", response.FirstName);
-            console.log("LastName:", response.LastName);
-            console.log("Token:", response.token);
-            console.log("Token Type:", response.token_type);*/
 
             // บันทึก token ลง localStorage
             localStorage.setItem("firstname", response.FirstName);
@@ -37,7 +33,12 @@ function LoginPage() {
             localStorage.setItem("token_type", response.token_type);
 
             // แสดงข้อความ
-            message.success("Login success");
+            Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ',
+                text: 'Login สำเร็จ',
+                confirmButtonColor: "#3085d6",
+            });
 
             // ส่งไปยัง path ตาม role
             const role = response.Role.toLowerCase();
@@ -52,7 +53,11 @@ function LoginPage() {
             }
         } catch (err) {
             console.error(err);
-            message.error("Login failed. Please check your credentials.");
+            Swal.fire({
+                icon: 'error',
+                title: 'ผิดพลาด',
+                text: 'ข้อมูลไม่ถูกต้อง',
+            });
         }
     };
 

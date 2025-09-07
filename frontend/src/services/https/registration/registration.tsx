@@ -11,11 +11,11 @@ interface RegistrationStudentInterface {
     SubjectID?: string;
 }
 
-export const getStudentBySubjectID = async (subj_id: string) => {
+export const getStudentBySubjectID = async (subj_id: string): Promise<RegistrationStudentInterface[]>  => {
     try {
         const response = await axios.get(`${apiUrl}/registrations/subjects/${subj_id}`);
-        console.log("api get student by subject id",response);
-        return response
+        console.log("api get student by subject id",response.data);
+        return response.data
     }
     catch (error) {
         console.error("Error fetching get student by subject id:", error);
