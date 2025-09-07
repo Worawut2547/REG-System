@@ -1,12 +1,6 @@
 // ====================================================================
 // AddSubject.tsx — เพิ่ม/แสดงรายวิชา + แสดงช่วงเวลาเรียนจากหลังบ้านจริง
-// - โหลดคณะ/สาขา + รายวิชาทั้งหมด
-// - บันทึกรายวิชาแล้วบันทึกเวลาต่อ (subject_study_time)
-// - ดึง times ต่อวิชาเพื่อแสดงในตาราง (เผื่อ /subjects ไม่แนบมา)
-// - ช่องค้นหา (ชื่อวิชา/รหัสวิชา/คณะ/สาขา)
-// - จัดรูปแบบเวลาเป็นแท็ก แล้วขึ้นบรรทัดใหม่ทุกๆ 5 รายการ
-// - หลังบันทึกสำเร็จ: แสดงข้อความ + reset ฟอร์ม + รีเฟรชตาราง
-// - ไม่มี any + มีคอมเมนต์
+// (ปรับให้ SemesterID เป็น number ในหน้าฟอร์ม + dropdown ภาคการศึกษาใช้ ID จริง)
 // ====================================================================
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -27,35 +21,46 @@ import {
 import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
-// ชนิดข้อมูลในโปรเจ็กต์ของคุณ
 import { type SubjectInterface } from "../../../../../interfaces/Subjects";
 import { type SubjectStudyTimeInterface } from "../../../../../interfaces/SubjectsStudyTime";
+import { type TeacherInterface } from "../../../../../interfaces/Teacher";
 
-// services ที่มีอยู่แล้ว
 import {
   createSubject,
   getSubjectAll,
 } from "../../../../../services/https/subject/subjects";
 import {
   addStudyTime,
-  getStudyTimesBySubject, // ใช้ดึง times ต่อวิชาเพื่อแสดงผลจริง
+  getStudyTimesBySubject,
 } from "../../../../../services/https/subjectstudytime/subjectsstudytime";
 import { getFacultyAll } from "../../../../../services/https/faculty/faculty";
 import { getMajorAll } from "../../../../../services/https/major/major";
+import { getTeacherAll } from "../../../../../services/https/teacher/teacher";
+import { getSemestermAll as getSemesterAll } from "../../../../../services/https/semesterm/semesterm";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 /* -----------------------------------------
- * Types สำหรับ option ของคณะ/สาขา
+ * Types (ภายในไฟล์)
  * ----------------------------------------- */
 type Faculty = { id: string; name: string };
 type Major = { id: string; name: string; facultyId?: string };
 
-/* -----------------------------------------
- * รูปแบบ API response (รองรับหลายเคสคีย์)
- * ----------------------------------------- */
+type TeacherOpt = {
+  id: string;
+  firstname: string;
+  lastname: string;
+  majorId?: string;
+};
+
+type SemesterOpt = {
+  id: number;              // ⬅ ใช้ number จริง
+  term: string;
+  academicYear: string;
+};
+
 type FacultyAPI = {
   faculty_id?: string;
   facultyId?: string;
@@ -79,95 +84,50 @@ type MajorAPI = {
   facultyId?: string;
   FacultyID?: string;
 };
-type SubjectTimeAPI = {
-  start?: string;
-  start_time?: string;
-  StartAt?: string;
-  end?: string;
-  end_time?: string;
-  EndAt?: string;
-};
-type SubjectAPI = {
-  subject_id?: string;
-  subjectId?: string;
-  SubjectID?: string;
-  id?: string;
-  subject_name?: string;
-  subjectName?: string;
-  SubjectName?: string;
-  name?: string;
-  credit?: number | string;
-  Credit?: number | string; // <-- เพิ่ม Credit
-  study_times?: SubjectTimeAPI[];
-  schedule?: SubjectTimeAPI[];
-  major_id?: string;
-  majorId?: string;
-  MajorID?: string;
-  major_name?: string;
-  majorName?: string;
-  MajorName?: string;
-  faculty_id?: string;
-  facultyId?: string;
-  FacultyID?: string;
-  faculty_name?: string;
-  facultyName?: string;
-  FacultyName?: string;
+
+/* รองรับคีย์จาก /subjects + แปลง semester/teacher ให้ตรงชนิด */
+type SubjectFromService = SubjectInterface & {
+  teacher_id?: string | number;
+  TeacherID?: string | number;
+  teacherId?: string | number;
+
+  semester_id?: string | number;
+  SemesterID?: string | number;
+  semesterId?: string | number;
+
   term?: string;
   academic_year?: string;
 };
 
-/* -----------------------------------------
- * แถวที่ใช้ในตาราง (สืบทอดจาก SubjectInterface)
- * มี schedule + formattedSchedule เพิ่ม
- * ----------------------------------------- */
-interface SubjectRow extends SubjectInterface {
+/* แถวในตาราง (Override ให้ SemesterID เป็น number ในหน้า Add นี้) */
+type SubjectRow = Omit<SubjectInterface, "SemesterID"> & {
+  SemesterID?: number;
   schedule: SubjectStudyTimeInterface[];
   formattedSchedule?: string[];
-}
+};
 
-/* -----------------------------------------
- * ค่าที่ฟอร์มส่ง (extend จาก SubjectInterface)
- * schedule เก็บเป็นคู่ [start, end] ของ dayjs
- * ----------------------------------------- */
-interface FormValues extends SubjectInterface {
+/* ฟอร์มในหน้านี้: Override ให้ SemesterID เป็น number */
+type FormValues = Omit<SubjectInterface, "SemesterID"> & {
   SubjectID: string;
+  SemesterID?: number;
   schedule: [dayjs.Dayjs, dayjs.Dayjs][];
-}
-
-/* -----------------------------------------
- * สไตล์หน้า
- * ----------------------------------------- */
-const pageStyle: React.CSSProperties = {
-  minHeight: "100vh",
-  display: "flex",
-  flexDirection: "column",
-  background: "#f5f5f5",
-};
-const contentStyle: React.CSSProperties = {
-  flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  padding: 24,
-};
-const formShell: React.CSSProperties = {
-  flex: 1,
-  background: "#fff",
-  borderRadius: 12,
-  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-  padding: 24,
-  display: "flex",
-  flexDirection: "column",
 };
 
 /* -----------------------------------------
- * ตัวช่วย: แบ่งอาเรย์เป็นกลุ่มละ n ชิ้น
- * ใช้จัด schedule ให้ขึ้นบรรทัดทุก 5 ชิ้น
+ * Utils
  * ----------------------------------------- */
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
+const toStr = (v: string | number | undefined | null): string =>
+  v == null ? "" : String(v);
+const toNum = (v: string | number | undefined | null): number | undefined => {
+  if (v === null || v === undefined || v === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
 
 /* ====================================================================
  * Component
@@ -178,32 +138,39 @@ const ADD: React.FC = () => {
   // lists
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
+  const [teachers, setTeachers] = useState<TeacherOpt[]>([]);
+  const [semesters, setSemesters] = useState<SemesterOpt[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
 
   // UI state
   const [loadingFaculties, setLoadingFaculties] = useState(false);
   const [loadingMajors, setLoadingMajors] = useState(false);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [loadingSemesters, setLoadingSemesters] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // ค่าค้นหาในตาราง
+  // search
   const [query, setQuery] = useState<string>("");
 
-  // ใช้กรองสาขาตามคณะที่เลือก
+  // watches
   const selectedFacultyId = Form.useWatch("FacultyID", form);
+  const selectedMajorId = Form.useWatch("MajorID", form);
 
   /* -----------------------------------------
-   * โหลดคณะ
+   * Fetch: faculties / majors / teachers / semesters / subjects
    * ----------------------------------------- */
   const fetchFaculties = async () => {
     try {
       setLoadingFaculties(true);
       const data = await getFacultyAll();
       const arr = (Array.isArray(data) ? data : []) as FacultyAPI[];
-      const mapped: Faculty[] = arr.map((f) => ({
-        id: f.faculty_id ?? f.facultyId ?? f.FacultyID ?? f.id ?? "",
-        name: f.faculty_name ?? f.facultyName ?? f.FacultyName ?? f.name ?? "",
-      }));
-      setFaculties(mapped);
+      setFaculties(
+        arr.map((f) => ({
+          id: f.faculty_id ?? f.facultyId ?? f.FacultyID ?? f.id ?? "",
+          name:
+            f.faculty_name ?? f.facultyName ?? f.FacultyName ?? f.name ?? "",
+        }))
+      );
     } catch (err) {
       console.error("fetchFaculties error:", err);
       message.error("โหลดรายชื่อคณะไม่สำเร็จ");
@@ -212,20 +179,18 @@ const ADD: React.FC = () => {
     }
   };
 
-  /* -----------------------------------------
-   * โหลดสาขา
-   * ----------------------------------------- */
   const fetchMajors = async () => {
     try {
       setLoadingMajors(true);
       const data = await getMajorAll();
       const arr = (Array.isArray(data) ? data : []) as MajorAPI[];
-      const mapped: Major[] = arr.map((m) => ({
-        id: m.major_id ?? m.majorId ?? m.MajorID ?? m.id ?? "",
-        name: m.major_name ?? m.majorName ?? m.MajorName ?? m.name ?? "",
-        facultyId: m.faculty_id ?? m.facultyId ?? m.FacultyID ?? "",
-      }));
-      setMajors(mapped);
+      setMajors(
+        arr.map((m) => ({
+          id: m.major_id ?? m.majorId ?? m.MajorID ?? m.id ?? "",
+          name: m.major_name ?? m.majorName ?? m.MajorName ?? m.name ?? "",
+          facultyId: m.faculty_id ?? m.facultyId ?? m.FacultyID ?? "",
+        }))
+      );
     } catch (err) {
       console.error("fetchMajors error:", err);
       message.error("โหลดรายชื่อสาขาไม่สำเร็จ");
@@ -233,46 +198,106 @@ const ADD: React.FC = () => {
       setLoadingMajors(false);
     }
   };
-  /* -----------------------------------------
-   * โหลดรายวิชา:
-   * 1) ดึงรายการวิชา
-   * 2) map ค่าเบื้องต้น
-   * 3) ดึง times ของแต่ละวิชาจากหลังบ้านจริง (กันเคส /subjects ไม่ส่งเวลามา)
-   * ----------------------------------------- */
+
+  const fetchTeachers = async () => {
+    try {
+      setLoadingTeachers(true);
+      const data = await getTeacherAll();
+    const arr = (Array.isArray(data) ? data : []) as TeacherInterface[];
+      setTeachers(
+        arr.map((t) => ({
+          id: toStr(t.TeacherID),
+          firstname: t.FirstName ?? "",
+          lastname: t.LastName ?? "",
+          majorId: t.MajorID ?? "",
+        }))
+      );
+    } catch (err) {
+      console.error("fetchTeachers error:", err);
+      message.error("โหลดรายชื่ออาจารย์ไม่สำเร็จ");
+    } finally {
+      setLoadingTeachers(false);
+    }
+  };
+
+  /* ทำให้ option ภาคการศึกษา “id เป็น number และไม่ซ้ำ” */
+  const fetchSemesters = async () => {
+    try {
+      setLoadingSemesters(true);
+      const data = await getSemesterAll(); // คืน { SemesterID, Term, AcademicYear }[]
+      const arr = Array.isArray(data) ? data : [];
+
+      const mapped = arr
+        .map((s) => {
+          const idNum = toNum((s as { SemesterID?: string | number }).SemesterID);
+          const term = (s as { Term?: string }).Term ?? "";
+          const year = (s as { AcademicYear?: string }).AcademicYear ?? "";
+          return idNum !== undefined
+            ? { id: idNum, term, academicYear: year }
+            : undefined;
+        })
+        .filter((x): x is SemesterOpt => Boolean(x));
+
+      // dedupe ตาม id
+      const uniq = Array.from(new Map(mapped.map((m) => [m.id, m])).values());
+      setSemesters(uniq);
+    } catch (err) {
+      console.error("fetchSemesters error:", err);
+      message.error("โหลดภาคการศึกษาไม่สำเร็จ");
+    } finally {
+      setLoadingSemesters(false);
+    }
+  };
+
   const fetchSubjects = async () => {
     try {
       const data = await getSubjectAll();
-      const arr = (Array.isArray(data) ? data : []) as SubjectAPI[];
+      const arr = (Array.isArray(data) ? data : []) as SubjectFromService[];
 
-      // map เบื้องต้น (ยังไม่ใส่ times)
-      const base: SubjectRow[] = arr.map((s) => ({
-        SubjectID: s.subject_id ?? s.subjectId ?? s.SubjectID ?? s.id ?? "",
-        SubjectName:
-          s.subject_name ?? s.subjectName ?? s.SubjectName ?? s.name ?? "",
-        Credit: Number(s.credit ?? s.Credit ?? 0), // แปลงเป็นตัวเลขแน่ๆ กันค่าซ้ำ/ผิดประเภท
+      const base: SubjectRow[] = arr.map((s) => {
+        // map TeacherID
+        const teacherId =
+          s.TeacherID ?? s.teacher_id ?? s.teacherId ?? s.TeacherID;
 
-        // ใส่ค่า default ไว้ก่อน
-        schedule: [],
-        formattedSchedule: [],
+        // map SemesterID -> number
+        const semesterRaw =
+          s.SemesterID ?? s.semester_id ?? s.semesterId ?? s.SemesterID;
+        const semesterNum = toNum(semesterRaw);
 
-        FacultyID: s.faculty_id ?? s.facultyId ?? s.FacultyID ?? "",
-        FacultyName: s.faculty_name ?? s.facultyName ?? s.FacultyName,
-        MajorID: s.major_id ?? s.majorId ?? s.MajorID ?? "",
-        MajorName: s.major_name ?? s.majorName ?? s.MajorName,
-      }));
+        return {
+          SubjectID: s.SubjectID ?? "",
+          SubjectName: s.SubjectName ?? "",
+          Credit: Number(s.Credit ?? 0),
 
-      // ดึง times ต่อวิชาแบบขนาน
-      // ดึง times ต่อวิชาแบบขนาน (กัน undefined ด้วยการ narrow ก่อน)
-      const withTimes: SubjectRow[] = await Promise.all(
+          FacultyID: (s.FacultyID ?? "").toString().trim(),
+          FacultyName:
+            s.FacultyName && s.FacultyName.trim() !== ""
+              ? s.FacultyName
+              : undefined,
+
+          MajorID: (s.MajorID ?? "").toString().trim(),
+          MajorName:
+            s.MajorName && s.MajorName.trim() !== "" ? s.MajorName : undefined,
+
+          TeacherID: toStr(teacherId),
+
+          // เก็บเป็น number ในตาราง
+          SemesterID: semesterNum,
+
+          Term: s.Term ?? s.term ?? "",
+          AcademicYear: s.AcademicYear ?? s.academic_year ?? "",
+
+          schedule: [],
+          formattedSchedule: [],
+        };
+      });
+
+      const withTimes = await Promise.all(
         base.map(async (row) => {
-          const sid = row.SubjectID?.trim(); // sid: string | undefined
-          if (!sid) {
-            // ไม่มี SubjectID ก็ข้ามการดึงเวลา
-            return row;
-          }
-
+          const sid = (row.SubjectID ?? "").trim();
+          if (!sid) return row;
           try {
-            const times = await getStudyTimesBySubject(sid); // sid เป็น string แน่นอนแล้ว
+            const times = await getStudyTimesBySubject(sid);
             const formatted = times.map((t) => {
               const st = dayjs(t.StartAt, "YYYY-MM-DD HH:mm");
               const en = dayjs(t.EndAt, "YYYY-MM-DD HH:mm");
@@ -293,17 +318,16 @@ const ADD: React.FC = () => {
     }
   };
 
-  /* -----------------------------------------
-   * โหลดข้อมูลเริ่มต้น
-   * ----------------------------------------- */
   useEffect(() => {
     fetchFaculties();
     fetchMajors();
+    fetchTeachers();
+    fetchSemesters();
     fetchSubjects();
   }, []);
 
   /* -----------------------------------------
-   * กรองสาขาตามคณะที่เลือก
+   * Derived: filter + search
    * ----------------------------------------- */
   const filteredMajors = useMemo(() => {
     if (!selectedFacultyId) return majors;
@@ -312,43 +336,62 @@ const ADD: React.FC = () => {
     );
   }, [majors, selectedFacultyId]);
 
-  /* -----------------------------------------
-   * กรองรายการตารางจากช่องค้นหา
-   * คีย์เวิร์ดค้นหา: ชื่อวิชา/รหัส/คณะ/สาขา (ไม่สนตัวพิมพ์)
-   * ----------------------------------------- */
+  const filteredTeachers = useMemo(() => {
+    const chosenMajor = form.getFieldValue("MajorID") as string | undefined;
+    const majorKey = chosenMajor ?? selectedMajorId;
+    if (!majorKey) return teachers;
+    return teachers.filter((t) => !t.majorId || t.majorId === majorKey);
+  }, [teachers, selectedMajorId, form]);
+
   const tableRows = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return subjects;
     return subjects.filter((s) => {
+      const teacherLabel = (() => {
+        const t = teachers.find((tt) => String(tt.id) === String(s.TeacherID));
+        return t ? `${t.firstname} ${t.lastname}`.trim() : "";
+      })();
       const fields = [
         s.SubjectName ?? "",
         s.SubjectID ?? "",
         s.FacultyName ?? "",
         s.MajorName ?? "",
+        teacherLabel,
       ]
         .join(" ")
         .toLowerCase();
       return fields.includes(q);
     });
-  }, [subjects, query]);
+  }, [subjects, query, teachers]);
 
   /* -----------------------------------------
-   * บันทึกรายวิชา + บันทึกเวลา + reset + รีเฟรช
+   * Submit
    * ----------------------------------------- */
   const onFinish = async (values: FormValues) => {
     setSubmitting(true);
 
-    const payload: SubjectInterface = {
+    // — สร้าง payload โดยเก็บ SemesterID เป็น number —
+    const payload: Omit<SubjectInterface, "SemesterID"> & {
+      SemesterID?: number;
+    } = {
       SubjectID: values.SubjectID,
       SubjectName: values.SubjectName,
       Credit: Number(values.Credit),
       MajorID: values.MajorID,
       FacultyID: values.FacultyID,
+      TeacherID: values.TeacherID,
+      SemesterID:
+        typeof values.SemesterID === "number"
+          ? values.SemesterID
+          : undefined,
     };
 
     try {
-      // 1) สร้างวิชา
-      const created = await createSubject(payload);
+      // NOTE: ถ้า type ของ service ยังคาดว่า SubjectInterface (SemesterID เป็น string)
+      // เรา assert ครั้งเดียวเพื่อไม่ไปแก้ interface กลางทั้งโปรเจกต์
+      const created = await createSubject(
+        (payload as unknown) as SubjectInterface
+      );
 
       const subjectId =
         (created as SubjectInterface & { subject_id?: string }).subject_id ??
@@ -357,7 +400,6 @@ const ADD: React.FC = () => {
 
       if (!subjectId) throw new Error("Missing subject_id from response");
 
-      // 2) เพิ่มช่วงเวลาเรียนทั้งหมด (ตามที่เลือก)
       const ranges = values.schedule || [];
       await Promise.all(
         ranges.map((range) =>
@@ -368,7 +410,6 @@ const ADD: React.FC = () => {
         )
       );
 
-      // 3) แจ้งสำเร็จ + reset + รีเฟรช
       message.success("บันทึกรายวิชาสำเร็จ");
       form.resetFields();
       form.setFieldsValue({ schedule: [] } as Partial<FormValues>);
@@ -385,10 +426,34 @@ const ADD: React.FC = () => {
    * Render
    * ==================================================================== */
   return (
-    <Layout style={pageStyle}>
-      <Content style={contentStyle}>
-        {/* -------------------- ฟอร์มเพิ่มรายวิชา -------------------- */}
-        <div style={formShell}>
+    <Layout
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "#f5f5f5",
+      }}
+    >
+      <Content
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          padding: 24,
+        }}
+      >
+        {/* -------------------- ฟอร์ม -------------------- */}
+        <div
+          style={{
+            flex: 1,
+            background: "#fff",
+            borderRadius: 12,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            padding: 24,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <div style={{ marginBottom: 16 }}>
             <Title level={4} style={{ margin: 0 }}>
               เพิ่มรายวิชาใหม่
@@ -408,7 +473,6 @@ const ADD: React.FC = () => {
               width: "100%",
             }}
           >
-            {/* รหัสวิชา */}
             <Form.Item
               label="รหัสวิชา"
               name="SubjectID"
@@ -421,7 +485,6 @@ const ADD: React.FC = () => {
               />
             </Form.Item>
 
-            {/* ชื่อรายวิชา */}
             <Form.Item
               label="ชื่อรายวิชา"
               name="SubjectName"
@@ -434,7 +497,6 @@ const ADD: React.FC = () => {
               />
             </Form.Item>
 
-            {/* หน่วยกิต — ใช้ rule type:number + transform ให้เป็นตัวเลข */}
             <Form.Item
               label="หน่วยกิต"
               name="Credit"
@@ -462,7 +524,7 @@ const ADD: React.FC = () => {
               />
             </Form.Item>
 
-            {/* เวลาเรียน — เพิ่มได้หลายช่วงด้วย Form.List */}
+            {/* เวลาเรียน */}
             <Form.Item label="เวลาเรียน" style={{ width: "100%" }}>
               <>
                 <Typography.Text type="danger">
@@ -531,7 +593,7 @@ const ADD: React.FC = () => {
               </>
             </Form.Item>
 
-            {/* เลือกคณะ */}
+            {/* คณะ */}
             <Form.Item
               label="คณะ (Faculty)"
               name="FacultyID"
@@ -552,7 +614,7 @@ const ADD: React.FC = () => {
               </Select>
             </Form.Item>
 
-            {/* เลือกสาขา — กรองตามคณะที่เลือก */}
+            {/* สาขา */}
             <Form.Item
               label="สาขา (Major)"
               name="MajorID"
@@ -574,7 +636,49 @@ const ADD: React.FC = () => {
               </Select>
             </Form.Item>
 
-            {/* ปุ่มบันทึก */}
+            {/* อาจารย์ */}
+            <Form.Item
+              label="อาจารย์ (Teacher)"
+              name="TeacherID"
+              rules={[{ required: true, message: "กรุณาเลือกอาจารย์" }]}
+              style={{ width: "100%" }}
+            >
+              <Select
+                placeholder="เลือกอาจารย์"
+                loading={loadingTeachers}
+                style={{ maxWidth: 300, fontSize: 15, width: "100%" }}
+                disabled={!selectedMajorId}
+                allowClear
+              >
+                {filteredTeachers.map((t) => (
+                  <Option key={t.id} value={t.id}>
+                    {`${t.firstname} ${t.lastname}`.trim()}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* ภาคการศึกษา */}
+            <Form.Item
+              label="ภาคการศึกษา (Semester)"
+              name="SemesterID"
+              rules={[{ required: true, message: "กรุณาเลือกภาคการศึกษา" }]}
+              style={{ width: "100%" }}
+            >
+              <Select
+                placeholder="เลือกภาคการศึกษา"
+                loading={loadingSemesters}
+                style={{ maxWidth: 300, fontSize: 15, width: "100%" }}
+                allowClear
+              >
+                {semesters.map((s) => (
+                  <Option key={s.id} value={s.id}>
+                    {`${s.term}/${s.academicYear}`}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
             <Form.Item style={{ marginTop: 8 }}>
               <Button
                 type="primary"
@@ -594,13 +698,13 @@ const ADD: React.FC = () => {
           </Form>
         </div>
 
-        {/* -------------------- ค้นหา + ตารางรายวิชาที่เพิ่มแล้ว -------------------- */}
+        {/* -------------------- ค้นหา + ตาราง -------------------- */}
         <div style={{ marginTop: 24, marginBottom: 8 }}>
           <Input.Search
             allowClear
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหา: ชื่อวิชา / รหัสวิชา / คณะ / สาขา"
+            placeholder="ค้นหา: ชื่อวิชา / รหัสวิชา / คณะ / สาขา / อาจารย์"
             style={{ maxWidth: 420 }}
           />
         </div>
@@ -618,12 +722,11 @@ const ADD: React.FC = () => {
                 width: 100,
                 render: (val: number | string | undefined) => (
                   <span>{Number(val ?? 0)}</span>
-                ), // กันกรณีเป็น string
+                ),
               },
               {
                 title: "เวลาเรียน",
                 dataIndex: "formattedSchedule",
-                // แสดงเป็นแท็ก และขึ้นบรรทัดใหม่ทุกๆ 5 รายการ
                 render: (formattedSchedule?: string[]) => {
                   const list = Array.isArray(formattedSchedule)
                     ? formattedSchedule
@@ -650,27 +753,47 @@ const ADD: React.FC = () => {
                 dataIndex: "FacultyName",
                 render: (_: unknown, row: SubjectRow) =>
                   row.FacultyName ??
-                  (faculties.find((f) => f.id === row.FacultyID)?.name || ""),
+                  faculties.find((f) => f.id === row.FacultyID)?.name ??
+                  "",
               },
               {
                 title: "สาขา",
                 dataIndex: "MajorName",
                 render: (_: unknown, row: SubjectRow) =>
                   row.MajorName ??
-                  (majors.find((m) => m.id === row.MajorID)?.name || ""),
+                  majors.find((m) => m.id === row.MajorID)?.name ??
+                  "",
+              },
+              {
+                title: "อาจารย์",
+                dataIndex: "TeacherID",
+                render: (_: unknown, row: SubjectRow) => {
+                  const t = teachers.find(
+                    (tt) => String(tt.id) === String(row.TeacherID)
+                  );
+                  return t ? `${t.firstname} ${t.lastname}`.trim() : "-";
+                },
               },
               {
                 title: "เทอม",
-                dataIndex: "term",
-                render: (_: unknown, row: SubjectRow) => row.Term || "-",
+                dataIndex: "Term",
                 width: 80,
+                render: (_: unknown, row: SubjectRow) => {
+                  if (row.Term && row.Term !== "") return row.Term;
+                  const s = semesters.find((ss) => ss.id === row.SemesterID);
+                  return s?.term ?? "-";
+                },
               },
               {
                 title: "ปีการศึกษา",
-                dataIndex: "academic_year",
-                render: (_: unknown, row: SubjectRow) =>
-                  row.AcademicYear || "-",
+                dataIndex: "AcademicYear",
                 width: 120,
+                render: (_: unknown, row: SubjectRow) => {
+                  if (row.AcademicYear && row.AcademicYear !== "")
+                    return row.AcademicYear;
+                  const s = semesters.find((ss) => ss.id === row.SemesterID);
+                  return s?.academicYear ?? "-";
+                },
               },
             ]}
             dataSource={tableRows}

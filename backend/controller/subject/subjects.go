@@ -1,9 +1,5 @@
 // ======================================================================
 // subjects/controller.go
-// เส้นทางและ handler สำหรับจัดการ "รายวิชา" (Subjects)
-// - รองรับ faculty_id ตาม entity ใหม่
-// - ตรวจสอบความสอดคล้อง Major ↔ Faculty (ถ้า Major ผูก Faculty อยู่แล้ว)
-// - ตอบกลับเป็น snake_case ให้ตรงกับ JSON tag
 // ======================================================================
 
 package subjects
@@ -18,37 +14,29 @@ import (
 	"gorm.io/gorm"
 )
 
-// ======================================================================
-// Section 1: Request DTOs (รับข้อมูลจากฝั่ง Frontend)
-// ======================================================================
+// -------------------- Request DTOs --------------------
 
-// SubjectCreateReq ใช้รับข้อมูลตอนสร้างรายวิชา
-// หมายเหตุ:
-// - ถ้าให้ระบบ generate subject_id เอง ให้ปรับ binding ของ SubjectID เป็น omitempty หรือเอาออก
 type SubjectCreateReq struct {
-	SubjectID   string `json:"subject_id"   binding:"required"` // เปลี่ยนเป็น omitempty ถ้าไม่บังคับกรอก
+	SubjectID   string `json:"subject_id"   binding:"required"`
 	SubjectName string `json:"subject_name" binding:"required"`
 	Credit      int    `json:"credit"       binding:"required,min=1,max=5"`
 	MajorID     string `json:"major_id"     binding:"required"`
 	FacultyID   string `json:"faculty_id"   binding:"required"`
 	SemesterID  int    `json:"semester_id"  binding:"required"`
+	TeacherID   string `json:"teacher_id"   binding:"omitempty"` // ไม่บังคับ แต่ถ้าส่งมาก็เก็บ
 }
 
-// SubjectUpdateReq ใช้รับข้อมูลตอนแก้ไขรายวิชา
 type SubjectUpdateReq struct {
 	SubjectName *string `json:"subject_name,omitempty"`
-	Credit      *int    `json:"credit,omitempty"    binding:"omitempty,min=1,max=5"`
+	Credit      *int    `json:"credit,omitempty"       binding:"omitempty,min=1,max=5"`
 	MajorID     *string `json:"major_id,omitempty"`
 	FacultyID   *string `json:"faculty_id,omitempty"`
 	SemesterID  *int    `json:"semester_id,omitempty"`
+	TeacherID   *string `json:"teacher_id,omitempty"`
 }
 
-// ======================================================================
-// Section 2: Helper Functions (ฟังก์ชันช่วยเหลือ)
-// ======================================================================
+// -------------------- Helpers --------------------
 
-// validateMajorFaculty ตรวจสอบว่า major_id และ faculty_id มีอยู่จริง
-// และถ้า major ผูก faculty อยู่แล้ว ต้องสอดคล้องกับ faculty_id ที่รับมา
 func validateMajorFaculty(db *gorm.DB, majorID, facultyID string) error {
 	var major entity.Majors
 	if err := db.First(&major, "major_id = ?", majorID).Error; err != nil {
@@ -57,12 +45,9 @@ func validateMajorFaculty(db *gorm.DB, majorID, facultyID string) error {
 		}
 		return err
 	}
-
-	// ถ้ามี constraint ว่า Major อยู่ภายใต้ Faculty ใด ต้องเช็คให้ตรง
 	if major.FacultyID != "" && major.FacultyID != facultyID {
 		return errors.New("major_id does not belong to faculty_id")
 	}
-
 	var fac entity.Faculty
 	if err := db.First(&fac, "faculty_id = ?", facultyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -73,12 +58,9 @@ func validateMajorFaculty(db *gorm.DB, majorID, facultyID string) error {
 	return nil
 }
 
-// ======================================================================
-// Section 3: Handlers - Create / Read / Update / Delete
-// ======================================================================
+// -------------------- Handlers --------------------
 
 // POST /subjects
-// สร้างรายวิชาใหม่
 func CreateSubject(c *gin.Context) {
 	var req SubjectCreateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -88,7 +70,6 @@ func CreateSubject(c *gin.Context) {
 
 	db := config.DB()
 
-	// --- ตรวจสอบความสอดคล้อง Major ↔ Faculty และการมีอยู่จริง ---
 	if err := validateMajorFaculty(db, req.MajorID, req.FacultyID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -101,6 +82,7 @@ func CreateSubject(c *gin.Context) {
 		MajorID:     req.MajorID,
 		FacultyID:   req.FacultyID,
 		SemesterID:  req.SemesterID,
+		TeacherID:   req.TeacherID,
 	}
 
 	if err := db.Create(&sub).Error; err != nil {
@@ -108,22 +90,36 @@ func CreateSubject(c *gin.Context) {
 		return
 	}
 
-	// ตอบกลับ (snake_case)
+	// Reload เพื่อให้มีข้อมูล Semester (term/academic_year) ตอนตอบกลับ
+	if err := db.Preload("Semester").First(&sub, "subject_id = ?", sub.SubjectID).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"message":      "create subject success",
+			"subject_id":   sub.SubjectID,
+			"subject_name": sub.SubjectName,
+			"credit":       sub.Credit,
+			"major_id":     sub.MajorID,
+			"faculty_id":   sub.FacultyID,
+			"semester_id":  sub.SemesterID,
+			"teacher_id":   sub.TeacherID,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":      "create subject success",
-		"subject_id":   sub.SubjectID,
-		"subject_name": sub.SubjectName,
-		"credit":       sub.Credit,
-		"major_id":     sub.MajorID,
-		"faculty_id":   sub.FacultyID,
-		"semester_id":  sub.SemesterID,
-		"term":  sub.Semester.Term,
+		"message":       "create subject success",
+		"subject_id":    sub.SubjectID,
+		"subject_name":  sub.SubjectName,
+		"credit":        sub.Credit,
+		"major_id":      sub.MajorID,
+		"faculty_id":    sub.FacultyID,
+		"semester_id":   sub.SemesterID,
+		"term":          sub.Semester.Term,
 		"academic_year": sub.Semester.AcademicYear,
+		"teacher_id":    sub.TeacherID,
 	})
 }
 
 // GET /subjects/:subjectId
-// อ่านรายวิชา + preload ความสัมพันธ์ (Major, Faculty, StudyTimes)
 func GetSubjectID(c *gin.Context) {
 	id := c.Param("subjectId")
 	db := config.DB()
@@ -132,8 +128,8 @@ func GetSubjectID(c *gin.Context) {
 	if err := db.
 		Preload("Major").
 		Preload("Faculty").
-		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
 		Preload("Semester").
+		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
 		First(&sub, "subject_id = ?", id).Error; err != nil {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -145,18 +141,15 @@ func GetSubjectID(c *gin.Context) {
 	}
 
 	resp := map[string]interface{}{
-		"subject_id":   sub.SubjectID,
-		"subject_name": sub.SubjectName,
-		"credit":       sub.Credit,
-		"major_id":     sub.MajorID,
-		"faculty_id":   sub.FacultyID,
-		"semester_id":  sub.SemesterID,
-		"term":  sub.Semester.Term,
+		"subject_id":    sub.SubjectID,
+		"subject_name":  sub.SubjectName,
+		"credit":        sub.Credit,
+		"major_id":      sub.MajorID,
+		"faculty_id":    sub.FacultyID,
+		"semester_id":   sub.SemesterID,
+		"term":          sub.Semester.Term,
 		"academic_year": sub.Semester.AcademicYear,
-		/*"teacher_id":        sub.TeacherID,
-		"teacher_firstname": sub.Teacher.FirstName,
-		"teacher_lastname":  sub.Teacher.LastName,*/
-		//"study_times":  sub.StudyTimes, // อ่านอย่างเดียว (CRUD แยกใน study time controller)
+		"teacher_id":    sub.TeacherID,
 	}
 	if sub.Major != nil {
 		resp["major_name"] = sub.Major.MajorName
@@ -169,7 +162,6 @@ func GetSubjectID(c *gin.Context) {
 }
 
 // GET /subjects
-// อ่านรายการรายวิชาทั้งหมด
 func GetSubjectAll(c *gin.Context) {
 	db := config.DB()
 
@@ -180,26 +172,25 @@ func GetSubjectAll(c *gin.Context) {
 		Preload("Semester").
 		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
 		Find(&subs).Error; err != nil {
-		
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+
+	 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	 return
 	}
 
 	out := make([]map[string]interface{}, 0, len(subs))
 	for i, s := range subs {
 		row := map[string]interface{}{
-			"index":        i + 1, // ใช้สำหรับแสดงลำดับในตาราง (ถ้าไม่ใช้จะลบออกก็ได้)
-			"subject_id":   s.SubjectID,
-			"subject_name": s.SubjectName,
-			"credit":       s.Credit,
-			"major_id":     s.MajorID,
-			"faculty_id":   s.FacultyID,
-			"term":  s.Semester.Term,
+			"index":         i + 1,
+			"subject_id":    s.SubjectID,
+			"subject_name":  s.SubjectName,
+			"credit":        s.Credit,
+			"major_id":      s.MajorID,
+			"faculty_id":    s.FacultyID,
+			"semester_id":   s.SemesterID,
+			"term":          s.Semester.Term,
 			"academic_year": s.Semester.AcademicYear,
-			/*"teacher_id":        s.TeacherID,
-			"teacher_firstname": s.Teacher.FirstName,
-			"teacher_lastname":  s.Teacher.LastName,*/	
-			//"study_times":  s.StudyTimes,
+			"teacher_id":    s.TeacherID,
+			// "study_times": s.StudyTimes, // ถ้าต้องการแนบด้วยค่อยเปิด
 		}
 		if s.Major != nil {
 			row["major_name"] = s.Major.MajorName
@@ -214,8 +205,6 @@ func GetSubjectAll(c *gin.Context) {
 }
 
 // PUT /subjects/:subjectId
-// แก้ไขรายวิชา (รองรับแก้ชื่อ, หน่วยกิต, major_id, faculty_id)
-// ถ้าแก้ major/faculty ให้ตรวจสอบความสอดคล้องก่อน
 func UpdateSubject(c *gin.Context) {
 	id := c.Param("subjectId")
 	db := config.DB()
@@ -236,7 +225,6 @@ func UpdateSubject(c *gin.Context) {
 		return
 	}
 
-	// เตรียมค่าที่จะตรวจความสอดคล้อง
 	newMajorID := sub.MajorID
 	newFacultyID := sub.FacultyID
 	if req.MajorID != nil {
@@ -245,8 +233,6 @@ func UpdateSubject(c *gin.Context) {
 	if req.FacultyID != nil {
 		newFacultyID = *req.FacultyID
 	}
-
-	// ถ้ามีการเปลี่ยน Major/Faculty -> ตรวจสอบ
 	if req.MajorID != nil || req.FacultyID != nil {
 		if err := validateMajorFaculty(db, newMajorID, newFacultyID); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -254,7 +240,6 @@ func UpdateSubject(c *gin.Context) {
 		}
 	}
 
-	// อัปเดตฟิลด์ที่ส่งมา
 	if req.SubjectName != nil {
 		sub.SubjectName = *req.SubjectName
 	}
@@ -267,26 +252,46 @@ func UpdateSubject(c *gin.Context) {
 	if req.FacultyID != nil {
 		sub.FacultyID = *req.FacultyID
 	}
+	if req.SemesterID != nil {
+		sub.SemesterID = *req.SemesterID
+	}
+	if req.TeacherID != nil {
+		sub.TeacherID = *req.TeacherID
+	}
 
 	if err := db.Save(&sub).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// แนะนำตอบเป็น snake_case
+	// Reload เพื่อให้ term/year อัปเดตตอนตอบ
+	if err := db.Preload("Semester").First(&sub, "subject_id = ?", sub.SubjectID).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"subject_id":   sub.SubjectID,
+			"subject_name": sub.SubjectName,
+			"credit":       sub.Credit,
+			"major_id":     sub.MajorID,
+			"faculty_id":   sub.FacultyID,
+			"semester_id":  sub.SemesterID,
+			"teacher_id":   sub.TeacherID,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"subject_id":   sub.SubjectID,
-		"subject_name": sub.SubjectName,
-		"credit":       sub.Credit,
-		"major_id":     sub.MajorID,
-		"faculty_id":   sub.FacultyID,
-		"term":  sub.Semester.Term,
+		"subject_id":    sub.SubjectID,
+		"subject_name":  sub.SubjectName,
+		"credit":        sub.Credit,
+		"major_id":      sub.MajorID,
+		"faculty_id":    sub.FacultyID,
+		"semester_id":   sub.SemesterID,
+		"term":          sub.Semester.Term,
 		"academic_year": sub.Semester.AcademicYear,
+		"teacher_id":    sub.TeacherID,
 	})
 }
 
 // DELETE /subjects/:subjectId
-// ลบรายวิชา (ถ้ามี constraint:OnDelete:CASCADE ที่ StudyTimes จะลบเวลาที่เกี่ยวข้องตาม)
 func DeleteSubject(c *gin.Context) {
 	id := c.Param("subjectId")
 	db := config.DB()
