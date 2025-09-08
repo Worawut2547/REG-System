@@ -47,6 +47,7 @@ const footerStyle: React.CSSProperties = {
 
 const RegistrationPage: React.FC = () => {
   const [mode, setMode] = useState<"home" | "add" | "drop">("home");
+  const studentId = (typeof window !== 'undefined' ? (localStorage.getItem('username') || localStorage.getItem('student_id') || '') : '').trim();
 
   return (
         <Layout style={wrapperStyle}>
@@ -75,12 +76,12 @@ const RegistrationPage: React.FC = () => {
             </Space>
           </div>
         ) : mode === "add" ? (
-          <AddCoursePage onBack={() => setMode("home")} />
+          <AddCoursePage onBack={() => setMode("home")} studentId={studentId} />
         ) : (
-          <DropCoursePage onBack={() => setMode("home")} />
+          <DropCoursePage onBack={() => setMode("home")} studentId={studentId} />
         )}
           </Content>
-          <Footer style={footerStyle}>Footer © 2025</Footer>
+          <Footer style={footerStyle}>Arcanatech University © 2025</Footer>
         </Layout>
           );
 };

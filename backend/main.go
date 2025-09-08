@@ -24,6 +24,7 @@ import (
 	"reg_system/controller/status"
 	"reg_system/controller/students"
 	"reg_system/controller/subject"
+	"reg_system/controller/sections"
 	"reg_system/controller/subjectcurriculum"
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
@@ -192,9 +193,23 @@ func main() {
 				times.GET("/:timeId", subjectstudytime.GetOne)
 				times.POST("", subjectstudytime.Create)
 				times.PUT("/:timeId", subjectstudytime.Update)
-				times.DELETE("/:timeId", subjectstudytime.Delete)
+					times.DELETE("/:timeId", subjectstudytime.Delete)
 			}
+
+			// Sections under a subject
+			// GET /subjects/:subjectId/sections -> list sections for that subject
+			subjectItem.GET("/sections", sections.GetSectionsBySubject)
 		}
+    }
+
+	// -------------------- Sections --------------------
+	sectionGroup := r.Group("/sections")
+	{
+		sectionGroup.GET("/", sections.GetSectionAll)
+		sectionGroup.GET("/:sectionId", sections.GetSectionByID)
+		sectionGroup.POST("/", sections.CreateSection)
+		sectionGroup.PUT("/:sectionId", sections.UpdateSection)
+		sectionGroup.DELETE("/:sectionId", sections.DeleteSection)
 	}
 
 	// -------------------- Reports --------------------
@@ -205,6 +220,9 @@ func main() {
 		reportGroup.POST("/", reports.CreateReport)
 		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)
 		reportGroup.PUT("/:id/status", reports.UpdateStatus)
+		// comments
+		reportGroup.GET("/:id/comments", reports.GetReportComments)
+		reportGroup.POST("/:id/comments", reports.CreateReportComment)
 		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment)
 		reportGroup.DELETE("/:id", reports.DeleteReportAlias)
 	}

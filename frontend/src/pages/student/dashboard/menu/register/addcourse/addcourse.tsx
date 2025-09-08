@@ -29,12 +29,12 @@ type BasketRow = {
   Blocks?: { day: string; start: number; end: number; label: string }[];
 };
 
-type Props = { onBack?: () => void };
-const AddCoursePage: React.FC<Props> = ({ onBack }) => {
+type Props = { onBack?: () => void, studentId?: string };
+const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) => {
   const [studentId] = useState(() => {
-    const sid = localStorage.getItem("student_id") || "B6616052";
-    if (!localStorage.getItem("student_id")) localStorage.setItem("student_id", sid);
-    return sid;
+    const username = (typeof window !== 'undefined' ? localStorage.getItem('username') : "") || "";
+    const sid = (propStudentId && propStudentId.trim()) || username || (typeof window !== 'undefined' ? localStorage.getItem('student_id') : "") || "";
+    return String(sid).trim();
   });
 
   const [step, setStep] = useState<Step>("select");
@@ -90,10 +90,23 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
     const lines = String(text || "").split(/\n|,/).map((s) => s.trim()).filter(Boolean);
     type Block = { day: string; start: number; end: number; label: string };
     const blocks: Block[] = [];
+    const normDay = (d: string) => {
+      const map: Record<string, string> = {
+        mon: 'monday', monday: 'monday', 'จันทร์': 'monday',
+        tue: 'tuesday', tues: 'tuesday', tuesday: 'tuesday', 'อังคาร': 'tuesday',
+        wed: 'wednesday', weds: 'wednesday', wednesday: 'wednesday', 'พุธ': 'wednesday',
+        thu: 'thursday', thur: 'thursday', thurs: 'thursday', thursday: 'thursday', 'พฤหัสบดี': 'thursday',
+        fri: 'friday', friday: 'friday', 'ศุกร์': 'friday',
+        sat: 'saturday', saturday: 'saturday', 'เสาร์': 'saturday',
+        sun: 'sunday', sunday: 'sunday', 'อาทิตย์': 'sunday'
+      };
+      const key = (d || '').toLowerCase();
+      return map[key] || key;
+    };
     for (const line of lines) {
-      const m = line.match(/^([A-Za-zก-๙]+)\s*:\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+      const m = line.match(/^([A-Za-zก-๙]+)\s*:??\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
       if (!m) continue;
-      const day = m[1];
+      const day = normDay(m[1]);
       const h1 = parseInt(m[2], 10), n1 = parseInt(m[3], 10);
       const h2 = parseInt(m[4], 10), n2 = parseInt(m[5], 10);
       const start = h1 * 60 + n1; const end = h2 * 60 + n2;
@@ -304,7 +317,7 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
     }
   };
 
-  useEffect(() => { reloadMyList(); }, []);
+  useEffect(() => { if (studentId) reloadMyList(); }, [studentId]);
 
   const openBrowseSubjects = async () => {
     setBrowseLoading(true);
@@ -406,7 +419,6 @@ const AddCoursePage: React.FC<Props> = ({ onBack }) => {
               { title: "เวลาเรียน", key: "Schedule", width: 260, render: (_: any, s: SectionLite) => (
                   <span style={{ whiteSpace: 'pre-line' }}>{normalizeDateTeaching(String(s.DateTeaching || '-'))}</span>
                 ) },
-              { title: "หมายเหตุ", key: "remark", render: () => <span>-</span> },
             ] as any}
           />
         ) : (

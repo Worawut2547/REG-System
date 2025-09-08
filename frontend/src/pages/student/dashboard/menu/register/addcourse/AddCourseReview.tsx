@@ -29,10 +29,24 @@ const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit, reg
     const lines = String(text || "").split(/\n|,/).map((s) => s.trim()).filter(Boolean);
     type Block = { day: string; start: number; end: number; label: string };
     const blocks: Block[] = [];
+    const normDay = (d: string) => {
+      const map: Record<string, string> = {
+        mon: 'monday', monday: 'monday', 'จันทร์': 'monday',
+        tue: 'tuesday', tues: 'tuesday', tuesday: 'tuesday', 'อังคาร': 'tuesday',
+        wed: 'wednesday', weds: 'wednesday', wednesday: 'wednesday', 'พุธ': 'wednesday',
+        thu: 'thursday', thur: 'thursday', thurs: 'thursday', thursday: 'thursday', 'พฤหัสบดี': 'thursday',
+        fri: 'friday', friday: 'friday', 'ศุกร์': 'friday',
+        sat: 'saturday', saturday: 'saturday', 'เสาร์': 'saturday',
+        sun: 'sunday', sunday: 'sunday', 'อาทิตย์': 'sunday'
+      };
+      const key = (d || '').toLowerCase();
+      return map[key] || key;
+    };
     for (const line of lines) {
-      const m = line.match(/^([A-Za-zก-๙]+)\s*:\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+      // support both "Monday: 10:00-12:00" and "Monday 10:00-12:00"
+      const m = line.match(/^([A-Za-zก-๙]+)\s*:??\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
       if (!m) continue;
-      const day = m[1];
+      const day = normDay(m[1]);
       const h1 = parseInt(m[2], 10), n1 = parseInt(m[3], 10);
       const h2 = parseInt(m[4], 10), n2 = parseInt(m[5], 10);
       const start = h1 * 60 + n1; const end = h2 * 60 + n2;
@@ -87,6 +101,7 @@ const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit, reg
     return keys;
   }, [rows, registeredRows]);
   const totalCredit = rows.reduce((sum, b) => sum + (b.Credit || 0), 0);
+  const hasAnyConflict = conflictKeys.size > 0 || conflictWithRegisteredKeys.size > 0;
   const columns = [
     { title: "กลุ่ม", dataIndex: "Group", key: "Group", width: 80 },
     { title: "รหัสวิชา", dataIndex: "SubjectID", key: "SubjectID", width: 120 },
@@ -113,7 +128,9 @@ const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit, reg
       <Table columns={columns} dataSource={rows} rowKey="key" bordered pagination={false} />
       <Space style={{ width: "100%", justifyContent: "flex-end", marginTop: 16 }}>
         <Button onClick={onBack}>ย้อนกลับ</Button>
-        <Button type="primary" loading={loading} onClick={onSubmit}>ยืนยันการลงทะเบียน</Button>
+        <Button type="primary" loading={loading} onClick={onSubmit} disabled={hasAnyConflict}>
+          ยืนยันการลงทะเบียน
+        </Button>
       </Space>
     </Card>
   );

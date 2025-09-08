@@ -247,6 +247,71 @@ func DeleteReport(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
+// ---------- Comments ----------
+
+// GET /reports/:id/comments
+func GetReportComments(c *gin.Context) {
+    id := c.Param("id")
+    db := config.DB()
+    var items []entity.ReviewerComment
+    if err := db.Preload("Reviewer.User").
+        Where("report_id = ?", id).
+        Order("comment_date ASC").
+        Find(&items).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, items)
+}
+
+// POST /reports/:id/comments { reviewer_id?: string, comment?: string }
+func CreateReportComment(c *gin.Context) {
+    id := strings.TrimSpace(c.Param("id"))
+    type payload struct {
+        ReviewerID string `json:"reviewer_id"`
+        Comment    string `json:"comment"`
+        CommentText string `json:"CommentText"`
+    }
+    var body payload
+    if err := c.ShouldBindJSON(&body); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+        return
+    }
+    text := strings.TrimSpace(firstNonEmpty(body.Comment, body.CommentText))
+    if text == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "comment is required"})
+        return
+    }
+    db := config.DB()
+    // fallback reviewer id to report's reviewer if not provided
+    rid := strings.TrimSpace(body.ReviewerID)
+    if rid == "" {
+        var rep entity.Report
+        if err := db.Select("reviewer_id").Where("report_id = ?", id).First(&rep).Error; err == nil {
+            rid = strings.TrimSpace(rep.Reviewer_id)
+        }
+    }
+    item := entity.ReviewerComment{
+        Comment_id:  "COM-" + time.Now().Format("150405000000000"),
+        CommentText: text,
+        CommentDate: time.Now(),
+        Reviewer_id: rid,
+        Report_id:   id,
+    }
+    if err := db.Create(&item).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    // return with reviewer preloaded for display
+    _ = db.Preload("Reviewer.User").First(&item, "comment_id = ?", item.Comment_id).Error
+    c.JSON(http.StatusCreated, item)
+}
+
+func firstNonEmpty(ss ...string) string {
+    for _, s := range ss { if strings.TrimSpace(s) != "" { return s } }
+    return ""
+}
+
 // ---------- Masters / Dropdown ----------
 
 // GET /report-types

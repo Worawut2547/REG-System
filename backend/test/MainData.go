@@ -6,20 +6,19 @@ import (
 )
 
 func ExampleData() {
-	db := config.DB()
-	
-	FacultyExample()
-	MajorExample()
-	SubjectExample()
-	PositionExample()
-	DegreeExample()
-	SemesterExample()
-	GenderExample()
-	StatusExample()
-	ReportExampleData()
-	
-	BookPathExample()
-	CurriculumExample()
+    db := config.DB()
+    
+    FacultyExample()
+    MajorExample()
+    SubjectExample()
+    PositionExample()
+    DegreeExample()
+    SemesterExample()
+    GenderExample()
+    StatusExample()
+    
+    BookPathExample()
+    CurriculumExample()
 
 	RegistrationExample()
 	StudentExample()
@@ -94,5 +93,7 @@ func ExampleData() {
 		Password: hashedPasswordTeacher,
 		Role:     "teacher",
 	}
-	db.Create(&userTeacher)
+    db.Create(&userTeacher)
+
+    ReportExampleData()
 }

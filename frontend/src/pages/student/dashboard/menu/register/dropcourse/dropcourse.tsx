@@ -21,9 +21,13 @@ type Row = {
   InternalID?: number;
 };
 
-type Props = { onBack?: () => void };
-const DropCoursePage: React.FC<Props> = ({ onBack }) => {
-  const [studentId] = useState(() => localStorage.getItem("student_id") || "B6616052");
+type Props = { onBack?: () => void, studentId?: string };
+const DropCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) => {
+  const [studentId] = useState(() => {
+    const username = (typeof window !== 'undefined' ? localStorage.getItem('username') : "") || "";
+    const sid = (propStudentId && propStudentId.trim()) || username || (typeof window !== 'undefined' ? localStorage.getItem('student_id') : "") || "";
+    return String(sid).trim();
+  });
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -89,7 +93,7 @@ const DropCoursePage: React.FC<Props> = ({ onBack }) => {
     }
   };
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { if (studentId) reload(); }, [studentId]);
 
   const handleDrop = async (row: Row) => {
     const id = row.InternalID ?? row.RegistrationID;

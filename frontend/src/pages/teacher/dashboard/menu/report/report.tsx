@@ -1,9 +1,11 @@
 // src/pages/teacher/dashboard/menu/report/report.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Layout, Card, Table, Tag, Button, Modal, Typography, message, Spin } from "antd";
+import { Layout, Card, Table, Tag, Button, Modal, Typography, message, Spin, Input, List } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { apiUrl } from "../../../../../services/api";
 import "./report.css";
+import { getNameTeacher } from "../../../../../services/https/teacher/teacher";
+import { getNameAdmin } from "../../../../../services/https/admin/admin";
 
 const { Header, Content, Footer } = Layout;
 const { Text, Title } = Typography;
@@ -90,6 +92,10 @@ const TeacherReport: React.FC = () => {
   const [atts, setAtts] = useState<AnyObj[]>([]);
   const [attLoading, setAttLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [commenting, setCommenting] = useState(false);
+  const [comments, setComments] = useState<AnyObj[]>([]);
+  const [newComment, setNewComment] = useState<string>("");
+  const [nameMap, setNameMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -158,7 +164,47 @@ const TeacherReport: React.FC = () => {
       const id = r.Report_id || r.report_id;
       const one = await http<AnyObj>(`/reports/${encodeURIComponent(String(id))}`);
       setAtts(normalizeAttachments(one?.Attachments || one?.attachments || one?.Attachment));
+      // load comments
+      await loadComments(String(id));
     } catch { setAtts([]); } finally { setAttLoading(false); }
+  };
+
+  const loadComments = async (reportId: string) => {
+    try {
+      const items = await http<AnyObj[]>(`/reports/${encodeURIComponent(reportId)}/comments`);
+      setComments(items || []);
+      // enrich names (teacher/admin)
+      const wanted: { username: string; role: string }[] = [];
+      const seen = new Set<string>();
+      for (const it of (items || [])) {
+        const u = it?.Reviewer?.User;
+        const username = u?.Username || u?.username;
+        const role = (u?.Role || u?.role || "").toLowerCase();
+        if (!username || !role) continue;
+        if (nameMap[username]) continue;
+        const key = role + ":" + username;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        wanted.push({ username, role });
+      }
+      if (wanted.length) {
+        const updates: Record<string, string> = {};
+        await Promise.all(wanted.map(async ({ username, role }) => {
+          try {
+            if (role === "teacher") {
+              const t = await getNameTeacher(username);
+              const full = [t?.FirstName, t?.LastName].filter(Boolean).join(" ");
+              if (full) updates[username] = full;
+            } else if (role === "admin") {
+              const a = await getNameAdmin(username);
+              const full = [a?.FirstName, a?.LastName].filter(Boolean).join(" ");
+              updates[username] = full || "เจ้าหน้าที่";
+            }
+          } catch {}
+        }));
+        if (Object.keys(updates).length) setNameMap((m) => ({ ...m, ...updates }));
+      }
+    } catch { setComments([]); }
   };
 
   const changeStatus = async (status: string) => {
@@ -166,6 +212,14 @@ const TeacherReport: React.FC = () => {
     const id = sel.Report_id || sel.report_id;
     setSaving(true);
     try {
+      const txt = (newComment || '').trim();
+      if (txt) {
+        await http(`/reports/${encodeURIComponent(String(id))}/comments`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comment: txt, reviewer_id: sel?.Reviewer_id || sel?.reviewer_id })
+        });
+        setNewComment('');
+        await loadComments(String(id));
+      }
       await http(`/reports/${encodeURIComponent(String(id))}/status`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
       setRows(prev => prev.map(r => (String(r.Report_id || r.report_id) === String(id) ? { ...r, Status: status } : r)));
       message.success("อัปเดตสถานะสำเร็จ");
@@ -175,15 +229,37 @@ const TeacherReport: React.FC = () => {
     } finally { setSaving(false); }
   };
 
-  return (
+  const submitComment = async () => {
+    if (!sel) return;
+    const id = sel.Report_id || sel.report_id;
+    const txt = (newComment || '').trim();
+    if (!txt) { message.warning('กรุณาพิมพ์คอมเมนต์'); return; }
+    try {
+      setCommenting(true);
+      await http(`/reports/${encodeURIComponent(String(id))}/comments`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comment: txt, reviewer_id: sel?.Reviewer_id || sel?.reviewer_id })
+      });
+      setNewComment('');
+      await loadComments(String(id));
+      message.success('เพิ่มคอมเมนต์แล้ว');
+    } catch (e: any) { message.error(e?.message || 'เพิ่มคอมเมนต์ไม่สำเร็จ'); }
+    finally { setCommenting(false); }
+  };
 
+  return (
     <Layout style={wrapperStyle}>
           <Header style={headerStyle}>ระบบคำร้อง</Header>
           <Content style={contentStyle}>
             <Card title="รายการคำร้องที่ส่งให้ฉัน" style={{ borderRadius: 8 }}>
-          <Table rowKey={(r) => r.Report_id || r.report_id} columns={columns as any} dataSource={rows} loading={loading} pagination={{ pageSize: 6 }} />
+          <Table
+            rowKey={(r) => r.Report_id || r.report_id}
+            columns={columns as any}
+            dataSource={rows}
+            loading={loading}
+            pagination={{ pageSize: 6 }}
+            scroll={{ x: 'max-content' }}
+          />
         </Card>
-
         <Modal open={open} onCancel={() => setOpen(false)} footer={null} centered title="รายละเอียดคำร้อง">
           {sel && (
             <div>
@@ -206,19 +282,43 @@ const TeacherReport: React.FC = () => {
                   </ul>
                 ))}
               </div>
-              <div style={{ marginTop: 16, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                <Button disabled={saving} onClick={() => changeStatus("ไม่อนุมัติ")}>
-                  ไม่อนุมัติ
-                </Button>
-                <Button type="primary" disabled={saving} onClick={() => changeStatus("อนุมัติ")}>
-                  อนุมัติ
-                </Button>
+              <div style={{ marginTop: 16 }}>
+                <Title level={5} style={{ marginBottom: 8 }}>Comment</Title>
+                <List
+                  className="comment-list"
+                  size="small"
+                  locale={{ emptyText: 'ยังไม่มีคอมเมนต์' }}
+                  dataSource={comments}
+                  renderItem={(item: any) => (
+                    <List.Item className="comment-item">
+                      <div style={{ width: '100%' }}>
+                        <div className="comment-header">
+                          {(() => {
+                            const u = item?.Reviewer?.User;
+                            const role = String(u?.Role || u?.role || '').toLowerCase();
+                            const uname = u?.Username || u?.username || '';
+                            const display = nameMap[uname] || (role === 'admin' ? 'เจ้าหน้าที่' : (uname || 'ผู้ตรวจสอบ'));
+                            return <Text className="comment-name">{display}</Text>;
+                          })()}
+                          <Text className="comment-date">{item?.CommentDate ? new Date(item.CommentDate).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : ''}</Text>
+                        </div>
+                        <div className="comment-text">{item?.CommentText || item?.comment || ''}</div>
+                      </div>
+                    </List.Item>
+                  )}
+                />
+              </div>
+              <div className="actions-row">
+                <Input.TextArea rows={3} className="comment-box" placeholder="พิมพ์คอมเมนต์..." value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+                <Button onClick={submitComment} loading={commenting} disabled={!newComment.trim()}>เพิ่มComment</Button>
+                <Button disabled={saving} onClick={() => changeStatus("ไม่อนุมัติ")}>ไม่อนุมัติ</Button>
+                <Button type="primary" disabled={saving} onClick={() => changeStatus("อนุมัติ")}>อนุมัติ</Button>
               </div>
             </div>
           )}
         </Modal>
           </Content>
-          <Footer style={footerStyle}>Footer © 2025</Footer>
+          <Footer style={footerStyle}>Arcanatech University  © 2025</Footer>
         </Layout>
 
   );

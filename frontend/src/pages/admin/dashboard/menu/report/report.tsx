@@ -79,7 +79,7 @@ const AdminReportPage: React.FC = () => {
           <div className="rq-center"><div className="rq-container"><DropType /></div></div>
         )}
           </Content>
-          <Footer style={footerStyle}>Footer © 2025</Footer>
+          <Footer style={footerStyle}>Arcanatech University © 2025</Footer>
         </Layout>
   );
 };

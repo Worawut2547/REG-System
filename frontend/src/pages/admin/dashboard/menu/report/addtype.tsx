@@ -6,19 +6,19 @@ import { apiUrl } from "../../../../../services/api";
 type Props = { onBack?: () => void };
 
 const AddType: React.FC<Props> = ({ onBack }) => {
-  const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!id.trim() || !name.trim()) return message.warning("กรอกรหัสและชื่อประเภทคำร้อง");
+    if (!name.trim()) return message.warning("กรอกชื่อประเภทคำร้อง");
     setSaving(true);
     try {
-      const payload = { ReportType_id: id.trim(), ReportType_Name: name.trim(), ReportTypeDescription: desc.trim() };
+      // ไม่ส่ง ReportType_id เพื่อให้หลังบ้าน gen ให้อัตโนมัติ
+      const payload = { ReportType_Name: name.trim(), ReportTypeDescription: desc.trim() } as any;
       await axios.post(`${apiUrl}/report-types`, payload, { headers: { 'Content-Type': 'application/json' } });
       message.success("เพิ่มประเภทคำร้องเรียบร้อย");
-      setId(""); setName(""); setDesc("");
+      setName(""); setDesc("");
       onBack?.();
     } catch (e: any) {
       message.error(e?.response?.data?.error || e?.message || "เพิ่มประเภทไม่สำเร็จ");
@@ -28,10 +28,6 @@ const AddType: React.FC<Props> = ({ onBack }) => {
   return (
     <Card title="เพิ่มประเภทคำร้อง" style={{ borderRadius: 8 }}>
       <Space direction="vertical" style={{ width: '100%' }} size="middle">
-        <div>
-          <Typography.Text strong>รหัสประเภทคำร้อง</Typography.Text>
-          <Input placeholder="เช่น RT03" value={id} onChange={(e) => setId(e.target.value)} maxLength={16} />
-        </div>
         <div>
           <Typography.Text strong>ชื่อประเภทคำร้อง</Typography.Text>
           <Input placeholder="เช่น ขอยื่นคำร้องทั่วไป" value={name} onChange={(e) => setName(e.target.value)} />

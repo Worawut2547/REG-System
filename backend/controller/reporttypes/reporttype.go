@@ -1,7 +1,10 @@
 package reporttypes
 
 import (
+    "fmt"
     "net/http"
+    "regexp"
+    "strconv"
     "strings"
 
     "github.com/gin-gonic/gin"
@@ -54,11 +57,20 @@ func CreateReportType(c *gin.Context) {
     id := strings.TrimSpace(body.ReportType_id)
     name := strings.TrimSpace(body.ReportType_Name)
     desc := strings.TrimSpace(body.ReportTypeDescription)
-    if id == "" || name == "" {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "ReportType_id and ReportType_Name are required"})
+    if name == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ReportType_Name is required"})
         return
     }
     db := config.DB()
+    // Autogenerate running id if not provided
+    if id == "" {
+        gen, err := nextReportTypeID(db)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        id = gen
+    }
     var cnt int64
     if err := db.Model(&entity.ReportType{}).Where("report_type_id = ?", id).Count(&cnt).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -74,6 +86,25 @@ func CreateReportType(c *gin.Context) {
         return
     }
     c.JSON(http.StatusCreated, rt)
+}
+
+// nextReportTypeID generates ids like RT01, RT02, ... (2 digits)
+func nextReportTypeID(db *gorm.DB) (string, error) {
+    var items []entity.ReportType
+    if err := db.Select("report_type_id").Find(&items).Error; err != nil {
+        return "", err
+    }
+    re := regexp.MustCompile(`(?i)^RT(\d+)$`)
+    maxN := 0
+    for _, it := range items {
+        m := re.FindStringSubmatch(strings.TrimSpace(it.ReportType_id))
+        if len(m) == 2 {
+            if n, err := strconv.Atoi(m[1]); err == nil && n > maxN {
+                maxN = n
+            }
+        }
+    }
+    return fmt.Sprintf("RT%02d", maxN+1), nil
 }
 
 // PUT /report-types/:id

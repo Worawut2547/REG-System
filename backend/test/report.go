@@ -78,7 +78,7 @@ func ReportExampleData() {
 		},
 		{
 			Report_id:       "REP002",
-			Report_details:  "ขอลงทะเบียนเพิ่มวิชา Digital System",
+			Report_details:  "ขอลงทะเบียนเพิ่มวิชา Embedded",
 			Submittion_date: time.Now().Add(-24 * time.Hour),
 			Status:          "อนุมัติ",
 			StudentID:       "B6616052",
