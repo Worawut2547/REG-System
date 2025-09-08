@@ -1,9 +1,13 @@
 package graduation
 
 import (
+	//"fmt"
+	//"log"
 	"net/http"
 	"reg_system/config"
+	//"reg_system/controller/graduation"
 	"reg_system/entity"
+
 	//"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,41 +18,16 @@ import (
 // 1. สร้างคำขอแจ้งจบ (นักศึกษา)
 // ----------------------
 func CreateGraduation(c *gin.Context) {
-	/*var input struct {
-		StudentID    string  `json:"StudentID"`
-		CurriculumID *string `json:"CurriculumID,omitempty"`
-		Date         string  `json:"Date"` // frontend ส่งมา
-	}*/
 	input := &entity.Graduation{}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	/*if input.StudentID == ""{
-		c.JSON(http.StatusBadRequest, gin.H{"error": "StudentID and Date are required"})
-		return
-	}
-
-	// ✅ รองรับได้ทั้ง "YYYY-MM-DD" และ ISO "YYYY-MM-DDTHH:mm:ss"
-	var gradDate time.Time
-	var err error
-	if len(input.Date) > 10 {
-		gradDate, err = time.Parse(time.RFC3339, input.Date)
-	} else {
-		gradDate, err = time.Parse("2006-01-02", input.Date)
-	}*/
-
-	/*if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format"})
-		return
-	}*/
-
 	db := config.DB()
 	graduation := entity.Graduation{
 		StudentID:    input.StudentID,
 		CurriculumID: input.CurriculumID,
-		//Date:         gradDate,
 	}
 
 	// ใช้ transaction
@@ -80,11 +59,6 @@ func CreateGraduation(c *gin.Context) {
 // ----------------------
 func GetMyGraduation(c *gin.Context) {
 	studentID := c.Param("id")
-	/*studentID, exists := c.Get("studentID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}*/
 
 	db := config.DB()
 	var graduation entity.Graduation
@@ -166,48 +140,38 @@ func GetAllGraduation(c *gin.Context) {
 // ----------------------
 // 4. อัพเดทสถานะคำขอแจ้งจบ (Admin)
 // ----------------------
-func UpdateGraduationStatus(c *gin.Context) {
-	var input struct {
-		GraduationID   uint   `json:"GraduationID"`
-		StatusStudentID string `json:"StatusStudentID"`   // เช่น "30" = อนุมัติ, "40" = ไม่อนุมัติ
-		RejectReason   string `json:"RejectReason"`       // ต้องใส่ถ้าไม่อนุมัติ
+func UpdateGraduation(c *gin.Context) {
+	graduationID := c.Param("id")
+
+	type UpdateInput struct {
+		StatusStudentID string  `json:"StatusStudentID"`
+		RejectReason    *string `json:"RejectReason,omitempty"` // ใช้ pointer
 	}
 
+	var input UpdateInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if input.GraduationID == 0 || input.StatusStudentID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "GraduationID and StatusStudentID are required"})
-		return
-	}
-
-	// ถ้าไม่อนุมัติ ต้องมีเหตุผล
-	if input.StatusStudentID != "30" && input.RejectReason == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "RejectReason is required when not approved"})
-		return
-	}
-
 	db := config.DB()
+
 	err := db.Transaction(func(tx *gorm.DB) error {
-		// ดึงข้อมูล graduation ก่อน
 		var graduation entity.Graduation
-		if err := tx.First(&graduation, input.GraduationID).Error; err != nil {
+		if err := tx.First(&graduation, "id = ?", graduationID).Error; err != nil {
 			return err
 		}
 
-		// อัพเดทตาราง graduation
-		if err := tx.Model(&graduation).Updates(map[string]interface{}{
-			"RejectReason": input.RejectReason,
-		}).Error; err != nil {
-			return err
-		}
-
-		// อัพเดท status_student_id ของนักศึกษา
+		// อัปเดต StatusStudent ของนักเรียน
 		if err := tx.Model(&entity.Students{}).
 			Where("student_id = ?", graduation.StudentID).
 			Update("status_student_id", input.StatusStudentID).Error; err != nil {
+			return err
+		}
+
+		// อัปเดต RejectReason เฉพาะถ้ามีค่า
+		if err := tx.Model(&graduation).
+			Update("reject_reason", input.RejectReason).Error; err != nil {
 			return err
 		}
 
@@ -219,7 +183,6 @@ func UpdateGraduationStatus(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Graduation status updated successfully",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Graduation status updated successfully"})
 }
+

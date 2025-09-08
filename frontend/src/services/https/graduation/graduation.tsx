@@ -1,39 +1,10 @@
 import axios from "axios";
-import type { GraduationInterface , UpdateGraduationInput } from "../../../interfaces/Graduation";
+import type { CreateGraduationInput, GraduationInterface } from "../../../interfaces/Graduation";
 
 import { apiUrl } from "../../api";
 
 //const apiUrl = "/graduations";
 //const apiUrl = "http://localhost:8080/graduations";
-
-
-// --------------------------
-// ดึงข้อมูลผู้แจ้งจบทั้งหมด (Admin)
-// --------------------------
-/*export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
-    try {
-        const res = await axios.get(apiUrl, { withCredentials: true });
-        const items = res.data?.data ?? [];
-
-        if (!Array.isArray(items)) {
-            console.error("Unexpected response format:", res.data);
-            return [];
-        }
-
-        return items.map((item: any): GraduationInterface => ({
-            id: item.GraduationID?.toString() || "",
-            StudentID: item.StudentID || "",
-            fullName: `${item.FirstName ?? ""} ${item.LastName ?? ""}`.trim(),
-            curriculum: item.Curriculum ?? "",
-            statusStudent: item.StatusStudent ?? "รอตรวจสอบ",
-            reason: item.RejectReason ?? "",
-            Date: item.Date ? new Date(item.Date) : null,
-        }));
-    } catch (err) {
-        console.error("Error fetching all graduations:", err);
-        return [];
-    }
-};*/
 
 // Mapping รหัส status เป็นข้อความ
 /*const statusMap: Record<string, string> = {
@@ -44,38 +15,19 @@ import { apiUrl } from "../../api";
 // --------------------------
 // อัปเดตคำขอแจ้งจบ (Admin) รอแก้
 // --------------------------
-export const updateGraduations = async (id: string, data: UpdateGraduationInput) => {
-    try {
 
-        const res = await axios.get(`${apiUrl}/${id}`);
-        
-        // backend ต้องการ GraduationID + StatusStudentID + RejectReason
-        const payload = {
-            GraduationID: Number(id),
-            StatusStudentID: data.StatusStudent,
-            RejectReason: data.StatusStudent === "40" ? data.RejectReason : "",
-        };
-
-        //const res = await axios.put(`${apiUrl}/${id}`, payload);
-        console.log(res.data);
-
-
-        return {
-            statusStudent: data.StatusStudent === "30" ? "อนุมัติ" : "ไม่อนุมัติ",
-            reason: payload.RejectReason ?? "",
-        };
-    } catch (err) {
-        console.error("Error updating graduation:", err);
-        throw err;
-    }
+export const statusStudentMap: Record<string, string> = {
+    "20": "รอตรวจสอบ",
+    "30": "สำเร็จการศึกษา",
+    "40": "ไม่อนุมัติให้จบการศึกษา",
 };
+
 
 // ดึงข้อมูลผู้แจ้งจบทั้งหมด
 export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
     try {
         const res = await axios.get(`${apiUrl}/graduations/`);
-        console.log("api graduations",res.data)
-        //const res = await axios.get(apiUrl, { withCredentials: true });
+        console.log("api graduations", res.data)
         const items = res.data?.data ?? [];
 
         return items.map((item: any): GraduationInterface => ({
@@ -97,11 +49,11 @@ export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
 // สร้างคำขอแจ้งจบ (นักศึกษา)
 // --------------------------
 export const createGraduation = async (
-    data: GraduationInterface
+    data: CreateGraduationInput
 ): Promise<GraduationInterface> => {
     try {
         const res = await axios.post(`${apiUrl}/graduations/`, data);
-        console.log("api create graduation:",res.data);
+        console.log("api create graduation:", res.data);
         const item = res.data?.data;
 
         if (!item) throw new Error("No data returned from backend");
@@ -126,7 +78,11 @@ export const createGraduation = async (
 // --------------------------
 export const getMyGraduation = async (): Promise<GraduationInterface | null> => {
     try {
-        const res = await axios.get(`${apiUrl}/id`, { withCredentials: true });
+
+        const studentID = localStorage.getItem("username"); // หรือ StudentID จริง
+        if (!studentID) return null;
+
+        const res = await axios.get(`${apiUrl}/graduations/${studentID}`);
         const data = res.data?.data;
 
         if (!data) return null;
@@ -140,8 +96,32 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
             reason: data.RejectReason ?? "",
             Date: data.Date ? new Date(data.Date) : null,
         };
+        console.log("Graduation reason:", data.RejectReason);
     } catch (err) {
         console.error("Error fetching my graduation:", err);
         return null;
+    }
+};
+
+
+export const updateGraduation = async (
+    graduationID: string,
+    statusStudentID: string,
+    rejectReason?: string
+): Promise<void> => {
+    try {
+        const payload = {
+            StatusStudentID: statusStudentID,
+            RejectReason: rejectReason ?? null, // ถ้าไม่มี rejectReason ให้เป็น null
+        };
+
+        const res = await axios.put(`${apiUrl}/graduations/${graduationID}`, payload, {
+            withCredentials: true,
+        });
+
+        console.log("Graduation updated:", res.data);
+    } catch (err: any) {
+        console.error("Failed to update graduation:", err.response?.data || err.message);
+        throw err;
     }
 };

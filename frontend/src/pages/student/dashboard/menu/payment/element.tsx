@@ -98,7 +98,7 @@ const PaymentPage: React.FC = () => {
     };
   });
 
-  const termSubjects: DataType[] = subjects
+  const termSubjects = subjects
     .filter(s => String(s.academicYear) === selectedYear && String(s.term) === selectedTerm)
     .map((s, idx) => ({
       key: String(idx + 1),
@@ -107,6 +107,7 @@ const PaymentPage: React.FC = () => {
       credit: s.credit,
       amount: s.credit * pricePerCredit,
     }));
+
 
   const totalCredit = termSubjects.reduce((sum, s) => sum + s.credit, 0);
   const totalAmount = termSubjects.reduce((sum, s) => sum + s.amount, 0);

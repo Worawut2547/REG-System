@@ -4,7 +4,7 @@ import type { TableColumnsType } from 'antd';
 import CheckGraduate from './check';
 import './graduate.css';
 import type { GraduationInterface } from '../../../../../interfaces/Graduation';
-import { getAllGraduations, updateGraduations } from '../../../../../services/https/graduation/graduation';
+import { getAllGraduations, updateGraduation } from '../../../../../services/https/graduation/graduation';
 
 const { Content } = Layout;
 
@@ -46,22 +46,24 @@ const Element1: React.FC = () => {
   };
 
   const handleOk = async (status: string, reason?: string) => {
-  if (!selectedRecord) return;
+    if (!selectedRecord) return;
 
-  try {
-    await updateGraduations(selectedRecord.id, {
-      GraduationID: selectedRecord.id,
-      StatusStudent: status,
-      RejectReason: reason,
-    });
-    message.success('อัปเดตสถานะสำเร็จ');
-    setIsModalVisible(false);
-    setSelectedRecord(null);
-    fetchData(); // refresh table
-  } catch (err) {
-    message.error('ไม่สามารถอัปเดตสถานะได้');
-  }
-};
+    try {
+      await updateGraduation(
+        selectedRecord.id,
+        status,
+        reason
+      );
+      message.success('อัปเดตสถานะสำเร็จ');
+      setIsModalVisible(false);
+      setSelectedRecord(null);
+      fetchData(); // refresh table
+    } catch (err) {
+      message.error('ไม่สามารถอัปเดตสถานะได้');
+    }
+  };
+
+
 
 
   const handleCancel = () => {

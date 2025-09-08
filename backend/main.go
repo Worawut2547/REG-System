@@ -206,7 +206,7 @@ func main() {
 		billGroup.GET("/preview/:id", bill.ShowFile)
 		billGroup.GET("/download/:id", bill.DownloadBill)
 		billGroup.GET("/admin/all", bill.GetAllBills)
-		billGroup.PUT("/:id", bill.AdminUpdateBillStatus) // ใช้สำหรับอนุมัติใบเสร็จ
+		billGroup.PUT("/:id", bill.UpdateBillStatus) // ใช้สำหรับอนุมัติใบเสร็จ
 	}
 	
 
@@ -225,7 +225,7 @@ func main() {
 		graduationGroup.GET("/", graduation.GetAllGraduation)
 		graduationGroup.POST("/", graduation.CreateGraduation)
 		graduationGroup.GET("/:id", graduation.GetMyGraduation)
-		graduationGroup.PUT("/:id", graduation.UpdateGraduationStatus)
+		graduationGroup.PUT("/:id", graduation.UpdateGraduation)
 	}
 
 	// -------------------- Run Server --------------------

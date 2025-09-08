@@ -133,7 +133,16 @@ const GraduateStatus: React.FC = () => {
   };
 
 
-  if (loading) return <Spin tip="กำลังโหลดข้อมูล..." style={{ margin: '100px auto', display: 'block' }} />;
+  {
+    loading ? (
+      <div style={{ textAlign: 'center', marginTop: 100 }}>
+        <Spin size="large" />
+      </div>
+    ) : (
+      <Content style={contentStyle}> ... </Content>
+    )
+  }
+
 
   if (!data) return <Content style={contentStyle}>ไม่พบข้อมูลนักศึกษา</Content>;
 

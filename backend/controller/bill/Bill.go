@@ -188,37 +188,6 @@ func UploadReceipt(c *gin.Context) {
 	})
 }
 
-// PUT /bills/admin/update/:id - แอดมินตรวจสอบบิลแล้วอัปเดทสถานะ
-func AdminUpdateBillStatus(c *gin.Context) {
-	id := c.Param("id")
-	db := config.DB()
-
-	var req struct {
-		StatusID int `json:"status_id" binding:"required"` // 3 = ชำระเงินแล้ว
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
-		return
-	}
-
-	var bill entity.Bill
-	if err := db.First(&bill, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "bill not found"})
-		return
-	}
-
-	if err := db.Model(&bill).Update("StatusID", req.StatusID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update status"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "status updated",
-		"status":  req.StatusID,
-	})
-}
-
 // GET /bills/admin/all - ดึงบิลทั้งหมด สำหรับแอดมิน
 func GetAllBills(c *gin.Context) {
 	db := config.DB()
@@ -276,11 +245,11 @@ func GetAllBills(c *gin.Context) {
 
 // GET /bills/preview/:id - เปิด PDF inline
 
-func ShowFile (c *gin.Context) {
+func ShowFile(c *gin.Context) {
 	filename := c.Param("id")
 	filePath := fmt.Sprintf("./uploads/%s", filename)
 
-	if _,err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
 		return
 	}
@@ -313,6 +282,39 @@ func DownloadBill(c *gin.Context) {
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(path)))
 	c.File(path)
+}
+
+// PUT /bills/status/:id
+func UpdateBillStatus(c *gin.Context) {
+	billID := c.Param("id")
+	db := config.DB()
+
+	var req struct {
+		StatusID int `json:"status_id"` // แก้เป็น int
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	var bill entity.Bill
+	if err := db.First(&bill, billID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "bill not found"})
+		return
+	}
+
+	bill.StatusID = req.StatusID // ตอนนี้ตรงชนิดแล้ว
+	if err := db.Save(&bill).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill status"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "bill status updated",
+		"bill_id": bill.ID,
+		"status":  req.StatusID,
+	})
 }
 
 // ======================================================
