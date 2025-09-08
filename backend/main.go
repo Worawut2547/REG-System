@@ -77,7 +77,7 @@ func main() {
 	{
 		teacherGroup.GET("/:id", teachers.GetTeacherID)
 		teacherGroup.POST("/", teachers.CreateTeacher)
-		teacherGroup.GET("/", teachers.GetTeacherAll) // admin
+		teacherGroup.GET("/", teachers.GetTeacherAll) // admin :Earth
 		teacherGroup.PUT("/:id", teachers.UpdateTeacher)
 		teacherGroup.DELETE("/:id", teachers.DeleteTeacher)
 
@@ -89,14 +89,14 @@ func main() {
 	// -------------------- Majors --------------------
 	majorGroup := r.Group("/majors")
 	{
-		majorGroup.GET("/", major.GetMajorAll)  // admin
+		majorGroup.GET("/", major.GetMajorAll)  // admin  :Earth
 		majorGroup.POST("/", major.CreateMajor)
 	}
 
 	// -------------------- Faculties --------------------
 	facultyGroup := r.Group("/faculties")
 	{
-		facultyGroup.GET("/", faculty.GetFacultyAll) // admin, student, teacher
+		facultyGroup.GET("/", faculty.GetFacultyAll) // admin, student, teacher  :Earth
 		facultyGroup.POST("/", faculty.CreateFaculty)
 	}
 
@@ -134,12 +134,12 @@ func main() {
 	// -------------------- Curriculums --------------------
 	curriculumGroup := r.Group("/curriculums")
 	{
-		curriculumGroup.GET("/", curriculum.GetCurriculumAll)                 // admin, student, teacher
+		curriculumGroup.GET("/", curriculum.GetCurriculumAll)                 // admin, student, teacher  :Earth
 		curriculumGroup.GET("/:curriculumId", curriculum.GetCurriculumByID)
-		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin
-		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // admin
-		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // admin
-		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // admin
+		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin  :Earth  
+		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // admin  :Earth
+		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // admin  :Earth
+		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // admin  :Earth
 	}
 
 	// -------------------- Curriculum Books (files) --------------------
@@ -147,8 +147,8 @@ func main() {
 	{
 		cb.GET("/", curriculum.GetCurriculumBooks)
 		cb.GET("/:id", curriculum.GetCurriculumBookByID)
-		cb.POST("/register", curriculum.RegisterCurriculumBookByPath) // admin
-		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)      // admin, student, teacher
+		cb.POST("/register", curriculum.RegisterCurriculumBookByPath) // admin :Earth
+		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)      // admin, student, teacher  :Earth
 		cb.GET("/download/:id", curriculum.DownloadCurriculumBook)
 		cb.DELETE("/:id", curriculum.DeleteCurriculumBook)
 	}
@@ -156,31 +156,33 @@ func main() {
 	// -------------------- Subject-Curriculums (link) --------------------
 	subjectCurriculumGroup := r.Group("/subject-curriculums")
 	{
-		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)       // admin, student, teacher
+		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)       // admin, student, teacher  :Earth
 		subjectCurriculumGroup.GET("/:id", subjectcurriculum.GetSubjectCurriculumByID)
-		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // admin
-		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // admin
+		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // admin  :Earth
+		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // admin  :Earth
 	}
 
 	// -------------------- Subjects & Study Times --------------------
 	subjectGroup := r.Group("/subjects")
 	{
-		subjectGroup.GET("/", subjects.GetSubjectAll)  // admin, student, teacher
-		subjectGroup.POST("/", subjects.CreateSubject) // admin
+		subjectGroup.GET("/", subjects.GetSubjectAll)  // admin, student, teacher  :Earth
+		subjectGroup.POST("/", subjects.CreateSubject) // admin  :Earth
 
 		subjectItem := subjectGroup.Group("/:subjectId")
 		{
 			subjectItem.GET("", subjects.GetSubjectID)
-			subjectItem.PUT("", subjects.UpdateSubject)    // admin
-			subjectItem.DELETE("", subjects.DeleteSubject) // admin
+			subjectItem.PUT("", subjects.UpdateSubject)    // admin  :Earth
+			subjectItem.DELETE("", subjects.DeleteSubject) // admin  :Earth
+
+			// -------------------- Subject Study Times --------------------
 
 			times := subjectItem.Group("/times")
 			{
-				times.GET("", subjectstudytime.GetBySubject)      // admin
+				times.GET("", subjectstudytime.GetBySubject)      // admin  :Earth
 				times.GET("/:timeId", subjectstudytime.GetOne)
-				times.POST("", subjectstudytime.Create)           // admin
-				times.PUT("/:timeId", subjectstudytime.Update)    // admin
-				times.DELETE("/:timeId", subjectstudytime.Delete) // admin
+				times.POST("", subjectstudytime.Create)           // admin  :Earth
+				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth
+				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth
 			}
 		}
 	}
