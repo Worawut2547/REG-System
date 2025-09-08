@@ -918,9 +918,9 @@ const CHANGE: React.FC = () => {
             rowClassName={(_rec, i) =>
               i % 2 === 0 ? "table-row-light" : "table-row-dark"
             }
-            sticky
-            scroll={{ x: "max-content" }} // ให้ table เป็นตัวเลื่อนแนวนอนเอง หัว-ตัว sync กัน
-            tableLayout="auto" // ให้คอลัมน์กว้างตามเนื้อหา (ไม่ fixed)
+            // sticky
+            // scroll={{ x: "max-content" }} // ให้ table เป็นตัวเลื่อนแนวนอนเอง หัว-ตัว sync กัน
+            // tableLayout="auto" // ให้คอลัมน์กว้างตามเนื้อหา (ไม่ fixed)
           />
         </Form>
 
@@ -959,30 +959,38 @@ const CHANGE: React.FC = () => {
           </div>
         </Modal>
 
-        {/* Styles */}
+        {/* C — Table styles */}
         <style>{`
-          .table-row-light { background-color: #dad1d1ff; }
-          .table-row-dark  { background-color: #dad1d1ff; }
+          /* ใช้สีเส้นหลักให้ตรงกัน */
+          :root { --grid-color: #f0e9e9ff; }
 
           .custom-table-header .ant-table-thead > tr > th {
-            background: #2e236c;
-            color: #fff;
-            font-weight: bold;
-            font-size: 13px;
-            border-bottom: 2px solid #ffffffff;
-            border-right: 2px solid #ffffffff;
+            border-right: 1px solid var(--grid-color) !important;
+            border-bottom: 1px solid var(--grid-color) !important;
           }
           .custom-table-header .ant-table-tbody > tr > td {
-            border-bottom: 2px solid #ffffffff;
-            border-right: 2px solid #ffffffff;
+            border-right: 1px solid var(--grid-color) !important;
+            border-bottom: 1px solid var(--grid-color) !important;
           }
-          .custom-table-header .ant-table-tbody > tr > td:last-child,
-          .custom-table-header .ant-table-thead > tr > th:last-child {
-            border-right: none;
+
+          /* ⛔️ ปิดเส้นขาว (split line) ของหัวตาราง */
+          .custom-table-header .ant-table-thead > tr > th::before {
+            background: transparent !important;
+            width: 0 !important;
           }
-          .custom-table-header .ant-table-tbody > tr:hover > td {
-            background-color: #dad1d1ff !important;
-            transition: background 0.2s;
+          /* กันกรณี sticky header */
+          .custom-table-header .ant-table-sticky-holder .ant-table-thead > tr > th::before {
+            background: transparent !important;
+            width: 0 !important;
+          }
+          /* เผื่อบางธีมมี ::after ด้วย */
+          .custom-table-header .ant-table-thead > tr > th::after {
+            display: none !important;
+          }
+
+          /* วิธีทางเลือก: เปลี่ยนตัวแปรสี split line ให้โปร่งใส (AntD v5) */
+          .custom-table-header .ant-table {
+            --ant-table-header-column-split-color: transparent;
           }
         `}</style>
       </Content>

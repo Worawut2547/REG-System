@@ -11,8 +11,6 @@ import (
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
 	"reg_system/controller/major"
@@ -20,11 +18,14 @@ import (
 	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
-	"reg_system/controller/subject"
+	subjects "reg_system/controller/subject"
 	"reg_system/controller/subjectcurriculum"
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
 	"reg_system/controller/users"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 const port = "8000"
@@ -141,15 +142,19 @@ func main() {
 		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // DELETE /curriculums/:id
 	}
 
-	// -------------------- Books (files) --------------------
-	bookGroup := r.Group("/books")
+	// -------------------- Curriculum Books (files) --------------------
+	cb := r.Group("/curriculum-books")
 	{
-		bookGroup.GET("/", curriculum.GetBookPathAll)               // GET /books
-		bookGroup.GET("/:id", curriculum.GetBookPathByID)           // GET /books/:id (อ่าน metadata ไฟล์)
-		bookGroup.POST("/upload", curriculum.UploadBookFile)        // POST /books/upload (อัปโหลดไฟล์)
-		bookGroup.GET("/download/:id", curriculum.DownloadBookFile) // GET /books/download/:id (ดาวน์โหลดไฟล์)
-		bookGroup.DELETE("/:id", curriculum.DeleteBookFile)         // DELETE /books/:id (ลบไฟล์ + metadata)
+	cb.GET("/", curriculum.GetCurriculumBooks)
+	cb.GET("/:id", curriculum.GetCurriculumBookByID)
+	cb.POST("/register", curriculum.RegisterCurriculumBookByPath) // ✅
+	cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)      // ✅
+	cb.GET("/download/:id", curriculum.DownloadCurriculumBook)
+	cb.DELETE("/:id", curriculum.DeleteCurriculumBook)
 	}
+
+
+
 	// -------------------- Subject-Curriculums (link) --------------------
 	subjectCurriculumGroup := r.Group("/subject-curriculums")
 	{

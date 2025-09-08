@@ -37,6 +37,8 @@ import { getFacultyAll } from "../../../../../services/https/faculty/faculty";
 import { getMajorAll } from "../../../../../services/https/major/major";
 import { getTeacherAll } from "../../../../../services/https/teacher/teacher";
 import { getSemestermAll as getSemesterAll } from "../../../../../services/https/semesterm/semesterm";
+//เพิ่มลูกเล่นสักหน่อย
+import Swal from "sweetalert2";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -56,7 +58,7 @@ type TeacherOpt = {
 };
 
 type SemesterOpt = {
-  id: number;              // ⬅ ใช้ number จริง
+  id: number; // ⬅ ใช้ number จริง
   term: string;
   academicYear: string;
 };
@@ -203,7 +205,7 @@ const ADD: React.FC = () => {
     try {
       setLoadingTeachers(true);
       const data = await getTeacherAll();
-    const arr = (Array.isArray(data) ? data : []) as TeacherInterface[];
+      const arr = (Array.isArray(data) ? data : []) as TeacherInterface[];
       setTeachers(
         arr.map((t) => ({
           id: toStr(t.TeacherID),
@@ -229,7 +231,9 @@ const ADD: React.FC = () => {
 
       const mapped = arr
         .map((s) => {
-          const idNum = toNum((s as { SemesterID?: string | number }).SemesterID);
+          const idNum = toNum(
+            (s as { SemesterID?: string | number }).SemesterID
+          );
           const term = (s as { Term?: string }).Term ?? "";
           const year = (s as { AcademicYear?: string }).AcademicYear ?? "";
           return idNum !== undefined
@@ -381,16 +385,12 @@ const ADD: React.FC = () => {
       FacultyID: values.FacultyID,
       TeacherID: values.TeacherID,
       SemesterID:
-        typeof values.SemesterID === "number"
-          ? values.SemesterID
-          : undefined,
+        typeof values.SemesterID === "number" ? values.SemesterID : undefined,
     };
 
     try {
-      // NOTE: ถ้า type ของ service ยังคาดว่า SubjectInterface (SemesterID เป็น string)
-      // เรา assert ครั้งเดียวเพื่อไม่ไปแก้ interface กลางทั้งโปรเจกต์
       const created = await createSubject(
-        (payload as unknown) as SubjectInterface
+        payload as unknown as SubjectInterface
       );
 
       const subjectId =
@@ -410,13 +410,30 @@ const ADD: React.FC = () => {
         )
       );
 
-      message.success("บันทึกรายวิชาสำเร็จ");
+      // ✅ เด้งป็อปอัพแจ้งสำเร็จ (ไม่บล็อกรอผู้ใช้กด — ใช้ `void` ป้องกัน warning เรื่อง Promise)
+      void Swal.fire({
+        icon: "success",
+        title: "บันทึกรายวิชาสำเร็จ",
+        text: "ระบบได้บันทึกรายวิชาและเวลาเรียนเรียบร้อยแล้ว",
+        confirmButtonText: "ตกลง",
+        confirmButtonColor: "#2e236c",
+      });
+
       form.resetFields();
       form.setFieldsValue({ schedule: [] } as Partial<FormValues>);
       await fetchSubjects();
     } catch (e) {
       console.error("[SUBMIT] error:", e);
-      message.error("เพิ่มรายวิชาไม่สำเร็จ");
+
+      // ❌ เด้งป็อปอัพแจ้งข้อผิดพลาด
+      const errMsg = (e as Error)?.message?.trim?.() || "กรุณาลองใหม่อีกครั้ง";
+      void Swal.fire({
+        icon: "error",
+        title: "เพิ่มรายวิชาไม่สำเร็จ",
+        text: errMsg,
+        confirmButtonText: "ปิด",
+        confirmButtonColor: "#d33",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -805,34 +822,40 @@ const ADD: React.FC = () => {
           />
         </div>
 
-        {/* -------------------- Table Styles -------------------- */}
-        <style>
-          {`
-            .table-row-light { background-color: #dad1d1ff; }
-            .table-row-dark  { background-color: #dad1d1ff; }
+        {/* C — Table styles */}
+        <style>{`
+          /* ใช้สีเส้นหลักให้ตรงกัน */
+          :root { --grid-color: #f0e9e9ff; }
 
-            .custom-table-header .ant-table-thead > tr > th {
-              background: #2e236c;
-              color: #fff;
-              font-weight: bold;
-              font-size: 16px;
-              border-bottom: 2px solid #ffffffff;
-              border-right: 2px solid #ffffffff;
-            }
-            .custom-table-header .ant-table-tbody > tr > td {
-              border-bottom: 2px solid #ffffffff;
-              border-right: 2px solid #ffffffff;
-            }
-            .custom-table-header .ant-table-tbody > tr > td:last-child,
-            .custom-table-header .ant-table-thead > tr > th:last-child {
-              border-right: none;
-            }
-            .custom-table-header .ant-table-tbody > tr:hover > td {
-              background-color: #dad1d1ff !important;
-              transition: background 0.2s;
-            }
-          `}
-        </style>
+          .custom-table-header .ant-table-thead > tr > th {
+            border-right: 1px solid var(--grid-color) !important;
+            border-bottom: 1px solid var(--grid-color) !important;
+          }
+          .custom-table-header .ant-table-tbody > tr > td {
+            border-right: 1px solid var(--grid-color) !important;
+            border-bottom: 1px solid var(--grid-color) !important;
+          }
+
+          /* ⛔️ ปิดเส้นขาว (split line) ของหัวตาราง */
+          .custom-table-header .ant-table-thead > tr > th::before {
+            background: transparent !important;
+            width: 0 !important;
+          }
+          /* กันกรณี sticky header */
+          .custom-table-header .ant-table-sticky-holder .ant-table-thead > tr > th::before {
+            background: transparent !important;
+            width: 0 !important;
+          }
+          /* เผื่อบางธีมมี ::after ด้วย */
+          .custom-table-header .ant-table-thead > tr > th::after {
+            display: none !important;
+          }
+
+          /* วิธีทางเลือก: เปลี่ยนตัวแปรสี split line ให้โปร่งใส (AntD v5) */
+          .custom-table-header .ant-table {
+            --ant-table-header-column-split-color: transparent;
+          }
+        `}</style>
       </Content>
     </Layout>
   );

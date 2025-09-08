@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // ✅ ADD
 import name_white from "../../../assets/name_white.png";
 import shortLogo from "../../../assets/logo_white.png";
 import { type AdminInterface } from '../../../interfaces/Admin'
@@ -49,8 +49,28 @@ const AdminDashboardpage: React.FC = () => {
   const [activePage, setActivePage] = useState<string>('หน้าหลัก');
   const [student, setStudent] = useState<AdminInterface | null>(null);
 
-
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ ADD
+
+  // ✅ ADD: map ชื่อเมนู ↔ slug สำหรับใช้ใน URL
+  const keyToSlug: Record<string, string> = {
+    'หน้าหลัก': 'home',
+    'ลงทะเบียนเรียน': 'register',
+    'วิชาที่เปิดสอน': 'course',
+    'ตารางเรียน': 'timetable',
+    'ผลการเรียน': 'grade',
+    'คะแนน': 'score',
+    'ใบแจ้งยอดชำระ': 'payment',
+    'นักศึกษา': 'student',
+    'อาจารย์': 'teacher',
+    'คำร้อง': 'report',
+    'แจ้งจบการศึกษา': 'graduate',
+    'หลักสูตร': 'curriculum',
+    'เปลี่ยนรหัสผ่าน': 'password',
+  };
+  const slugToKey: Record<string, string> = Object.fromEntries( // ✅ ADD
+    Object.entries(keyToSlug).map(([k, v]) => [v, k])
+  );
 
   useEffect(() => {
     // ดึง username จาก localStorage
@@ -67,11 +87,22 @@ const AdminDashboardpage: React.FC = () => {
     }
   }, []);
 
+  // ✅ ADD: sync activePage จาก query ?tab=... ทุกครั้งที่ URL เปลี่ยน
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab') ?? 'home';
+    const key = slugToKey[tab] ?? 'หน้าหลัก';
+    setActivePage(key);
+  }, [location.search, slugToKey]); 
+
   const handleMenuClick = (e: { key: string }) => {
     if (e.key === 'ออกจากระบบ') {
       navigate('/');
     } else {
       setActivePage(e.key);
+      // ✅ ADD: อัปเดต URL ให้สอดคล้อง (ไม่ hardcode path ใช้ path ปัจจุบัน)
+      const slug = keyToSlug[e.key] ?? 'home';
+      navigate({ pathname: location.pathname, search: `?tab=${slug}` });
     }
   };
 
@@ -168,7 +199,7 @@ const AdminDashboardpage: React.FC = () => {
           className="custom-menu"
           style={{ backgroundColor: '#2e236c' }}
           mode="inline"
-          defaultSelectedKeys={['หน้าหลัก']}
+          selectedKeys={[activePage]}             // ✅ ADD (แทน defaultSelectedKeys)
           onClick={handleMenuClick}
           items={[
             { key: 'หน้าหลัก', icon: <HomeOutlined />, label: 'หน้าหลัก' },
