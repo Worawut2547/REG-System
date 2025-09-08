@@ -11,7 +11,6 @@ import (
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
@@ -25,6 +24,8 @@ import (
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
 	"reg_system/controller/users"
+
+	"reg_system/controller/graduation"
 )
 
 const port = "8000"
@@ -40,8 +41,16 @@ func main() {
 	// -------------------- Gin Setup --------------------
 	r := gin.Default()
 	r.RedirectTrailingSlash = true // ถ้า /path/ หรือ /path Gin จะ redirect อัตโนมัติให้ตรงกัน
-	r.Use(cors.Default())
+	//r.Use(cors.Default())
 	r.Use(CORSMiddleware())
+
+	/*r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // frontend URL
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		AllowCredentials: true, // ต้องเป็น true เพราะ frontend ส่ง withCredentials
+		//MaxAge:           12 * time.Hour,
+	}))*/
 
 	// -------------------- Auth --------------------
 	r.POST("/signin", users.SignIn)
@@ -189,15 +198,17 @@ func main() {
 	}
 
 	//---------------------------------------------------------
-	billrGroup := r.Group("/bills")
+	billGroup := r.Group("/bills")
 	{
-		billrGroup.GET("/", bill.GetBills)
-		billrGroup.GET("/:id", bill.GetBillByStudentID)
-		billrGroup.POST("/:id", bill.CreateBill)
-		billrGroup.PUT("/:id", bill.UpdateBill)
-		billrGroup.DELETE("/:id", bill.DeleteBill)
-
+		billGroup.GET("/:id", bill.GetBillByStudentID)
+		billGroup.POST("/:id/create", bill.CreateBill)
+		billGroup.POST("/upload/:id", bill.UploadReceipt)
+		billGroup.GET("/preview/:id", bill.ShowFile)
+		billGroup.GET("/download/:id", bill.DownloadBill)
+		billGroup.GET("/admin/all", bill.GetAllBills)
+		billGroup.PUT("/:id", bill.AdminUpdateBillStatus) // ใช้สำหรับอนุมัติใบเสร็จ
 	}
+	
 
 	//---------------------------------------------------------
 	// Grades
@@ -209,8 +220,17 @@ func main() {
 	// -------------------- Genders --------------------
 	r.GET("/genders", gender.GetGenderAll)
 
+	graduationGroup := r.Group("/graduations")
+	{
+		graduationGroup.GET("/", graduation.GetAllGraduation)
+		graduationGroup.POST("/", graduation.CreateGraduation)
+		graduationGroup.GET("/:id", graduation.GetMyGraduation)
+		graduationGroup.PUT("/:id", graduation.UpdateGraduationStatus)
+	}
+
 	// -------------------- Run Server --------------------
 	// เปิดให้บริการที่ localhost:8000
+	r.Static("/uploads", "./uploads")
 	r.Run("localhost:" + port)
 }
 

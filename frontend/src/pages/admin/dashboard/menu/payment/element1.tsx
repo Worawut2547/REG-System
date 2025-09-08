@@ -1,62 +1,66 @@
-import React, { useState } from 'react';
-import { Table, Cascader, Button, Input } from 'antd';
-import type { CascaderProps, TableColumnsType } from 'antd';
-import Check from './check1'; // import modal
-import './payment.css';
+import React, { useEffect, useState } from 'react';
+import { Table, Cascader, Button, Input, message, Spin, Modal } from 'antd';
+import type { TableColumnsType } from 'antd';
+import { getAllBills, approveBill } from '../../../../../services/https/bill/bill';
+import type { DataType } from '../../../../../services/https/bill/bill';
+import { apiUrl } from '../../../../../services/api';
 
-interface Option { value: string; label: string; children?: Option[] }
-interface DataType { 
-  key: string;
-  StudentID: string;
-  no: number; 
-  fullName: string;
-  receiptNo: string; 
-  paymentDate: string;
-  year: string;   // ปีการศึกษา
-  term: string;   // เทอม
-}
-
-const currentYear = 2568;
-const numYears = 3;
-
-// สร้าง options สำหรับ Cascader ปี/เทอม
-const options: Option[] = Array.from({ length: numYears }, (_, i) => {
-  const year = (currentYear - i).toString();
-  return { 
-    value: year, 
-    label: `${year}`, 
-    children: [
-      { value: '1', label: '1' }, 
-      { value: '2', label: '2' }, 
-      { value: '3', label: '3' }
-    ] 
-  };
-});
-
-// ตัวอย่างข้อมูล
-const data: DataType[] = [
-  { key: '1', StudentID: 'B6630652', no: 1, fullName: 'นาย ก ข', receiptNo: '1234567890', paymentDate: '01/09/2566', year: '2568', term: '1' },
-  { key: '2', StudentID: 'B6630653', no: 2, fullName: 'นางสาว ค ง', receiptNo: '0987654321', paymentDate: '02/09/2566', year: '2568', term: '2' },
-  { key: '3', StudentID: 'B6630654', no: 3, fullName: 'นาย จ ฉ', receiptNo: '1122334455', paymentDate: '03/09/2566', year: '2567', term: '1' },
-];
-
-const contentStyle: React.CSSProperties = { background: '#f5f5f5', padding: 24, minHeight: 400, color: '#333', overflowY: 'auto' };
-
-const Element1: React.FC = () => {
+const BillPage: React.FC = () => {
+  const [data, setData] = useState<DataType[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<DataType | null>(null);
   const [verifiedKeys, setVerifiedKeys] = useState<Set<string>>(new Set());
   const [searchText, setSearchText] = useState('');
   const [selectedYearTerm, setSelectedYearTerm] = useState<string[]>([]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const bills = await getAllBills();
+        const mappedData: DataType[] = bills.map((bill: any, idx: number) => ({
+          key: String(bill.id),
+          StudentID: bill.student_id ?? '-',
+          no: idx + 1,
+          fullName: bill.full_name ?? '-',
+          receiptNo: '-', 
+          paymentDate: bill.date ?? '-',
+          year: String(bill.year ?? '-'),
+          term: String(bill.term ?? '-'),
+          totalPrice: bill.total_price ?? 0,
+          filePath: bill.file_path && !bill.file_path.includes('C:\\')
+              ? `${apiUrl}/uploads/${bill.file_path}`
+              : undefined,
+          status: bill.status ?? 'ค้างชำระ',
+        }));
+        setData(mappedData);
+      } catch (err) {
+        message.error('ไม่สามารถโหลดข้อมูลบิลนักศึกษาได้');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const handleVerify = (record: DataType) => {
     setSelectedRecord(record);
     setIsModalVisible(true);
   };
 
-  const handleOk = () => {
+  const handleApprove = async () => {
     if (selectedRecord) {
-      setVerifiedKeys(prev => new Set(prev).add(selectedRecord.key));
+      try {
+        await approveBill(String(selectedRecord.key));
+        message.success('อนุมัติใบเสร็จเรียบร้อยแล้ว');
+
+        setData(prev =>
+          prev.map(d => d.key === selectedRecord.key ? { ...d, status: 'ชำระแล้ว' } : d)
+        );
+        setVerifiedKeys(prev => new Set(prev).add(selectedRecord.key));
+      } catch (err) {
+        message.error('ไม่สามารถอนุมัติใบเสร็จได้');
+      }
     }
     setIsModalVisible(false);
     setSelectedRecord(null);
@@ -67,14 +71,25 @@ const Element1: React.FC = () => {
     setSelectedRecord(null);
   };
 
-  // กรองข้อมูลตาม search text และปี/เทอมที่เลือก
+  // สร้าง options สำหรับ Cascader ปี/เทอม
+  const yearOptions = Array.from(new Set(data.map(d => d.year))).sort().reverse();
+  const options = yearOptions.map(year => {
+    const terms = Array.from(new Set(data.filter(d => d.year === year).map(d => d.term))).sort();
+    return {
+      value: year,
+      label: year,
+      children: terms.map(term => ({ value: term, label: term })),
+    };
+  });
+
+  // กรองข้อมูลตาม search และ Year/Term
   const filteredData = data.filter(item => {
     const matchesSearch = item.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
-                          item.StudentID.toLowerCase().includes(searchText.toLowerCase()) ||
-                          item.receiptNo.includes(searchText);
+      item.StudentID.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.receiptNo.includes(searchText);
 
-    const matchesYearTerm = selectedYearTerm.length === 0 || 
-                            (item.year === selectedYearTerm[0] && item.term === selectedYearTerm[1]);
+    const matchesYearTerm = selectedYearTerm.length === 0 ||
+      (item.year === selectedYearTerm[0] && item.term === selectedYearTerm[1]);
 
     return matchesSearch && matchesYearTerm;
   });
@@ -85,6 +100,34 @@ const Element1: React.FC = () => {
     { title: 'ชื่อ-สกุล', dataIndex: 'fullName', key: 'fullName' },
     { title: 'เลขที่ใบเสร็จรับเงิน', dataIndex: 'receiptNo', key: 'receiptNo' },
     { title: 'วันที่ชำระเงิน', dataIndex: 'paymentDate', key: 'paymentDate' },
+    {
+      title: 'จำนวนเงินรวม',
+      dataIndex: 'totalPrice',
+      key: 'totalPrice',
+      render: (value: number) => value.toLocaleString('th-TH', { style: 'currency', currency: 'THB' }),
+    },
+    {
+      title: 'สถานะ',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = '#f50';
+        if (status === 'รอตรวจสอบ') color = '#faad14';
+        if (status === 'ชำระแล้ว') color = '#52c41a';
+        return <span style={{ color }}>{status}</span>;
+      },
+    },
+    {
+      title: 'ใบเสร็จ',
+      key: 'receipt',
+      render: (_, record) => (
+        record.filePath ? (
+          <Button type="link" onClick={() => window.open(record.filePath, "_blank")}>
+            ดูใบเสร็จ
+          </Button>
+        ) : '-'
+      ),
+    },
     {
       title: 'ตรวจสอบ',
       key: 'verify',
@@ -104,36 +147,55 @@ const Element1: React.FC = () => {
   ];
 
   return (
-    <div style={contentStyle}>
-      {/* Row ของ Cascader + Search */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Cascader
-          options={options}
-          onChange={(value) => setSelectedYearTerm(value)}
-          placeholder="เลือกปีการศึกษา/เทอม"
-        />
+    <div style={{ background: '#f5f5f5', padding: 24, minHeight: 400 }}>
+      {loading ? <Spin /> : (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <Cascader
+              options={options}
+              onChange={(value: (string | number)[]) =>
+                setSelectedYearTerm(value.filter(v => v != null).map(String))
+              }
+              placeholder="เลือกปีการศึกษา/เทอม"
+            />
+            <Input
+              placeholder="ค้นหา ชื่อ รหัสนักศึกษาหรือเลขที่ใบเสร็จ"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 300, height: 50, fontSize: 14 }}
+            />
+          </div>
 
-        <Input
-          placeholder="ค้นหา ชื่อ รหัสนักศึกษาหรือเลขที่ใบเสร็จ"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 300, height: 50, fontSize: 14 }}
-        />
-      </div>
+          <Table<DataType>
+            columns={columns}
+            dataSource={filteredData}
+            pagination={false}
+            bordered
+            locale={{ emptyText: 'ไม่มีข้อมูลการชำระเงิน' }}
+          />
 
-      <Table<DataType>
-        columns={columns}
-        dataSource={filteredData}
-        pagination={false}
-        style={{ marginTop: 12 }}
-        bordered
-        locale={{ emptyText: 'ไม่มีข้อมูลการชำระเงิน' }}
-      />
-
-      {/* เรียกใช้งาน Check modal */}
-      <Check visible={isModalVisible} record={selectedRecord} onOk={handleOk} onCancel={handleCancel} />
+          <Modal
+            visible={isModalVisible}
+            title="ตรวจสอบใบเสร็จ"
+            onOk={handleApprove}
+            onCancel={handleCancel}
+            width={800}
+            okText="อนุมัติ"
+          >
+            {selectedRecord?.filePath ? (
+              <iframe
+                src={selectedRecord.filePath ?? undefined}
+                title="Preview Bill"
+                width="100%"
+                height="500px"
+                style={{ border: 'none' }}
+              />
+            ) : <p>ไม่มีใบเสร็จสำหรับบิลนี้ หรือเป็นไฟล์บนเครื่อง local</p>}
+          </Modal>
+        </>
+      )}
     </div>
   );
 };
 
-export default Element1;
+export default BillPage;

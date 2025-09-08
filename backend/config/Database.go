@@ -53,7 +53,10 @@ func SetupDatabase() {
 		
 		&entity.Payment{},
 		&entity.Bill{},
+		&entity.BillStatus{},
 
 		&entity.Grades{},
+
+		&entity.Graduation{},
 	)	
 }

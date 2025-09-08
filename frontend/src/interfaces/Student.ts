@@ -34,4 +34,5 @@ export interface StudentInterface {
 
     GPAX?: number;
 
+    RejectReason?:string;
 }

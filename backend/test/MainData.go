@@ -22,10 +22,13 @@ func ExampleData() {
 	RegistrationExample()
 	StudentExample()
 	BillExample()
+	BillStatus()
 
 	BookPathExample()
 	CurriculumExample()
 	SubjectExample()
+	GradeExample()
+
 	GradeExample()
 
 	teacher := entity.Teachers{
