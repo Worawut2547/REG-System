@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
-import { getNameAdmin } from '../../../services/https/admin/admin';
+import { getNameStudent } from '../../../services/https/student/student';
 const { Header, Sider, Content } = Layout;
 
 const StudentDashboardpage: React.FC = () => {
@@ -78,7 +78,7 @@ const StudentDashboardpage: React.FC = () => {
     console.log("Username fro localStorage:",username);
     
     if(username){
-      getNameAdmin(username)
+      getNameStudent(username)
       .then(setStudent)
       .catch(console.error)
     }
