@@ -1,39 +1,63 @@
-// src/pages/dashboard/menu/checkGraduate.tsx
-import React from 'react';
-import { Modal } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Modal, Radio, Input, Form, message } from 'antd';
+import type { GraduationInterface } from '../../../../../interfaces/Graduation';
 
-interface GraduateRecord {
-  fullName: string;
-  curriculum: string;
-  creditCompleted: number;
-  gpax: number;
-}
-
-interface CheckGraduateProps {
+type Props = {
   visible: boolean;
-  record: GraduateRecord | null;
-  onOk: () => void;
+  record: GraduationInterface | null;
+  onOk: (status: string, reason?: string) => void;
   onCancel: () => void;
-}
+};
 
-const CheckGraduate: React.FC<CheckGraduateProps> = ({ visible, record, onOk, onCancel }) => {
+const CheckGraduate: React.FC<Props> = ({ visible, record, onOk, onCancel }) => {
+  const [status, setStatus] = useState<string>('30'); // default approve
+  const [reason, setReason] = useState<string>('');
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (record) {
+      setStatus(record.statusStudent === "ไม่อนุมัติให้สำเร็จการศึกษา" ? '40' : '30');
+      setReason(record.reason || '');
+      form.resetFields();
+    }
+  }, [record, form]);
+
+  const handleOk = async () => {
+    if (status === '40' && !reason.trim()) {
+      message.warning('กรุณากรอกเหตุผลสำหรับการไม่อนุมัติ');
+      return;
+    }
+    onOk(status, reason);
+  };
+
   return (
     <Modal
-      title="ตรวจสอบข้อมูลผู้แจ้งจบ"
+      title={`ตรวจสอบแจ้งจบ: ${record?.fullName ?? ''}`}
       visible={visible}
-      onOk={onOk}
+      onOk={handleOk}
       onCancel={onCancel}
+      okText="บันทึก"
+      cancelText="ยกเลิก"
     >
-      {record ? (
-        <div>
-          <p>ชื่อ-สกุล: {record.fullName}</p>
-          <p>โครงสร้างหลักสูตร: {record.curriculum}</p>
-          <p>หน่วยกิตที่ผ่าน: {record.creditCompleted}</p>
-          <p>GPAX: {record.gpax}</p>
-        </div>
-      ) : (
-        <p>ไม่มีข้อมูล</p>
-      )}
+      <Form form={form} layout="vertical">
+        <Form.Item label="สถานะ">
+          <Radio.Group onChange={(e) => setStatus(e.target.value)} value={status}>
+            <Radio value="30">อนุมัติสำเร็จการศึกษา</Radio>
+            <Radio value="40">ไม่อนุมัติให้สำเร็จการศึกษา</Radio>
+          </Radio.Group>
+        </Form.Item>
+
+        {status === '40' && (
+          <Form.Item label="เหตุผลปฏิเสธ">
+            <Input.TextArea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="กรอกเหตุผลปฏิเสธ"
+              rows={4}
+            />
+          </Form.Item>
+        )}
+      </Form>
     </Modal>
   );
 };
