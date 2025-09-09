@@ -10,7 +10,7 @@ func CurriculumExample() {
 
 	curriculum := entity.Curriculum{
 		CurriculumID: "curr23",
-		CurriculumName:          "หลักสูตรวิศวกรรมคอมพิวเตอร์2565",
+		CurriculumName:"หลักสูตรวิศวกรรมคอมพิวเตอร์2565",
 		TotalCredit: 175,
 		BookID: 1,
 		MajorID: "ENG23",

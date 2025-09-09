@@ -59,6 +59,8 @@ type GraduateData = {
   majorName: string;
   status: string;
   rejectReason?: string;
+
+  totalCredits?: number; // ✅ เพิ่มหน่วยกิต
 };
 
 const GraduateStatus: React.FC = () => {
@@ -84,6 +86,7 @@ const GraduateStatus: React.FC = () => {
             majorName: grad.curriculum,
             status: grad.statusStudent,
             rejectReason: grad.reason,
+            totalCredits: grad.totalCredits, // ✅ เพิ่มหน่วยกิต
           });
         } else {
           const student: StudentInterface | null = await getNameStudent(username);
@@ -133,15 +136,14 @@ const GraduateStatus: React.FC = () => {
   };
 
 
-  {
-    loading ? (
+  if (loading) {
+    return (
       <div style={{ textAlign: 'center', marginTop: 100 }}>
         <Spin size="large" />
       </div>
-    ) : (
-      <Content style={contentStyle}> ... </Content>
-    )
+    );
   }
+
 
 
   if (!data) return <Content style={contentStyle}>ไม่พบข้อมูลนักศึกษา</Content>;
@@ -174,9 +176,15 @@ const GraduateStatus: React.FC = () => {
         <div style={valueStyle}>{data.faculty}</div>
       </div>
 
+
       <div style={gridRowStyle}>
         <div style={labelStyle}>สาขา/โครงสร้างหลักสูตร</div>
         <div style={{ ...valueStyle, backgroundColor: '#2e236c', color: 'white' }}>{data.majorName}</div>
+      </div>
+
+      <div style={gridRowStyle}>
+        <div style={labelStyle}>หน่วยกิตรวม</div>
+        <div style={valueStyle}>{data.totalCredits}</div>
       </div>
 
       <div style={gridRowStyle}>

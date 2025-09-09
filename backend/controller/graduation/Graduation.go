@@ -19,12 +19,14 @@ import (
 // ----------------------
 func CreateGraduation(c *gin.Context) {
 	input := &entity.Graduation{}
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	db := config.DB()
+	
 	graduation := entity.Graduation{
 		StudentID:    input.StudentID,
 		CurriculumID: input.CurriculumID,
@@ -71,6 +73,18 @@ func GetMyGraduation(c *gin.Context) {
 		return
 	}
 
+	// ดึง registrations พร้อม Subject
+	var regs []entity.Registration
+	db.Preload("Subject").Where("student_id = ?", studentID).Find(&regs)
+
+	// คำนวณ totalCredits
+	totalCredits := 0
+	for _, reg := range regs {
+		if reg.Subject != nil {
+			totalCredits += reg.Subject.Credit
+		}
+	}
+
 	status := ""
 	if graduation.Student != nil && graduation.Student.StatusStudent != nil {
 		status = graduation.Student.StatusStudent.Status
@@ -80,6 +94,11 @@ func GetMyGraduation(c *gin.Context) {
 	if graduation.Curriculum != nil {
 		curriculumName = graduation.Curriculum.CurriculumName
 	}
+
+	/*Gpax := 0.0
+	if graduation.Student != nil {
+		Gpax = float64(graduation.Student.Gpax)
+	}*/
 
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"GraduationID":  graduation.ID,
@@ -91,6 +110,10 @@ func GetMyGraduation(c *gin.Context) {
 		"StatusStudent": status,
 		"RejectReason":  graduation.RejectReason,
 		"Date":          graduation.Date,
+
+		// ✅ เพิ่มหน่วยกิต
+		"TotalCredits": totalCredits,
+		"Gpax":         graduation.Student.Gpax,
 	}})
 }
 
@@ -111,6 +134,14 @@ func GetAllGraduation(c *gin.Context) {
 
 	var response []gin.H
 	for _, g := range graduations {
+
+		var totalCredits int
+		db.Table("registrations").
+			Joins("JOIN subjects ON registrations.subject_id = subjects.subject_id").
+			Where("registrations.student_id = ?", g.StudentID).
+			Select("SUM(subjects.credit)").
+			Scan(&totalCredits)
+
 		status := ""
 		if g.Student != nil && g.Student.StatusStudent != nil {
 			status = g.Student.StatusStudent.Status
@@ -131,6 +162,9 @@ func GetAllGraduation(c *gin.Context) {
 			"StatusStudent": status,
 			"RejectReason":  g.RejectReason,
 			"Date":          g.Date,
+
+			// ✅ เพิ่มหน่วยกิตรวม
+			"TotalCredits": totalCredits,
 		})
 	}
 
@@ -185,4 +219,3 @@ func UpdateGraduation(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Graduation status updated successfully"})
 }
-

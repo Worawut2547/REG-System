@@ -38,6 +38,8 @@ export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
             statusStudent: item.StatusStudent ?? "รอตรวจสอบ",
             reason: item.RejectReason ?? "",
             Date: item.Date ? new Date(item.Date) : null,
+
+            totalCredits: item.TotalCredits ?? 0, // ✅ ดึงมาจาก backend
         }));
     } catch (err) {
         console.error("Error fetching all graduations:", err);
@@ -66,6 +68,8 @@ export const createGraduation = async (
             statusStudent: item.StatusStudent ?? "รอตรวจสอบ",
             reason: item.RejectReason ?? "",
             Date: item.Date ? new Date(item.Date) : null,
+
+            totalCredits: item.TotalCredits ?? 0, // ✅ ดึงมาจาก backend
         };
     } catch (err: any) {
         console.error("Failed to create graduation:", err.response?.data || err.message);
@@ -87,6 +91,8 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
 
         if (!data) return null;
 
+        console.log("Graduation reason:", data.RejectReason);
+
         return {
             id: data.GraduationID?.toString() || "",
             StudentID: data.StudentID || "",
@@ -95,8 +101,9 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
             statusStudent: data.StatusStudent ?? "รอตรวจสอบ",
             reason: data.RejectReason ?? "",
             Date: data.Date ? new Date(data.Date) : null,
+
+            totalCredits: data.TotalCredits ?? 0, // ✅ ดึงมาจาก backend
         };
-        console.log("Graduation reason:", data.RejectReason);
     } catch (err) {
         console.error("Error fetching my graduation:", err);
         return null;

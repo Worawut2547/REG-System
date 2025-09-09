@@ -6,6 +6,9 @@ export interface GraduationInterface {
     statusStudent: string;
     reason: string;
     Date?: Date | null;
+
+    totalCredits: number; // ✅ จำนวนหน่วยกิตรวม
+    gpax: number; // ✅ เกรดเฉลี่ยสะสม
 }
 
 export interface CreateGraduationInput {
