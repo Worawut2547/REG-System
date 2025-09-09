@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Divider, Descriptions, Button, Space, Upload, Avatar } from "antd";
+import { Card, Col, Row, Button, Upload, Avatar } from "antd";
 import { PlusOutlined, UserOutlined } from "@ant-design/icons";
 import { type StudentInterface } from "../../../../../../interfaces/Student";
 import { getNameStudent } from "../../../../../../services/https/student/student";
@@ -9,7 +9,7 @@ interface ShowNameStudentProps {
     onEdit?: () => void;
 }
 
-export const ShowStudentProfile: React.FC<ShowNameStudentProps> = ( {onEdit} ) => {
+export const ShowStudentProfile: React.FC<ShowNameStudentProps> = ({ onEdit }) => {
 
     const [username, setUsername] = useState<string | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -56,55 +56,95 @@ export const ShowStudentProfile: React.FC<ShowNameStudentProps> = ( {onEdit} ) =
     };
 
     return (
-        <Card>
-            <h2>ข้อมูลนักศึกษา</h2>
-            <Divider />
-            <div style={{ display: "flex", gap: 32 }}>
+        <div style={{ padding: 24 }}>
+            {/* Header Profile */}
+            <Card
+                style={{
+                    marginBottom: 24,
+                    borderRadius: 12,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                }}
+            >
+                <Row gutter={16} align="middle">
+                    {/* รูปโปรไฟล์ */}
+                    <Col>
+                        <Upload showUploadList={false} beforeUpload={beforeUpload} accept="image/*">
+                            <Avatar
+                                size={120}
+                                src={imageUrl}
+                                icon={<UserOutlined />}
+                                style={{
+                                    cursor: "pointer",
+                                    border: "3px solid #eee",
+                                }}
+                            />
+                            <div style={{ marginTop: 8, color: "#1890ff", cursor: "pointer" }}>
+                                <PlusOutlined /> อัปโหลดรูปโปรไฟล์
+                            </div>
+                        </Upload>
+                    </Col>
 
-                {/* ฝั่งซ้าย: Avatar + Upload */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <Upload
-                        showUploadList={false}
-                        beforeUpload={beforeUpload}
-                        accept="image/*"
-                    >
-                        <Avatar
-                            size={230}
-                            src={imageUrl}
-                            icon={<UserOutlined />}
-                            style={{ cursor: "pointer", border: "2px solid #eee" }}
-                        />
-                        <div style={{ marginTop: 8, color: "#1890ff", cursor: "pointer" }}>
-                            <PlusOutlined /> อัปโหลดรูปโปรไฟล์
-                        </div>
-                    </Upload>
-                </div>
+                    {/* ข้อมูลหลัก */}
+                    <Col flex="auto">
+                        <h2 style={{ marginBottom: 8, color: "#3B0A57" }}>
+                            {student?.FirstName} {student?.LastName}
+                        </h2>
+                        <p style={{ margin: 0 }}>รหัสนักศึกษา: {student?.StudentID}</p>
+                        <p style={{ margin: 0 }}>สำนักวิชา: {student?.FacultyName}</p>
+                        <p style={{ margin: 0 }}>สาขาวิชา: {student?.MajorName}</p>
+                        <p style={{ margin: 0 }}>หลักสูตร: {student?.CurriculumName}</p>
+                        <p style={{ margin: 0 }}>เกรดเฉลี่ย: {student?.GPAX}</p>
+                    </Col>
 
-                {/* ฝั่งขวา: Descriptions แบบ 1 column */}
-                <Descriptions column={1} bordered style={{ flex: 1 }}>
-                    <Descriptions.Item label="รหัสนักศึกษา">{student?.StudentID}</Descriptions.Item>
-                    <Descriptions.Item label="ชื่อ">{student?.FirstName} {student?.LastName}</Descriptions.Item>
-                    <Descriptions.Item label="เลขบัตรประชาชน">{student?.CitizenID}</Descriptions.Item>
-                    <Descriptions.Item label="เบอร์โทร">{student?.Phone}</Descriptions.Item>
-                    <Descriptions.Item label="อีเมล">{student?.Email}</Descriptions.Item>
-                    <Descriptions.Item label="คณะ">{student?.FacultyName}</Descriptions.Item>
-                    <Descriptions.Item label="สาขา">{student?.MajorName}</Descriptions.Item>
-                    <Descriptions.Item label="ระดับการศึกษา">{student?.Degree}</Descriptions.Item>
-                    <Descriptions.Item label="สถานะทางการศึกษา">{student?.StatusStudent}</Descriptions.Item>
-                    <Descriptions.Item label="ศาสนา">{student?.Religion}</Descriptions.Item>
-                    <Descriptions.Item label="สัญชาติ">{student?.Nationality}</Descriptions.Item>
-                    <Descriptions.Item label="เชื้อชาติ">{student?.Ethnicity}</Descriptions.Item>
-                    <Descriptions.Item label="วันเกิด">{student?.BirthDay}</Descriptions.Item>
-                    <Descriptions.Item label="ผู้ปกครอง">{student?.Parent}</Descriptions.Item>
-                    <Descriptions.Item label="ที่อยู่">{student?.Address}</Descriptions.Item>
-                </Descriptions>
-            </div>
+                    {/* ปุ่มแก้ไข */}
+                    <Col>
+                        <Button type="primary" onClick={onEdit}>
+                            แก้ไขโปรไฟล์
+                        </Button>
+                    </Col>
+                </Row>
+            </Card>
 
-            <Space style={{ marginTop: 16 }}>
-                <Button type="primary" onClick={onEdit}>
-                    เเก้ไข
-                </Button>
-            </Space>
-        </Card>
+            {/* Academic Info */}
+            <Card
+                title="ข้อมูลการศึกษา"
+                style={{
+                    marginBottom: 24,
+                    borderRadius: 12,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                }}
+            >
+                <Row gutter={[16, 16]}>
+                    <Col span={12}><b>รหัสนักศึกษา:</b> {student?.StudentID}</Col>
+                    <Col span={12}><b>หลักสูตร:</b> {student?.CurriculumName}</Col>
+                    <Col span={12}><b>สำนักวิชา:</b> {student?.FacultyName}</Col>
+                    <Col span={12}><b>สาขา:</b> {student?.MajorName}</Col>
+                    <Col span={12}><b>ระดับการศึกษา:</b> {student?.Degree}</Col>
+                    <Col span={12}><b>สถานะการศึกษา:</b> {student?.StatusStudent}</Col>
+                    <Col span={12}><b>เกรดเฉลี่ย:</b> {student?.GPAX}</Col>
+                </Row>
+            </Card>
+
+            {/* Personal Info */}
+            <Card
+                title="ข้อมูลส่วนตัว"
+                style={{
+                    borderRadius: 12,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                }}
+            >
+                <Row gutter={[16, 16]}>
+                    <Col span={12}><b>เลขบัตรประชาชน:</b> {student?.CitizenID}</Col>
+                    <Col span={12}><b>เบอร์โทร:</b> {student?.Phone}</Col>
+                    <Col span={12}><b>อีเมล:</b> {student?.Email}</Col>
+                    <Col span={12}><b>วันเกิด:</b> {student?.BirthDay}</Col>
+                    <Col span={12}><b>ศาสนา:</b> {student?.Religion}</Col>
+                    <Col span={12}><b>สัญชาติ:</b> {student?.Nationality}</Col>
+                    <Col span={12}><b>เชื้อชาติ:</b> {student?.Ethnicity}</Col>
+                    <Col span={12}><b>ผู้ปกครอง:</b> {student?.Parent}</Col>
+                    <Col span={24}><b>ที่อยู่:</b> {student?.Address}</Col>
+                </Row>
+            </Card>
+        </div>
     );
 };

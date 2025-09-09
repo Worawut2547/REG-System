@@ -1,55 +1,116 @@
-// src/pages/dashboard/menu/register.tsx
-import React from 'react';
-import { Layout } from 'antd';
-import './mainpage.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
+// src/pages/dashboard/menu/mainpage/mainpage.tsx
+import React from "react";
+import { Layout, Row, Col, Carousel } from "antd";
+import { Link } from "react-router-dom";
+import "./mainpage.css";
+
+import {
+  BookOutlined,
+  ContactsOutlined,
+  SolutionOutlined,
+  ExclamationCircleOutlined,
+  UserOutlined,
+  ApartmentOutlined,
+} from "@ant-design/icons";
 
 const { Header, Content, Footer } = Layout;
 
-// register.tsx  – only wrapperStyle changed
+const textSlides = [
+  { title: "ARCANATECH UNIVERSITY", l1: "MAGIC", and: "AND", l3: "SCIENCE", caption: "THE NAME" },
+  { title: "WELCOME TO", l1: "REGISTRATION", and: "AND", l3: "CURRICULUM", caption: "PORTAL" },
+  { title: "DIGITAL TECHNOLOGY", l1: "LEARN", and: "AND", l3: "CREATE", caption: "TOGETHER" },
+];
+
 const wrapperStyle: React.CSSProperties = {
-  /* keep your corner-rounding / shadow if you like */
   borderRadius: 8,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-
-  /* 👇 stretch full size of parent Content */
-  width: '100%',          // fill X
-  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
-  display: 'flex',        // so Header/Content/Footer stack vertically
-  flexDirection: 'column',
-  overflow: 'hidden',
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  width: "100%",
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
 };
-
 const headerStyle: React.CSSProperties = {
-  background: '#2e236c',            // ม่วงเข้ม
-  color: 'white',
-  textAlign: 'center',
-  padding: 16,
+  background: "#2e236c",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: 72,
+  padding: 0,
   fontSize: 20,
+  fontWeight: "bold",
+  lineHeight: 1.2,
 };
-
 const contentStyle: React.CSSProperties = {
-  background: '#f5f5f5',            // เทาอ่อน
+  background: "#f5f5f5",
   padding: 24,
   minHeight: 400,
-  color: '#333',
-  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
+  color: "#333",
+  overflowY: "auto",
 };
-
 const footerStyle: React.CSSProperties = {
-  background: '#1890ff',            // ฟ้า Ant Design
-  color: 'white',
-  textAlign: 'center',
+  background: "#1890ff",
+  color: "white",
+  textAlign: "center",
   padding: 12,
 };
+
+const Tile: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => (
+  <Link to={to} className="menu-tile" role="button" tabIndex={0}>
+    <div className="menu-icon">{icon}</div>
+    <div className="menu-label">{label}</div>
+  </Link>
+);
 
 const MainPage: React.FC = () => {
   return (
     <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>Header – หน้าหลัก</Header>
+      <Header style={headerStyle}>Wellcome to Arcanatech University</Header>
+
       <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
+        <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+          <Col xs={24} sm={12} md={8}>
+            {/* ✅ เปลี่ยนให้ลิงก์ไปที่ query tab */}
+            <Tile to="?tab=teacher" icon={<ContactsOutlined />} label="อาจารย์" />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Tile to="?tab=score" icon={<SolutionOutlined />} label="คะแนน" />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Tile to="?tab=report" icon={<ExclamationCircleOutlined />} label="คำร้อง" />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Tile to="?tab=course" icon={<BookOutlined />} label="วิชาที่เปิดสอน" />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Tile to="?tab=student" icon={<UserOutlined />} label="ระเบียนประวัติ" />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Tile to="?tab=curriculum" icon={<ApartmentOutlined />} label="หลักสูตร" />
+          </Col>
+        </Row>
+
+        {/* ---------- TEXT CAROUSEL ---------- */}
+        <div className="hero-wrap">
+          <Carousel autoplay autoplaySpeed={3000} pauseOnHover dots arrows>
+            {textSlides.map((s, idx) => (
+              <div key={idx} className={`hero-slide text-slide theme-${(idx % 3) + 1}`}>
+                <div className="text-slide-inner">
+                  <div className="uni">{s.title}</div>
+                  <div className="line1">{s.l1}</div>
+                  <div className="and">{s.and}</div>
+                  <div className="line3">{s.l3}</div>
+                  <div className="caption">{s.caption}</div>
+                </div>
+              </div>
+            ))}
+          </Carousel>
+        </div>
+        {/* ----------------------------------- */}
       </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
+
+      <Footer style={footerStyle}>Arcana University © 2025</Footer>
     </Layout>
   );
 };

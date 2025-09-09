@@ -1,5 +1,6 @@
 // src/pages/authentication/ForgotPage.tsx
-import { Button, Form, Input, Col, Row, message } from 'antd';
+import { Button, Form, Input, Col, Row } from 'antd';
+import Swal from 'sweetalert2';
 
 import { resetPassword } from '../../../services/auth/change';
 //Pictures
@@ -12,11 +13,15 @@ import './ForgotPage.css'
 
 
 function ForgotPage({ onBack }: { onBack: () => void }) {
-    
+
     const onForgotSubmit = async (values: any) => {
         // ตรวจสอบรหัสผ่านใหม่ตรงกับการยืนยันรหัสผ่าน
         if (values.NewPassword !== values.ConfirmPassword) {
-            message.error("รหัสผ่านใหม่เเละการยืนยันไม่ตรงกัน");
+            Swal.fire({
+                icon: "error",
+                title: "ผิดพลาด",
+                text: "รหัสผ่านใหม่เเละการยืนยันไม่ตรงกัน"
+            })
             return
         }
 
@@ -28,11 +33,20 @@ function ForgotPage({ onBack }: { onBack: () => void }) {
 
         try {
             await resetPassword(payload);
-            message.success("เปลี่ยนรหัสผ่านสำเร็จ");
+            Swal.fire({
+                icon: "success",
+                title: "สำเร็จ",
+                text: "เปลี่ยนรหัสผ่านสำเร็จ",
+                confirmButtonColor: "#3085d6",
+            });
         }
         catch (error) {
             console.error("เกิดข้อผิดพลาดในการแก้ไขนักศึกษา:", error);
-            message.error("เกิดข้อผิดพลาดในการแก้ไขนักศึกษา");
+            Swal.fire({
+                icon: "error",
+                title: "ผิดพลาด",
+                text: "เปลี่ยนรหัสผ่านไม่สำเร็จ",
+            });
         }
     };
 

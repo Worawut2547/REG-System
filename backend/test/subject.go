@@ -10,12 +10,12 @@ func SubjectExample() {
 
 	subjects := []entity.Subject{
 		{SubjectID: "233031", SubjectName: "System Anylist", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 1 , TeacherID: "T2900364"},
-		{SubjectID: "233001", SubjectName: "Computer Statistic", Credit: 2, FacultyID: "F01", MajorID: "ENG23", SemesterID: 1 , TeacherID: "T1234567"},
-		{SubjectID: "233072", SubjectName: "Embedded", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 1 ,TeacherID: "T1234567"},
+		{SubjectID: "233001", SubjectName: "Computer Statistic", Credit: 2, FacultyID: "F01", MajorID: "ENG23", SemesterID: 1 , TeacherID: "T2900364"},
+		{SubjectID: "233072", SubjectName: "Embedded", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 1 ,TeacherID: "T2900364"},
 		{SubjectID: "233012", SubjectName: "Data Mining", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 1 , TeacherID: "T2900364"},
 
 		{SubjectID: "233032", SubjectName: "Software Engineering", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 2 , TeacherID: "T2900364"},
-		{SubjectID: "233052", SubjectName: "Computer Communation", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 2 , TeacherID: "T1234567"},
+		{SubjectID: "233052", SubjectName: "Computer Communation", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 2 , TeacherID: "T2900364"},
 		{SubjectID: "233054", SubjectName: "Operating System", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 2},
 		{SubjectID: "234053", SubjectName: "Computer Vision", Credit: 4, FacultyID: "F01", MajorID: "ENG23", SemesterID: 2},
 

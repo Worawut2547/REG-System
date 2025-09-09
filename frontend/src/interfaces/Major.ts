@@ -4,4 +4,3 @@ export interface MajorInterface {
 
     FacultyID?: string;
 }
-

@@ -1,7 +1,6 @@
 package grade
 
 import (
-	"log"
 	"net/http"
 	"reg_system/config"
 	"reg_system/entity"
@@ -87,7 +86,6 @@ func GetGradeByStudentID(c *gin.Context) {
 	var response []GradeResponse
 
 	for _, grade := range grades {
-		log.Printf("Grade: %s, Subject: %+v, Semester: %+v", grade.Grade, grade.Subject, grade.Subject.Semester)
 		subjectName := ""
 		credit := 0
 		term := 0

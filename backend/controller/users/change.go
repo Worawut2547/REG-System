@@ -67,6 +67,13 @@ func ChangePassword (c *gin.Context){
 		return
 	}
 
+	// ตรวจสอบรหัสผ่านเก่า 
+	// config.CheckPassword return ค่าเป็น bool
+	if ! config.CheckPassword([]byte(payload.OldPassword) , []byte(user.Password)) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "old password is incorrect"})
+		return
+	}
+
 	// hashNewPassword ก่อน Update password
 	hashNewPassword , _ := config.HashPassword(payload.NewPassword)
 	result := db.Model(&user).Update("password",hashNewPassword)

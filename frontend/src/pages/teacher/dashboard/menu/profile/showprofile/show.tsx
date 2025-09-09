@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Card, Divider, Descriptions, Button, Space, Upload, Avatar } from "antd";
+import { Card, Col, Row, Button, Upload, Avatar } from "antd";
 import { PlusOutlined, UserOutlined } from "@ant-design/icons";
-import { getNameTeacher } from "../../../../../../services/https/teacher/teacher";
+
 import type { TeacherInterface } from "../../../../../../interfaces/Teacher";
+import { getNameTeacher } from "../../../../../../services/https/teacher/teacher";
 
 
 interface ShowNameTeacherProps {
@@ -56,48 +57,88 @@ export const ShowTeacherProfile: React.FC<ShowNameTeacherProps> = ({ onEdit }) =
     };
 
     return (
-        <Card>
-            <h2>ข้อมูลอาจารย์</h2>
-            <Divider />
-            <div style={{ display: "flex", gap: 32 }}>
+        <div style={{ padding: 24 }}>
+            {/* Header Profile */}
+            <Card
+                style={{
+                    marginBottom: 24,
+                    borderRadius: 12,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                }}
+            >
+                <Row gutter={16} align="middle">
+                    {/* รูปโปรไฟล์ */}
+                    <Col>
+                        <Upload showUploadList={false} beforeUpload={beforeUpload} accept="image/*">
+                            <Avatar
+                                size={120}
+                                src={imageUrl}
+                                icon={<UserOutlined />}
+                                style={{
+                                    cursor: "pointer",
+                                    border: "3px solid #eee",
+                                }}
+                            />
+                            <div style={{ marginTop: 8, color: "#1890ff", cursor: "pointer" }}>
+                                <PlusOutlined /> อัปโหลดรูปโปรไฟล์
+                            </div>
+                        </Upload>
+                    </Col>
 
-                {/* ฝั่งซ้าย: Avatar + Upload */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <Upload
-                        showUploadList={false}
-                        beforeUpload={beforeUpload}
-                        accept="image/*"
-                    >
-                        <Avatar
-                            size={230}
-                            src={imageUrl}
-                            icon={<UserOutlined />}
-                            style={{ cursor: "pointer", border: "2px solid #eee" }}
-                        />
-                        <div style={{ marginTop: 8, color: "#1890ff", cursor: "pointer" }}>
-                            <PlusOutlined /> อัปโหลดรูปโปรไฟล์
-                        </div>
-                    </Upload>
-                </div>
+                    {/* ข้อมูลหลัก */}
+                    <Col flex="auto">
+                        <h2 style={{ marginBottom: 8, color: "#3B0A57" }}>
+                            {teacher?.FirstName} {teacher?.LastName}
+                        </h2>
+                        <p style={{ margin: 0 }}>รหัสอาจารย์: {teacher?.TeacherID}</p>
+                        <p style={{ margin: 0 }}>{teacher?.MajorName} - {teacher?.FacultyName}</p>
+                    </Col>
 
-                {/* ฝั่งขวา: Descriptions แบบ 1 column */}
-                <Descriptions column={1} bordered style={{ flex: 1 }}>
-                    <Descriptions.Item label="รหัสประจำตัว">{teacher?.TeacherID}</Descriptions.Item>
-                    <Descriptions.Item label="ตำเเหน่งทางวิชาการ">{teacher?.Position}</Descriptions.Item>
-                    <Descriptions.Item label="ชื่อ">{teacher?.FirstName} {teacher?.LastName}</Descriptions.Item>
-                    <Descriptions.Item label="เลขบัตรประชาชน">{teacher?.CitizenID}</Descriptions.Item>
-                    <Descriptions.Item label="เบอร์โทร">{teacher?.Phone}</Descriptions.Item>
-                    <Descriptions.Item label="อีเมล">{teacher?.Email}</Descriptions.Item>
-                    <Descriptions.Item label="คณะ">{teacher?.FacultyName}</Descriptions.Item>
-                    <Descriptions.Item label="สาขา">{teacher?.MajorName}</Descriptions.Item>
-                </Descriptions>
-            </div>
+                    {/* ปุ่มแก้ไข */}
+                    <Col>
+                        <Button type="primary" onClick={onEdit}>
+                            แก้ไขโปรไฟล์
+                        </Button>
+                    </Col>
+                </Row>
+            </Card>
 
-            <Space style={{ marginTop: 16 }}>
-                <Button type="primary" onClick={onEdit}>
-                    เเก้ไข
-                </Button>
-            </Space>
-        </Card>
+            {/* Academic Info */}
+            <Card
+                title="ข้อมูลการศึกษา"
+                style={{
+                    marginBottom: 24,
+                    borderRadius: 12,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                }}
+            >
+                <Row gutter={[16, 16]}>
+                    <Col span={12}><b>รหัสอาจารย์:</b> {teacher?.TeacherID}</Col>
+                    <Col span={12}><b>ตำเเหน่งทางวิชาการ:</b> {teacher?.Position}</Col>
+                    <Col span={12}><b>สำนักวิชา:</b> {teacher?.FacultyName}</Col>
+                    <Col span={12}><b>สาขา:</b> {teacher?.MajorName}</Col>
+                </Row>
+            </Card>
+
+            {/* Personal Info */}
+            <Card
+                title="ข้อมูลส่วนตัว"
+                style={{
+                    borderRadius: 12,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                }}
+            >
+                <Row gutter={[16, 16]}>
+                    <Col span={12}><b>เลขบัตรประชาชน:</b> {teacher?.CitizenID}</Col>
+                    <Col span={12}><b>เบอร์โทร:</b> {teacher?.Phone}</Col>
+                    <Col span={12}><b>อีเมล:</b> {teacher?.Email}</Col>
+                    <Col span={12}><b>วันเกิด:</b> {teacher?.BirthDay}</Col>
+                    <Col span={12}><b>ศาสนา:</b> {teacher?.Religion}</Col>
+                    <Col span={12}><b>สัญชาติ:</b> {teacher?.Nationality}</Col>
+                    <Col span={12}><b>เชื้อชาติ:</b> {teacher?.Ethnicity}</Col>
+                    <Col span={24}><b>ที่อยู่:</b> {teacher?.Address}</Col>
+                </Row>
+            </Card>
+        </div>
     );
 };

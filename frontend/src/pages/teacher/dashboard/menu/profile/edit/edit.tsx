@@ -7,12 +7,13 @@ import {
   Avatar,
   Form,
   Input,
-  message,
   Row,
   Col,
   Typography,
 } from "antd";
 import { PlusOutlined, UserOutlined, ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import Swal from "sweetalert2";
+
 import { type TeacherInterface } from "../../../../../../interfaces/Teacher";
 import { getNameTeacher, updateTeacherProfile } from "../../../../../../services/https/teacher/teacher";
 //import "./edit.css";
@@ -38,6 +39,7 @@ export const EditTeacherPage: React.FC<ShowNameTeacherProps> = ({ onBack }) => {
         .then((teacher) => {
           setTeacher(teacher);
           form.setFieldsValue({
+            Position: teacher.Position,
             FirstName: teacher.FirstName,
             LastName: teacher.LastName,
             Phone: teacher.Phone,
@@ -47,7 +49,6 @@ export const EditTeacherPage: React.FC<ShowNameTeacherProps> = ({ onBack }) => {
             Nationality: teacher.Nationality,
             Ethnicity: teacher.Ethnicity,
             Religion: teacher.Religion,
-            Parent: teacher.Parent,
           });
         })
         .catch((err) => console.error(err));
@@ -75,11 +76,20 @@ export const EditTeacherPage: React.FC<ShowNameTeacherProps> = ({ onBack }) => {
   const onFinish = async (values: any) => {
     try {
       await updateTeacherProfile(values);
-      message.success("แก้ไขข้อมูลสำเร็จ");
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "เเก้ไขข้อมูลสำเร็จ",
+        confirmButtonColor: "#3085d6",
+      });
       if (onBack) onBack();
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการแก้ไขอาจารย์:", error);
-      message.error("เกิดข้อผิดพลาดในการแก้ไขอาจารย์");
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "เเก้ไขข้อมูลไม่สำเร็จ",
+      });
     }
   };
 
@@ -147,7 +157,7 @@ export const EditTeacherPage: React.FC<ShowNameTeacherProps> = ({ onBack }) => {
             </Title>
             <Row gutter={16}>
               <Col xs={24} sm={12}>
-                <Form.Item label={<Text style={labelStyle}>รหัสนักศึกษา</Text>} style={formItemStyle}>
+                <Form.Item label={<Text style={labelStyle}>รหัสอาจารย์</Text>} style={formItemStyle}>
                   <Text style={{ color: "#555", fontSize: 16 }}>{teacher?.TeacherID || "-"}</Text>
                 </Form.Item>
               </Col>
@@ -156,6 +166,13 @@ export const EditTeacherPage: React.FC<ShowNameTeacherProps> = ({ onBack }) => {
                   <Text style={{ color: "#555", fontSize: 16 }}>{teacher?.CitizenID || "-"}</Text>
                 </Form.Item>
               </Col>
+
+              <Col xs={24} sm={24}>
+                <Form.Item label={<Text style={labelStyle}>ตำเเหน่งทางวิชาการ</Text>} style={formItemStyle}>
+                  <Text style={{ color: "#555", fontSize: 16 }}>{teacher?.Position || "-"}</Text>
+                </Form.Item>
+              </Col>
+
               <Col xs={24} sm={12}>
                 <Form.Item
                   label={<Text style={labelStyle}>ชื่อ</Text>}
@@ -267,16 +284,7 @@ export const EditTeacherPage: React.FC<ShowNameTeacherProps> = ({ onBack }) => {
                   <Input style={inputStyle} />
                 </Form.Item>
               </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item
-                  label={<Text style={labelStyle}>ผู้ปกครอง</Text>}
-                  name="Parent"
-                  rules={[{ required: true, message: "กรุณากรอกผู้ปกครอง" }]}
-                  style={formItemStyle}
-                >
-                  <Input style={inputStyle} />
-                </Form.Item>
-              </Col>
+
             </Row>
 
             <Divider />
@@ -296,31 +304,19 @@ export const EditTeacherPage: React.FC<ShowNameTeacherProps> = ({ onBack }) => {
                   <Text style={{ color: "#555", fontSize: 16 }}>{teacher?.MajorName || "-"}</Text>
                 </Form.Item>
               </Col>
-              {/* ส่วนเพิ่มเติม}
-              <Col xs={24} sm={12}>
-                <Form.Item label={<Text style={labelStyle}>ระดับการศึกษา</Text>} style={formItemStyle}>
-                  <Text style={{ color: "#555", fontSize: 16 }}>{teacher?.Degree || "-"}</Text>
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item label={<Text style={labelStyle}>สถานะทางการศึกษา</Text>} style={formItemStyle}>
-                  <Text style={{ color: "#555", fontSize: 16 }}>{teacher?.StatusStudent || "-"}</Text>
-                </Form.Item>
-              </Col>
-              {*/} 
             </Row>
 
             {/* ปุ่ม */}
-              <Form.Item style={{ marginTop: 24 }}>
-                <Space>
-                  <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
-                    บันทึก
-                  </Button>
-                  <Button onClick={onBack} icon={<ArrowLeftOutlined />}>
-                    กลับ
-                  </Button>
-                </Space>
-              </Form.Item>
+            <Form.Item style={{ marginTop: 24 }}>
+              <Space>
+                <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                  บันทึก
+                </Button>
+                <Button onClick={onBack} icon={<ArrowLeftOutlined />}>
+                  กลับ
+                </Button>
+              </Space>
+            </Form.Item>
           </Col>
         </Row>
       </Form>

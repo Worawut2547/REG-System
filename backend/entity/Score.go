@@ -1,21 +1,23 @@
 package entity
 
 import (
-	"gorm.io/gorm"
 	"time"
+	"gorm.io/gorm"
 )
 
 type Scores struct {
-	gorm.Model
+	ID        int       `gorm:"primaryKey;autoIncrement" json:"ID"`
+	List      string    `json:"List"`
+	Score     float64   `json:"Score"`
+	FullScore int       `json:"FullScore"`
 
-	Date        time.Time `json:"Date"`
-	List        string    `json:"List"`
-	Score       float64   `json:"Score"`
-	Score_Total int       `json:"Score_Total"`
+	StudentID string    `gorm:"uniqueIndex:idx_student_subject" json:"StudentID"`
+	Student   *Students `gorm:"foreignKey:StudentID;references:StudentID"` // ระบุความสัมพันธ์ 1--1 [Student]
 
-	Student_id *string
-	Students   Students `gorm:"foreignKey:Student_id"`
+	SubjectID string         `gorm:"uniqueIndex:idx_student_subject" json:"SubjectID"` // Foreign Key
+	Subject   *Subject       `gorm:"foreignKey:SubjectID;references:SubjectID"`        // ระบุความสัมพันธ์ 1--many [Subject]
 
-	SubjectID string  `json:"SubjectID"`
-	Subject   Subject `gorm:"foreignKey:SubjectID;references:SubjectID"`
+	CreatedAt time.Time      `json:"CreatedAt"`
+	UpdatedAt time.Time      `json:"UpdatedAt"`
+	DeletedAt gorm.DeletedAt `json:"DeletedAt,omitempty" gorm:"index"` // ใช้สำหรับ soft delete
 }

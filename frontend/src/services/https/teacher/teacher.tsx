@@ -4,7 +4,7 @@ import { type TeacherInterface } from "../../../interfaces/Teacher";
 import { apiUrl } from "../../api";
 
 
-export const getNameTeacher = async (username: string) => {
+export const getNameTeacher = async (username: string): Promise<TeacherInterface> => {
     //console.log("Fetching student data for:", username);
     if (!username) {
         throw new Error("Username is required");

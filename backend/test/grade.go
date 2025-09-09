@@ -41,6 +41,7 @@ func GradeExample() {
 		{ID: 20 ,SubjectID: "234052" , TotalScore: 84.36, Grade: "A" , StudentID: "B6616052"},
 	
 	}
+
 	for _,grade := range grades{
 		db.Save(&grade)
 	}

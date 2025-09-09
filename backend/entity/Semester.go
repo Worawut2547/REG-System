@@ -7,4 +7,3 @@ type Semester struct {
 
 	Subject []Subject `gorm:"foreignKey:SemesterID;references:ID" json:"-"`  // ระบุความสัมพันธ์เเบบ 1--many[Subject]
 }
-

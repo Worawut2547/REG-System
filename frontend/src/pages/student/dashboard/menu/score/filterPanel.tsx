@@ -1,7 +1,6 @@
 // src/pages/dashboard/menu/studentScore/FilterPanel.tsx
 import React from "react";
-import { Space, Select, Divider } from "antd";
-import type { BackendData } from "./mockData";
+import { Space, Select } from "antd";
 
 const { Option } = Select;
 
@@ -10,7 +9,6 @@ interface FilterPanelProps {
   selectedTerm: string;
   setSelectedYear: (val: string) => void;
   setSelectedTerm: (val: string) => void;
-  backendData: BackendData;
   yearOptions: string[];
   termOptions: string[];
 }
@@ -20,7 +18,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   selectedTerm,
   setSelectedYear,
   setSelectedTerm,
-  backendData,
   yearOptions,
   termOptions,
 }) => {
@@ -32,13 +29,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         style={{ width: 150 }}
         onChange={(val) => {
           setSelectedYear(val);
-          const terms = Object.keys(backendData)
-            .filter(k => k.startsWith(val + "-"))
-            .map(k => k.split("-")[1]);
-          setSelectedTerm(terms.sort((a, b) => Number(a) - Number(b))[0]);
+          setSelectedTerm(""); // reset term เมื่อเปลี่ยนปี
         }}
       >
-        {yearOptions.map(year => <Option key={year} value={year}>{year}</Option>)}
+        {yearOptions.map((year) => (
+          <Option key={year} value={year}>
+            {year}
+          </Option>
+        ))}
       </Select>
 
       <span style={{ fontSize: 18, marginLeft: 30 }}>ภาคการศึกษา</span>
@@ -47,7 +45,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         style={{ width: 150 }}
         onChange={setSelectedTerm}
       >
-        {termOptions.map(term => <Option key={term} value={term}>{term}</Option>)}
+        {termOptions.map((term) => (
+          <Option key={term} value={term}>
+            {term}
+          </Option>
+        ))}
       </Select>
     </Space>
   );

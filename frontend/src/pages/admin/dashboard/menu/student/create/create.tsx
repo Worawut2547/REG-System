@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 
-import { Form, Input, Button, Row, Col, Space, Card, Divider, message, Select } from "antd";
+import { Form, Input, Button, Row, Col, Space, Card, Divider, message, Select, Radio } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-
+import Swal from "sweetalert2";
 
 import type { StudentInterface } from "../../../../../../interfaces/Student";
 import { createStudent } from "../../../../../../services/https/student/student";
@@ -21,6 +21,7 @@ import { getDegreeAll } from "../../../../../../services/https/degree/degree";
 
 import type { GenderInterface } from "../../../../../../interfaces/Gender";
 import { getGenderAll } from "../../../../../../services/https/gender/gender";
+
 
 interface CreateStudentProps {
   onBack: () => void;
@@ -68,10 +69,6 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
     setMajorOptions(filteredMajors);
 
     setSelectedMajor(null);
-
-    // เมื่อเลือก Faculty ให้ดึง Major ที่ตรงกับ Faculty นั้น
-    /*const faculty = facultyOptions.find(f => f.FacultyID === value);
-    setMajorOptions(faculty?.Majors || []);*/
   }
 
   const onFinish = async (values: StudentInterface) => {
@@ -84,11 +81,20 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
     setLoading(true);
     try {
       await createStudent(values);
-      message.success("สร้างข้อมูลนักศึกษาเรียบร้อยแล้ว");
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "เพิ่มข้อมูลนักศึกษาสำเร็จ",
+        confirmButtonColor: "#3085d6",
+      });
     }
     catch (error) {
       console.error("เกิดข้อผิดพลาดในการสร้างนักศึกษา:", error);
-      message.error("เกิดข้อผิดพลาดในการสร้างนักศึกษา");
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "ไม่สามารถเพิ่มข้อมูลนักศึกษาได้",
+      });
     }
     finally {
       setLoading(false);
@@ -97,12 +103,23 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
   };
 
   return (
-    <Card>
-      <h2>เพิ่มข้อมูลนักศึกษา</h2>
+    <Card className="p-6 rounded-2xl shadow-md">
+      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+        เพิ่มข้อมูลนักศึกษา
+      </h2>
       <Divider />
-      <Form name="create_student" layout="vertical" onFinish={onFinish}>
+
+      <Form
+        name="create_student"
+        layout="vertical"
+        onFinish={onFinish}
+        scrollToFirstError
+      >
+
+        {/* ---------------------- Personal Info ---------------------- */}
+        <h3 style={{ fontWeight: 500, marginBottom: 8 }}>ข้อมูลส่วนตัว</h3>
         <Row gutter={[16, 0]}>
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="รหัสนักศึกษา"
               name="StudentID"
@@ -111,7 +128,21 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               <Input />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={24} md={12}>
+
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="เลขบัตรประชาชน"
+              name="CitizenID"
+              rules={[
+                { required: true, message: "กรุณากรอกเลขบัตรประชาชน!" },
+                { len: 13, message: "เลขบัตรต้องมี 13 หลัก!" },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={12}>
             <Form.Item
               label="ชื่อ"
               name="FirstName"
@@ -121,7 +152,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="นามสกุล"
               name="LastName"
@@ -131,43 +162,44 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          {/* Gender */}
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24}>
             <Form.Item
               label="เพศ"
               name="gender_id"
               rules={[{ required: true, message: "กรุณาเลือกเพศ!" }]}
             >
-              <Select placeholder="เลือกเพศ">
+            
+              <Radio.Group>
                 {genderOptions.map((g) => (
-                  <Select.Option key={g.ID} value={g.ID}>
+                  <Radio key={g.ID} value={g.ID}>
                     {g.Gender}
-                  </Select.Option>
+                  </Radio>
                 ))}
-              </Select>
+              </Radio.Group>
+            
             </Form.Item>
           </Col>
-          <Col xs={24} sm={24} md={12}>
-            <Form.Item
-              label="เลขบัตรประชาชน"
-              name="CitizenID"
-              rules={[{ required: true, message: "กรุณากรอกเลขบัตรประชาชน!" }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
+        </Row>
 
-          <Col xs={24} sm={24} md={12}>
+        <Divider />
+
+        {/* ---------------------- Contact Info ---------------------- */}
+        <h3 style={{ fontWeight: 500, marginBottom: 8 }}>ข้อมูลการติดต่อ</h3>
+        <Row gutter={[16, 0]}>
+          <Col xs={24}>
             <Form.Item
-              label="เบอร์โทร"
+              label="เบอร์โทรศัพท์"
               name="Phone"
-              rules={[{ required: true, message: "กรุณากรอกเบอร์โทร!" }]}
+              rules={[
+                { required: true, message: "กรุณากรอกเบอร์โทร!" },
+                { pattern: /^[0-9]{10}$/, message: "กรุณากรอกเบอร์โทร 10 หลัก!" },
+              ]}
             >
               <Input />
             </Form.Item>
           </Col>
 
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24}>
             <Form.Item
               label="อีเมล"
               name="Email"
@@ -179,16 +211,20 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               <Input />
             </Form.Item>
           </Col>
+        </Row>
 
-          {/* Degree */}
+        <Divider />
 
-          <Col xs={24} sm={24} md={12}>
+        {/* ---------------------- Education Info ---------------------- */}
+        <h3 style={{ fontWeight: 500, marginBottom: 8 }}>ข้อมูลการศึกษา</h3>
+        <Row gutter={[16, 0]}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="ระดับการศึกษา"
               name="DegreeID"
               rules={[{ required: true, message: "กรุณาเลือกระดับการศึกษา!" }]}
             >
-              <Select placeholder="เลือกระดับการศึกษา">
+              <Select placeholder="เลือกระดับการศึกษา" showSearch>
                 {degreeOptions.map((d) => (
                   <Select.Option key={d.DegreeID} value={d.DegreeID}>
                     {d.Degree}
@@ -198,14 +234,15 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          {/* Faculty */}
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24} md={12}>
             <Form.Item
-              label="คณะ"
+              label="สำนักวิชา"
               name="FacultyID"
-              rules={[{ required: true, message: "กรุณาเลือกคณะ!" }]}
+              rules={[{ required: true, message: "กรุณาเลือกสำนักวิชา!" }]}
             >
-              <Select placeholder="เลือกคณะ"
+              <Select
+                placeholder="เลือกสำนักวิชา"
+                showSearch
                 value={selectFaculty}
                 onChange={handleFacultyChange}
               >
@@ -218,15 +255,15 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
             </Form.Item>
           </Col>
 
-          {/* Major */}
-          <Col xs={24} sm={24} md={12}>
+          <Col xs={24}>
             <Form.Item
-              label="สาขา"
+              label="สาขาวิชา"
               name="MajorID"
-              rules={[{ required: true, message: "กรุณาเลือกสาขา!" }]}
+              rules={[{ required: true, message: "กรุณาเลือกสาขาวิชา!" }]}
             >
               <Select
-                placeholder="เลือกสาขา"
+                placeholder="เลือกสาขาวิชา"
+                showSearch
                 value={selectedMajor ?? undefined}
                 onChange={(value) => setSelectedMajor(value)}
               >
@@ -240,14 +277,18 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
           </Col>
         </Row>
 
+        {/* ---------------------- Action Buttons ---------------------- */}
         <Row justify="end">
           <Col>
             <Space style={{ marginTop: 16 }}>
-              <Button type="default" onClick={onBack}>
-                ยกเลิก
-              </Button>
-              <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={loading}>
-                ยืนยัน
+              <Button onClick={onBack}>ยกเลิก</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<PlusOutlined />}
+                loading={loading}
+              >
+                บันทึกข้อมูล
               </Button>
             </Space>
           </Col>
@@ -255,6 +296,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
       </Form>
     </Card>
   );
+
 };
 
 export default CreateStudent;

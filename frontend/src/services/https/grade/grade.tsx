@@ -2,7 +2,7 @@ import axios from "axios";
 
 import { apiUrl } from "../../api";
 import type { GradeStudentInterface } from "../../../interfaces/Grade";
- 
+
 export const getGradeStudent = async () => {
     try {
         const username = localStorage.getItem("username")
@@ -25,4 +25,4 @@ export const createGradeStudent = async (data: GradeStudentInterface[]) => {
         console.error("Error create grade data:", error);
         throw error;
     }
-} 
+}

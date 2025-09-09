@@ -1,51 +1,61 @@
 // src/pages/dashboard/menu/studentScore/StudentScore.tsx
 import React, { useEffect, useState } from "react";
-import { Layout, Typography, Space, Select, Divider } from "antd";
-import type { BackendData } from "./mockData";
-import mockData from "./mockData";
+import { Layout, Divider } from "antd";
 import FilterPanel from "./filterPanel";
-import CourseTable from "./table";
+import CourseTable from "./table.tsx";
+import { type CourseData } from "./table.tsx";
+import { getScoreByStudentID } from "../../../../../services/https/score/score";
 import "./score.css";
 
 const { Header, Content, Footer } = Layout;
+
 const StudentScore: React.FC = () => {
-  const [selectedYear, setSelectedYear] = useState("");
-  const [selectedTerm, setSelectedTerm] = useState("");
-  const [backendData, setBackendData] = useState<BackendData>(mockData);
+  const [selectedYear, setSelectedYear] = useState("2568");
+  const [selectedTerm, setSelectedTerm] = useState("1");
+  const [courses, setCourses] = useState<CourseData[]>([]);
   const [yearOptions, setYearOptions] = useState<string[]>([]);
   const [termOptions, setTermOptions] = useState<string[]>([]);
 
   useEffect(() => {
-    const yearsTerms = Object.keys(backendData);
-    if (yearsTerms.length === 0) return;
+    getScoreByStudentID().then((res) => {
+      // สร้าง options ของปี/เทอม
+      const years: string[] = Array.from(new Set(res.map((r: any) => String(r.AcademicYear))));
+      setYearOptions(years);
 
-    const latestYearTerm = yearsTerms.sort((a, b) => {
-      const [yearA, termA] = a.split("-").map(Number);
-      const [yearB, termB] = b.split("-").map(Number);
-      if (yearA !== yearB) return yearB - yearA;
-      return termB - termA;
-    })[0];
+      const terms: string[] = Array.from(new Set(res.map((r: any) => String(r.Term))));
+      setTermOptions(terms);
 
-    setSelectedYear(latestYearTerm.split("-")[0]);
-    setSelectedTerm(latestYearTerm.split("-")[1]);
-  }, [backendData]);
+      // map เป็นโครงที่ CourseTable ใช้
+      const grouped: { [key: string]: any[] } = {};
+      res.forEach((r: any) => {
+        const key = r.SubjectName;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(r);
+      });
 
-  useEffect(() => {
-    const years = Array.from(new Set(Object.keys(backendData).map(k => k.split("-")[0])));
-    setYearOptions(years);
+      const transformed: CourseData[] = Object.keys(grouped).map((subject) => {
+        const records = grouped[subject];
+        const scores = records.map((r) => ({
+          evaluation: r.List,
+          point: r.Score,
+          total: r.FullScore,
+        }));
+        const total = records.reduce((sum, r) => sum + r.Score, 0);
+        return {
+          course: subject,
+          scores,
+          summary: { total, net: total },
+        };
+      });
 
-    const terms = Array.from(
-      new Set(
-        Object.keys(backendData)
-          .filter(k => k.startsWith(selectedYear + "-"))
-          .map(k => k.split("-")[1])
-      )
-    );
-    setTermOptions(terms);
-  }, [backendData, selectedYear]);
+      setCourses(transformed);
+    });
+  }, []);
 
-  const yearTerm = `${selectedYear}-${selectedTerm}`;
-  const courses = backendData[yearTerm] ?? [];
+  // filter ตามปี/เทอม
+  const filteredCourses = courses.filter((course) => {
+    return true; // ตอนนี้ courses ไม่มี field year/term → ต้อง filter จาก raw data
+  });
 
   return (
     <Layout
@@ -72,27 +82,26 @@ const StudentScore: React.FC = () => {
         รายงานผลคะแนน
       </Header>
 
-        <Content
-          style={{
-            background: "#f5f5f5",
-            padding: 24,
-            minHeight: 400,
-            color: "#333",
-            overflowY: "auto",
-          }}
-        >
-          <FilterPanel
-            selectedYear={selectedYear}
-            selectedTerm={selectedTerm}
-            setSelectedYear={setSelectedYear}
-            setSelectedTerm={setSelectedTerm}
-            backendData={backendData}
-            yearOptions={yearOptions}
-            termOptions={termOptions}
-          />
-          < Divider />
-          <CourseTable courses={courses} />
-        </Content>
+      <Content
+        style={{
+          background: "#f5f5f5",
+          padding: 24,
+          minHeight: 400,
+          color: "#333",
+          overflowY: "auto",
+        }}
+      >
+        <FilterPanel
+          selectedYear={selectedYear}
+          selectedTerm={selectedTerm}
+          setSelectedYear={setSelectedYear}
+          setSelectedTerm={setSelectedTerm}
+          yearOptions={yearOptions}
+          termOptions={termOptions}
+        />
+        <Divider />
+        <CourseTable courses={filteredCourses} />
+      </Content>
 
       <Footer
         style={{

@@ -36,7 +36,7 @@ const TeacherDashboard: React.FC<Props> = ({
   const filteredCourses = courses.filter(c => String(c.year) === year && String(c.term) === term);
 
   return (
-    <div style={{ padding: 24, maxWidth: 1500, margin: "auto" }}>
+    <div style={{ maxWidth: 1500, margin: "auto" }}>
       <YearTermFilter
         year={year}
         term={term}

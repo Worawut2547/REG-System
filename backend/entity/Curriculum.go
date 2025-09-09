@@ -19,7 +19,7 @@ type Curriculum struct {
 	Major   *Majors `gorm:"foreignKey:MajorID;references:MajorID"`
 
 	BookID int       `json:"BookID"`
-	Book   *BookPath `gorm:"foreignKey:BookID;references:ID"`
+	Book   *CurriculumBook `gorm:"foreignKey:BookID;references:ID"`
 
 	CreatedAt time.Time `json:"CreatedAt"`
 	UpdatedAt time.Time `json:"UpdatedAt"`

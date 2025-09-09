@@ -11,4 +11,3 @@ type Faculty struct {
 	Curriculum []Curriculum `gorm:"foreignKey:FacultyID" json:"-"`   // ระบุความสัมพันธ์ 1--many [Curriculum]
 	Subjects []Subject `gorm:"foreignKey:FacultyID" json:"-"`   // ระบุความสัมพันธ์ 1--many [Subjects]
 }
-

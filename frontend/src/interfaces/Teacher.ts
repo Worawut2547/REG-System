@@ -6,7 +6,7 @@ export interface TeacherInterface {
     CitizenID?: string;
     GenderID?: number;
     Gender?: string;
-    
+
     Email?: string;
     Phone?: string;
 
@@ -17,4 +17,10 @@ export interface TeacherInterface {
     MajorName?: string;
 
     Position?: string;
+
+    Address?: string;
+    Nationality?: string;
+    Ethnicity?: string;
+    Religion?: string;
+    BirthDay?: string;
 }

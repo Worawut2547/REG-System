@@ -61,4 +61,3 @@ const TeacherProfilePage = () => {
 };
 
 export default TeacherProfilePage;
-

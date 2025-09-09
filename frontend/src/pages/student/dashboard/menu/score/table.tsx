@@ -2,7 +2,21 @@
 import React from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import type { CourseData, Score } from "./mockData";
+
+export interface Score {
+  evaluation: string;
+  total: number | string;
+  point: number | string;
+}
+
+export interface CourseData {
+  course: string;
+  scores: Score[];
+  summary: {
+    total: number;
+    net: number;
+  };
+}
 
 interface CourseTableProps {
   courses: CourseData[];
@@ -10,23 +24,38 @@ interface CourseTableProps {
 
 const columns: ColumnsType<Score> = [
   {
-    title: <div style={{ textAlign: "center", fontSize: 16 }}>Score Evaluation</div>,
+    title: (
+      <div style={{ textAlign: "center", fontSize: 16 }}>Score Evaluation</div>
+    ),
     dataIndex: "evaluation",
     key: "evaluation",
     width: 250,
     render: (text: string) => <div style={{ textAlign: "left" }}>{text}</div>,
   },
-  { title: "Total", dataIndex: "total", key: "total", width: 80, align: "center" },
+  {
+    title: "Total",
+    dataIndex: "total",
+    key: "total",
+    width: 80,
+    align: "center",
+    render: (text, record) => (record.evaluation === "สรุป" ? "" : text), // <-- ซ่อนค่าแถวสรุป
+  },
   { title: "Point", dataIndex: "point", key: "point", width: 80, align: "center" },
-  { title: "Cal", dataIndex: "cal", key: "cal", width: 150, align: "center" },
-  { title: "Net Point", dataIndex: "net", key: "net", width: 80, align: "center" },
 ];
 
 const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
   return (
     <>
       {courses.map((courseData, idx) => (
-        <div key={idx} style={{ marginBottom: 30, background: "#f5f5f5", borderRadius: 8, padding: 12 }}>
+        <div
+          key={idx}
+          style={{
+            marginBottom: 30,
+            background: "#f5f5f5",
+            borderRadius: 8,
+            padding: 12,
+          }}
+        >
           <h3 style={{ marginBottom: 10, color: "black" }}>{courseData.course}</h3>
           <Table<Score>
             className="course-table"
@@ -34,10 +63,8 @@ const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
               ...courseData.scores,
               {
                 evaluation: "สรุป",
-                total: courseData.summary.total,
-                point: "-",
-                cal: "-",
-                net: courseData.summary.net,
+                total: courseData.summary.total, // ค่า Total ยังคงมีอยู่ แต่จะไม่แสดง
+                point: courseData.summary.total, // แสดงรวมคะแนนใน Point
               },
             ]}
             columns={columns}
@@ -66,6 +93,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
               },
             }}
           />
+
         </div>
       ))}
     </>

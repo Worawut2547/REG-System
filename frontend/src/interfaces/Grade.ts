@@ -9,4 +9,4 @@ export interface GradeStudentInterface {
     Grade: string;
     Term?: number;
     AcademicYear?: number;
-}; 
+};
