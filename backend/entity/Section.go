@@ -10,6 +10,6 @@ type Section struct {
 
 	DateTeaching time.Time `json:"DateTeaching"` // Date and time when the section is taught
 	
-	/*SubjectID   string `json:"SubjectID"` // Reference to the subject associated with this
-	Subject *Subject `gorm:"foreignKey:SubjectID;references:SubjectID" json:"Subject"` // Association with the Subject entity*/
+	SubjectID   string `json:"SubjectID"` // Reference to the subject associated with this
+	Subject *Subject `gorm:"foreignKey:SubjectID;references:SubjectID" json:"Subject"` // Association with the Subject entity
 }

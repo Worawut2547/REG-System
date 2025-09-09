@@ -11,11 +11,11 @@ type Registration struct {
 	SubjectID string    `json:"SubjectID"`
 	Subject   *Subject `gorm:"foreignKey:SubjectID;references:SubjectID"`
 
-	/*SectionID int      `json:"SectionID"`
-	Section   *Section `gorm:"foreignKey:SectionID;references:SectionID"`*/
+	SectionID int      `json:"SectionID"`
+	Section   *Section `gorm:"foreignKey:SectionID;references:SectionID"`
 
-	/*SemesterID int       `json:"SemesterID"`
-	Semester   *Semester `gorm:"foreignKey:SemesterID;references:ID"`*/
+	SemesterID int       `json:"SemesterID"`
+	Semester   *Semester `gorm:"foreignKey:SemesterID;references:ID"`
 
 	StudentID string    `json:"StudentID"`
 	Student   *Students `gorm:"foreignKey:StudentID;references:StudentID"`

@@ -35,7 +35,7 @@ func SetupDatabase() {
 		&entity.Position{},
 		&entity.Gender{},
 		&entity.Semester{},
-
+		&entity.Graduation{},
 		&entity.Students{},
 		&entity.Teachers{},
 		&entity.Admins{},
