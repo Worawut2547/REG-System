@@ -41,7 +41,6 @@ const footerStyle: React.CSSProperties = {
 };
 
 const Curriculum: React.FC = () => {
-
   const [active, setActive] = useState<"add" | "change" | null>(null);
 
   return (
@@ -59,22 +58,20 @@ const Curriculum: React.FC = () => {
       </Header>
       <Content style={contentStyle}>
         {active === null ? (
-          <Button
-            type="primary"
-            style={{
-              position: "absolute", // Allow absolute positioning
-              top: "27%", // Adjust the distance from the top
-              left: "93%", // Center horizontally
-              transform: "translateX(-93%)", // Center horizontally exactly
-              width: 100,
-              height: 30,
-              fontSize: 15,
-              backgroundColor: "#1890ff",
-            }}
-            onClick={() => setActive("add")}
-          >
-            เพิ่มหลักสูตร
-          </Button>
+          <div style={{ position: "relative", height: 10 }}>
+            <Button
+              type="primary"
+              style={{
+                position: "absolute",
+                top: "500%", // ขยับลงครึ่งนึง
+                right: "25px", // ชิดขวา 10px
+                transform: "translateY(-50%)", // จัดกึ่งกลางแนวตั้งพอดี
+              }}
+              onClick={() => setActive("add")}
+            >
+              เพิ่มหลักสูตร
+            </Button>
+          </div>
         ) : (
           // Show BACK button
           <Button onClick={() => setActive(null)} type="dashed">
