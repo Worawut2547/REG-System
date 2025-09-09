@@ -10,9 +10,8 @@ import (
 	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
+	scores "reg_system/controller/score"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
 	"reg_system/controller/major"
@@ -25,6 +24,9 @@ import (
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
 	"reg_system/controller/users"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 const port = "8000"
@@ -49,8 +51,8 @@ func main() {
 	// -------------------- Users --------------------
 	userGroup := r.Group("/users")
 	{
-		userGroup.PUT("/reset/",users.ResetPassword)
-		userGroup.PUT("/:id",users.ChangePassword)
+		userGroup.PUT("/reset/", users.ResetPassword)
+		userGroup.PUT("/:id", users.ChangePassword)
 	}
 
 	// -------------------- Admin --------------------
@@ -69,6 +71,7 @@ func main() {
 		studentGroup.DELETE("/:id", students.DeleteStudent)
 
 		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID)
+		studentGroup.GET("/:id/scores", scores.GetScoreByStudentID)
 	}
 
 	// -------------------- Teachers --------------------
@@ -82,7 +85,9 @@ func main() {
 
 		teacherGroup.GET("/:id/subjects", teachers.GetSubjectByTeacherID)
 		teacherGroup.POST("/grades", grade.CreateGrade)
-		teacherGroup.GET("/:id/students",teachers.GetStudentByTeacherID)
+		teacherGroup.GET("/:id/students", teachers.GetStudentByTeacherID)
+
+		teacherGroup.POST("/scores", scores.CreateScores)
 	}
 
 	// -------------------- Majors --------------------
@@ -127,7 +132,7 @@ func main() {
 		registrationGroup.PUT("/:id", registration.UpdateRegistration)
 		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
 
-		registrationGroup.GET("/subjects/:id" ,registration.GetStudentBySubjectID)
+		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)
 	}
 
 	// -------------------- Curriculums --------------------
@@ -206,6 +211,17 @@ func main() {
 		gradeGroup.GET("/", grade.GetGradeAll)
 		gradeGroup.POST("/", grade.CreateGrade)
 	}
+
+	//---------------------------------------------------------
+	// Grades
+	scoreGroup := r.Group("/scores")
+	{
+		scoreGroup.GET("/:id",scores.GetScoreByStudentID)
+		scoreGroup.POST("/",scores.CreateScores)
+	}
+
+	//---------------------------------------------------------
+
 	// -------------------- Genders --------------------
 	r.GET("/genders", gender.GetGenderAll)
 

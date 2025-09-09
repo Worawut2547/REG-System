@@ -27,6 +27,7 @@ func ExampleData() {
 	CurriculumExample()
 	SubjectExample()
 	GradeExample()
+	//ScoresExample()
 
 	teacher := entity.Teachers{
 		TeacherID:  "T2900364",
