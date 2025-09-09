@@ -3,3 +3,5 @@ backend/tmp/main.exe
 backend/tmp/build-errors.log
 
 backend/testDB.db
+
+backend/uploads/

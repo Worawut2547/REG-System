@@ -10,6 +10,7 @@ import (
 	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
+	scores "reg_system/controller/score"
 
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
@@ -23,8 +24,8 @@ import (
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
 	"reg_system/controller/users"
+	"reg_system/controller/graduation"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,8 +42,8 @@ func main() {
 	// -------------------- Gin Setup --------------------
 	r := gin.Default()
 	r.RedirectTrailingSlash = true
-	r.Use(cors.Default())
 	r.Use(CORSMiddleware())
+	r.Static("/uploads", "./uploads")
 
 	// -------------------- Auth --------------------
 	r.POST("/signin", users.SignIn)
@@ -70,6 +71,7 @@ func main() {
 		studentGroup.DELETE("/:id", students.DeleteStudent)
 
 		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID)
+		studentGroup.GET("/:id/scores", scores.GetScoreByStudentID)
 	}
 
 	// -------------------- Teachers --------------------
@@ -84,6 +86,8 @@ func main() {
 		teacherGroup.GET("/:id/subjects", teachers.GetSubjectByTeacherID)
 		teacherGroup.POST("/grades", grade.CreateGrade)
 		teacherGroup.GET("/:id/students", teachers.GetStudentByTeacherID)
+
+		teacherGroup.POST("/scores", scores.CreateScores)
 	}
 
 	// -------------------- Majors --------------------
@@ -188,14 +192,17 @@ func main() {
 	}
 
 	//---------------------------------------------------------
-	billrGroup := r.Group("/bills")
+	billGroup := r.Group("/bills")
 	{
-		billrGroup.GET("/", bill.GetBills)
-		billrGroup.GET("/:id", bill.GetBillByStudentID)
-		billrGroup.POST("/:id", bill.CreateBill)
-		billrGroup.PUT("/:id", bill.UpdateBill)
-		billrGroup.DELETE("/:id", bill.DeleteBill)
+		billGroup.GET("/:id", bill.GetBillByStudentID) //student
+		billGroup.POST("/:id/create", bill.CreateBill) // student
+		billGroup.POST("/upload/:id", bill.UploadReceipt) //student
+		billGroup.GET("/preview/:id", bill.ShowFile) // admin
+		billGroup.GET("/download/:id", bill.DownloadBill)
+		billGroup.GET("/admin/all", bill.GetAllBills) // admin
+		billGroup.PUT("/:id", bill.UpdateBillStatus) // ใช้สำหรับอนุมัติใบเสร็จ
 	}
+	
 
 	//---------------------------------------------------------
 	// Grades
@@ -204,10 +211,31 @@ func main() {
 		gradeGroup.GET("/", grade.GetGradeAll)
 		gradeGroup.POST("/", grade.CreateGrade)
 	}
+
+	//---------------------------------------------------------
+	// Grades
+	scoreGroup := r.Group("/scores")
+	{
+		scoreGroup.GET("/:id",scores.GetScoreByStudentID)
+		scoreGroup.POST("/",scores.CreateScores)
+	}
+
+	//---------------------------------------------------------
+
 	// -------------------- Genders --------------------
 	r.GET("/genders", gender.GetGenderAll)
 
+	graduationGroup := r.Group("/graduations")
+	{
+		graduationGroup.GET("/", graduation.GetAllGraduation)
+		graduationGroup.POST("/", graduation.CreateGraduation)
+		graduationGroup.GET("/:id", graduation.GetMyGraduation)
+		graduationGroup.PUT("/:id", graduation.UpdateGraduation)
+	}
+
 	// -------------------- Run Server --------------------
+	// เปิดให้บริการที่ localhost:8000
+
 	r.Run("localhost:" + port)
 }
 

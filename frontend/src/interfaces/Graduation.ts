@@ -1,0 +1,20 @@
+export interface GraduationInterface {
+    id: string;
+    StudentID: string;
+    fullName: string;
+    curriculum: string;
+    statusStudent: string;
+    reason: string;
+    Date?: Date | null;
+}
+
+export interface CreateGraduationInput {
+    StudentID: string;
+    Date: string; // "2025-09-07T..." ISO string
+}
+
+export interface UpdateGraduationInput {
+    StatusStudent: string;
+    RejectReason?: string;
+    GraduationID:string;
+}

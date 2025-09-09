@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { Layout, Table, Button, Input } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Layout, Table, Button, Input, message } from 'antd';
 import type { TableColumnsType } from 'antd';
 import CheckGraduate from './check';
 import './graduate.css';
+import type { GraduationInterface } from '../../../../../interfaces/Graduation';
+import { getAllGraduations, updateGraduation } from '../../../../../services/https/graduation/graduation';
+
 const { Content } = Layout;
 
 const contentStyle: React.CSSProperties = {
@@ -13,39 +16,55 @@ const contentStyle: React.CSSProperties = {
   overflowY: 'auto',
 };
 
-interface GraduateData {
-  key: string;
-  StudentID: string;
-  no: number;
-  fullName: string;
-  curriculum: string;
-  creditCompleted: number;
-  gpax: number;
-}
-
-const data: GraduateData[] = [
-  { key: '1', StudentID: 'B6630652', no: 1, fullName: 'สมชาย ใจดี', curriculum: 'วิทยาการคอมพิวเตอร์', creditCompleted: 120, gpax: 3.50 },
-  { key: '2', StudentID: 'B6630653', no: 2, fullName: 'สมหญิง แสนดี', curriculum: 'วิทยาการคอมพิวเตอร์', creditCompleted: 118, gpax: 3.45 },
-];
-
 const Element1: React.FC = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<GraduateData | null>(null);
+  const [data, setData] = useState<GraduationInterface[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [verifiedKeys, setVerifiedKeys] = useState<Set<string>>(new Set()); // เก็บ key ของ record ที่ตรวจสอบแล้ว
+  const [selectedRecord, setSelectedRecord] = useState<GraduationInterface | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const handleVerify = (record: GraduateData) => {
+  // โหลดข้อมูลทั้งหมด
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await getAllGraduations();
+      setData(res);
+    } catch (err) {
+      message.error('ไม่สามารถดึงข้อมูลผู้แจ้งจบได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleVerify = (record: GraduationInterface) => {
     setSelectedRecord(record);
     setIsModalVisible(true);
   };
 
-  const handleOk = () => {
-    if (selectedRecord) {
-      setVerifiedKeys(prev => new Set(prev).add(selectedRecord.key));
+  const handleOk = async (status: string, reason?: string) => {
+    if (!selectedRecord) return;
+
+    try {
+      await updateGraduation(
+        selectedRecord.id,
+        status,
+        reason
+      );
+      message.success('อัปเดตสถานะสำเร็จ');
+      setIsModalVisible(false);
+      setSelectedRecord(null);
+      fetchData(); // refresh table
+    } catch (err) {
+      message.error('ไม่สามารถอัปเดตสถานะได้');
     }
-    setIsModalVisible(false);
-    setSelectedRecord(null);
   };
+
+
+
 
   const handleCancel = () => {
     setIsModalVisible(false);
@@ -57,28 +76,20 @@ const Element1: React.FC = () => {
     item.StudentID.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const columns: TableColumnsType<GraduateData> = [
-    { title: 'ลำดับ', dataIndex: 'no', key: 'no' },
+  const columns: TableColumnsType<GraduationInterface> = [
     { title: 'รหัสนักศึกษา', dataIndex: 'StudentID', key: 'StudentID' },
     { title: 'ชื่อ-สกุล', dataIndex: 'fullName', key: 'fullName' },
     { title: 'โครงสร้างหลักสูตร', dataIndex: 'curriculum', key: 'curriculum' },
-    { title: 'หน่วยกิตที่ผ่าน', dataIndex: 'creditCompleted', key: 'creditCompleted' },
-    { title: 'GPAX', dataIndex: 'gpax', key: 'gpax' },
+    { title: 'สถานะ', dataIndex: 'statusStudent', key: 'statusStudent' },
+    { title: 'เหตุผลปฏิเสธ', dataIndex: 'reason', key: 'reason' },
     {
       title: 'ตรวจสอบ',
       key: 'verify',
-      render: (_, record) => {
-        const isVerified = verifiedKeys.has(record.key);
-        return (
-          <Button
-            type={isVerified ? 'default' : 'primary'}
-            style={isVerified ? { backgroundColor: 'yellow', color: '#000' } : {}}
-            onClick={() => !isVerified && handleVerify(record)}
-          >
-            {isVerified ? 'ตรวจสอบแล้ว' : 'ตรวจสอบ'}
-          </Button>
-        );
-      },
+      render: (_, record) => (
+        <Button type="primary" onClick={() => handleVerify(record)}>
+          ตรวจสอบ
+        </Button>
+      ),
     },
   ];
 
@@ -89,20 +100,27 @@ const Element1: React.FC = () => {
           placeholder="ค้นหา ชื่อหรือรหัสนักศึกษา"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 300 , height: 50 , fontSize: 14}}
+          style={{ width: 300, height: 50, fontSize: 14 }}
         />
       </div>
 
-      <Table<GraduateData>
+      <Table<GraduationInterface>
         columns={columns}
         dataSource={filteredData}
+        loading={loading}
         pagination={false}
+        rowKey="id"
         style={{ marginTop: 12 }}
         bordered
         locale={{ emptyText: 'ไม่มีข้อมูลผู้แจ้งจบ' }}
       />
 
-      <CheckGraduate visible={isModalVisible} record={selectedRecord} onOk={handleOk} onCancel={handleCancel} />
+      <CheckGraduate
+        visible={isModalVisible}
+        record={selectedRecord}
+        onOk={handleOk}
+        onCancel={handleCancel}
+      />
     </Content>
   );
 };

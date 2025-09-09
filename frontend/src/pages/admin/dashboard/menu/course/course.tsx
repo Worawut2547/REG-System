@@ -1,6 +1,6 @@
 // src/pages/dashboard/menu/register.tsx
 import React, { useState } from "react";
-import { Layout, Button} from "antd";
+import { Layout, Button } from "antd";
 import ADD from "./add";
 import CHANGE from "./change";
 

@@ -54,7 +54,8 @@ func GetRegistrationByStudentID(c *gin.Context) {
 	var registration []entity.Registration
 	db := config.DB()
 
-	result := db.Preload("Subject").
+	result := db.
+		Preload("Subject").
 		Preload("Subject.StudyTimes").
 		Find(&registration, "student_id = ?", sid)
 	if result.Error != nil {
@@ -150,7 +151,8 @@ func GetStudentBySubjectID(c *gin.Context) {
 	var registrations []entity.Registration
 
 	db := config.DB()
-	result := db.Preload("Student").
+	result := db.
+		Preload("Student").
 		Preload("Student.Major").
 		Preload("Student.Faculty").
 		Find(&registrations, "subject_id = ?", subj_id)
