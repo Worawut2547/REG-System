@@ -19,7 +19,7 @@ import (
 	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
-	"reg_system/controller/subject"
+	subjects "reg_system/controller/subject"
 	"reg_system/controller/subjectcurriculum"
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
@@ -41,7 +41,7 @@ func main() {
 
 	// -------------------- Gin Setup --------------------
 	r := gin.Default()
-	r.RedirectTrailingSlash = true // ถ้า /path/ หรือ /path Gin จะ redirect อัตโนมัติให้ตรงกัน
+	r.RedirectTrailingSlash = true
 	r.Use(cors.Default())
 	r.Use(CORSMiddleware())
 
@@ -79,7 +79,7 @@ func main() {
 	{
 		teacherGroup.GET("/:id", teachers.GetTeacherID)
 		teacherGroup.POST("/", teachers.CreateTeacher)
-		teacherGroup.GET("/", teachers.GetTeacherAll)
+		teacherGroup.GET("/", teachers.GetTeacherAll) // admin :Earth
 		teacherGroup.PUT("/:id", teachers.UpdateTeacher)
 		teacherGroup.DELETE("/:id", teachers.DeleteTeacher)
 
@@ -93,14 +93,14 @@ func main() {
 	// -------------------- Majors --------------------
 	majorGroup := r.Group("/majors")
 	{
-		majorGroup.GET("/", major.GetMajorAll)
+		majorGroup.GET("/", major.GetMajorAll)  // admin  :Earth
 		majorGroup.POST("/", major.CreateMajor)
 	}
 
 	// -------------------- Faculties --------------------
 	facultyGroup := r.Group("/faculties")
 	{
-		facultyGroup.GET("/", faculty.GetFacultyAll)
+		facultyGroup.GET("/", faculty.GetFacultyAll) // admin, student, teacher  :Earth
 		facultyGroup.POST("/", faculty.CreateFaculty)
 	}
 
@@ -138,57 +138,55 @@ func main() {
 	// -------------------- Curriculums --------------------
 	curriculumGroup := r.Group("/curriculums")
 	{
-		curriculumGroup.GET("/", curriculum.GetCurriculumAll)                 // GET /curriculums
-		curriculumGroup.GET("/:curriculumId", curriculum.GetCurriculumByID)   // GET /curriculums/:id
-		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // POST /curriculums
-		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // PUT /curriculums/:id
-		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // PATCH /curriculums/:id
-		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // DELETE /curriculums/:id
+		curriculumGroup.GET("/", curriculum.GetCurriculumAll)                 // admin, student, teacher  :Earth
+		curriculumGroup.GET("/:curriculumId", curriculum.GetCurriculumByID)
+		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin  :Earth  
+		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // admin  :Earth
+		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // admin  :Earth
+		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // admin  :Earth
 	}
 
-	// -------------------- Books (files) --------------------
-	bookGroup := r.Group("/books")
+	// -------------------- Curriculum Books (files) --------------------
+	cb := r.Group("/curriculum-books")
 	{
-		bookGroup.GET("/", curriculum.GetBookPathAll)               // GET /books
-		bookGroup.GET("/:id", curriculum.GetBookPathByID)           // GET /books/:id (อ่าน metadata ไฟล์)
-		bookGroup.POST("/upload", curriculum.UploadBookFile)        // POST /books/upload (อัปโหลดไฟล์)
-		bookGroup.GET("/download/:id", curriculum.DownloadBookFile) // GET /books/download/:id (ดาวน์โหลดไฟล์)
-		bookGroup.DELETE("/:id", curriculum.DeleteBookFile)         // DELETE /books/:id (ลบไฟล์ + metadata)
+		cb.GET("/", curriculum.GetCurriculumBooks)
+		cb.GET("/:id", curriculum.GetCurriculumBookByID)
+		cb.POST("/register", curriculum.RegisterCurriculumBookByPath) // admin :Earth
+		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)      // admin, student, teacher  :Earth
+		cb.GET("/download/:id", curriculum.DownloadCurriculumBook)
+		cb.DELETE("/:id", curriculum.DeleteCurriculumBook)
 	}
+
 	// -------------------- Subject-Curriculums (link) --------------------
 	subjectCurriculumGroup := r.Group("/subject-curriculums")
 	{
-		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)       // GET /subject-curriculums (ดึงทั้งหมด)
-		subjectCurriculumGroup.GET("/:id", subjectcurriculum.GetSubjectCurriculumByID)   // GET /subject-curriculums/:id (ดูทีละรายการ)
-		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // POST /subject-curriculums (สร้างใหม่)
-		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // DELETE /subject-curriculums/:id (ลบตาม id)
+		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)       // admin, student, teacher  :Earth
+		subjectCurriculumGroup.GET("/:id", subjectcurriculum.GetSubjectCurriculumByID)
+		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // admin  :Earth
+		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // admin  :Earth
 	}
 
 	// -------------------- Subjects & Study Times --------------------
 	subjectGroup := r.Group("/subjects")
 	{
-		// รายการวิชาทั้งหมด
-		subjectGroup.GET("/", subjects.GetSubjectAll)
+		subjectGroup.GET("/", subjects.GetSubjectAll)  // admin, student, teacher  :Earth
+		subjectGroup.POST("/", subjects.CreateSubject) // admin  :Earth
 
-		// สร้างวิชาใหม่
-		subjectGroup.POST("/", subjects.CreateSubject)
-
-		// กลุ่มเส้นทางของวิชาเฉพาะตัว (RESTful)
 		subjectItem := subjectGroup.Group("/:subjectId")
 		{
 			subjectItem.GET("", subjects.GetSubjectID)
-			subjectItem.PUT("", subjects.UpdateSubject)
-			subjectItem.DELETE("", subjects.DeleteSubject)
+			subjectItem.PUT("", subjects.UpdateSubject)    // admin  :Earth
+			subjectItem.DELETE("", subjects.DeleteSubject) // admin  :Earth
 
-			// เวลาศึกษาของวิชานั้นๆ
-			// Allow trailing slash in study time routes
+			// -------------------- Subject Study Times --------------------
+
 			times := subjectItem.Group("/times")
 			{
-				times.GET("", subjectstudytime.GetBySubject)
+				times.GET("", subjectstudytime.GetBySubject)      // admin  :Earth
 				times.GET("/:timeId", subjectstudytime.GetOne)
-				times.POST("", subjectstudytime.Create)
-				times.PUT("/:timeId", subjectstudytime.Update)
-				times.DELETE("/:timeId", subjectstudytime.Delete)
+				times.POST("", subjectstudytime.Create)           // admin  :Earth
+				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth
+				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth
 			}
 		}
 	}
@@ -201,7 +199,6 @@ func main() {
 		billrGroup.POST("/:id", bill.CreateBill)
 		billrGroup.PUT("/:id", bill.UpdateBill)
 		billrGroup.DELETE("/:id", bill.DeleteBill)
-
 	}
 
 	//---------------------------------------------------------
@@ -226,7 +223,6 @@ func main() {
 	r.GET("/genders", gender.GetGenderAll)
 
 	// -------------------- Run Server --------------------
-	// เปิดให้บริการที่ localhost:8000
 	r.Run("localhost:" + port)
 }
 
@@ -234,22 +230,19 @@ func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
 		if origin != "" {
-			// ถ้าต้องใช้ cookie/credentials (เช่น Authorization)
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Vary", "Origin")
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		} else {
-			// ถ้าไม่ใช้ credentials ก็เปิด * ได้
 			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 
 		c.Writer.Header().Set("Access-Control-Allow-Headers",
 			"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Accept, Origin, Cache-Control, X-Requested-With")
-		// ชื่อ header ต้องเป็น Methods (มี s)
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
 		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(http.StatusNoContent) // 204
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 

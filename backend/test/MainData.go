@@ -16,14 +16,14 @@ func ExampleData() {
 	SemesterExample()
 	GenderExample()
 	StatusExample()
-	BookPathExample()
+	CurriculumBookExample()
 	CurriculumExample()
 
 	RegistrationExample()
 	StudentExample()
 	BillExample()
 
-	BookPathExample()
+	CurriculumBookExample()
 	CurriculumExample()
 	SubjectExample()
 	GradeExample()
