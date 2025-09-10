@@ -76,57 +76,36 @@ func GetMyGraduation(c *gin.Context) {
 		Preload("Student.Curriculum").
 		Preload("Student.Grade.Subject").
 		First(&graduation, "student_id = ?", studentID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Graduation request not found"})
+
+		// 🔹 ถ้าไม่พบ graduation ให้ดึง student แทน
+		var student entity.Students
+		if err := db.Preload("StatusStudent").
+			Preload("Curriculum").
+			Preload("Grade.Subject").
+			First(&student, "student_id = ?", studentID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
+			return
+		}
+
+		totalCredits, _ := services.CalculateTotalCredits(studentID)
+		gpa := services.CalculateGPA(student.Grade)
+
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{
+			"GraduationID":  0,
+			"StudentID":     student.StudentID,
+			"FirstName":     student.FirstName,
+			"LastName":      student.LastName,
+			"CurriculumID":  student.Curriculum.CurriculumID,
+			"Curriculum":    student.Curriculum.CurriculumName,
+			"StatusStudent": student.StatusStudent.Status,
+			"RejectReason":  "",
+			"Date":          nil,
+			"TotalCredits":  totalCredits,
+			"GPA":           gpa,
+		}})
 		return
 	}
-
-	var regs []entity.Registration
-	err := db.Preload("Subject").Where("student_id = ?", studentID).Find(&regs).Error
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	status := ""
-	if graduation.Student != nil && graduation.Student.StatusStudent != nil {
-		status = graduation.Student.StatusStudent.Status
-	}
-
-	// ดึง curriculum ของ student
-	CurriculumName := ""
-	CurriculumID := ""
-	if graduation.Student != nil && graduation.Student.Curriculum != nil {
-		CurriculumName = graduation.Student.Curriculum.CurriculumName
-		CurriculumID = graduation.Student.Curriculum.CurriculumID
-	}
-
-	// ✅ ใช้ service คำนวณ totalCredits
-	totalCredits, err := services.CalculateTotalCredits(studentID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate total credits"})
-		return
-	}
-
-	// คำนวณ GPA
-    gpa := services.CalculateGPA(graduation.Student.Grade)
-
-	c.JSON(http.StatusOK, gin.H{"data": gin.H{
-		"GraduationID":  graduation.ID,
-		"StudentID":     graduation.StudentID,
-		"FirstName":     graduation.Student.FirstName,
-		"LastName":      graduation.Student.LastName,
-		"CurriculumID":  CurriculumID,
-		"Curriculum":    CurriculumName,
-		"StatusStudent": status,
-		"RejectReason":  graduation.RejectReason,
-		"Date":          graduation.Date,
-
-		// ✅ เพิ่มหน่วยกิต
-		"TotalCredits": totalCredits,
-		"GPA":          gpa,
-	}})
 }
-
 
 // ----------------------
 // 3. ดึงคำขอแจ้งจบทั้งหมด (Admin)

@@ -194,13 +194,13 @@ func main() {
 	//---------------------------------------------------------
 	billGroup := r.Group("/bills")
 	{
-		billGroup.GET("/:id", bill.GetBillByStudentID) //student
-		billGroup.POST("/:id/create", bill.CreateBill) // student
-		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt)//student
-		billGroup.GET("/preview/:id", bill.ShowFile) // admin
-		billGroup.GET("/download/:id", bill.DownloadBill)
-		billGroup.GET("/admin/all", bill.GetAllBills) // admin
-		billGroup.PUT("/:id", bill.UpdateBillStatus)  // ใช้สำหรับอนุมัติใบเสร็จ
+		billGroup.GET("/:id", bill.GetBillByStudentID)                //student
+		billGroup.POST("/:id/create", bill.CreateBill)                // student
+		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt) //student
+		billGroup.GET("/preview/:id", bill.ShowFile)                  // admin
+		billGroup.GET("/download/:id", bill.DownloadBill)             //admin
+		billGroup.GET("/admin/all", bill.GetAllBills)                 // admin
+		billGroup.PUT("/:id", bill.UpdateBillStatus)                  // ใช้สำหรับอนุมัติใบเสร็จ
 	}
 
 	//---------------------------------------------------------
@@ -226,10 +226,10 @@ func main() {
 
 	graduationGroup := r.Group("/graduations")
 	{
-		graduationGroup.GET("/", graduation.GetAllGraduation)
-		graduationGroup.POST("/", graduation.CreateGraduation)
-		graduationGroup.GET("/:id", graduation.GetMyGraduation)
-		graduationGroup.PUT("/:id", graduation.UpdateGraduation)
+		graduationGroup.GET("/", graduation.GetAllGraduation)    //admin
+		graduationGroup.POST("/", graduation.CreateGraduation)   //student
+		graduationGroup.GET("/:id", graduation.GetMyGraduation)  //student
+		graduationGroup.PUT("/:id", graduation.UpdateGraduation) //admin
 	}
 
 	// -------------------- Run Server --------------------
