@@ -130,6 +130,8 @@ func GetSubjectID(c *gin.Context) {
 		Preload("Faculty").
 		Preload("Semester").
 		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
+		Preload("Semester").
+        Preload("Sections").
 		First(&sub, "subject_id = ?", id).Error; err != nil {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -150,6 +152,9 @@ func GetSubjectID(c *gin.Context) {
 		"term":          sub.Semester.Term,
 		"academic_year": sub.Semester.AcademicYear,
 		"teacher_id":    sub.TeacherID,
+		// include sections for frontend selection
+        "sections":      sub.Sections,
+        //"study_times":  sub.StudyTimes,
 	}
 	if sub.Major != nil {
 		resp["major_name"] = sub.Major.MajorName
@@ -173,8 +178,8 @@ func GetSubjectAll(c *gin.Context) {
 		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
 		Find(&subs).Error; err != nil {
 
-	 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	 return
+	    c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	    return
 	}
 
 	out := make([]map[string]interface{}, 0, len(subs))

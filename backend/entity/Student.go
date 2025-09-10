@@ -1,8 +1,9 @@
 package entity
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Students struct {
@@ -31,6 +32,9 @@ type Students struct {
 	StatusStudentID string         `json:"StatusStudentID"`                                       // Foreign Key
 	StatusStudent   *StatusStudent `gorm:"foreignKey:StatusStudentID;references:StatusStudentID"` // ระบุความสัมพันธ์ 1--1 [StatusStudent]
 
+	Reports []Report `gorm:"foreignKey:StudentID;references:StudentID" json:"-"`
+
+	/*RegistrationID int `json:"RegistrationID"` // Foreign Key*/
 	Registration []Registration `gorm:"foreignKey:StudentID;references:StudentID" json:"Registration"` // ระบุความสัมพันธ์ 1--1 [Registration]
 
 	CurriculumID string      `json:"CurriculumID"`                                    // Foreign Key

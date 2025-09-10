@@ -104,6 +104,31 @@ export const getSubjectAll = async (): Promise<SubjectInterface[]> => {
   return arr.map(mapSubjectFromAPI);
 };
 
+// GET one subject with sections (backend returns `sections` array)
+export const getSubjectById = async (subjectId: string): Promise<(SubjectInterface & { Sections?: any[]; StudyTimes?: any[] }) | null> => {
+  const sid = (subjectId || "").trim();
+  if (!sid) return null;
+  try {
+    const res = await axios.get(`${apiUrl}/subjects/${encodeURIComponent(sid)}`);
+    const raw = res.data || {};
+    const base: SubjectInterface = {
+      SubjectID: raw.subject_id ?? raw.SubjectID ?? sid,
+      SubjectName: raw.subject_name ?? raw.SubjectName ?? "",
+      Credit: typeof raw.credit === "number" ? raw.credit : Number(raw.credit ?? 0),
+      MajorID: raw.major_id ?? raw.MajorID,
+      FacultyID: raw.faculty_id ?? raw.FacultyID,
+      Term: raw.term ?? raw.Term,
+      AcademicYear: raw.academic_year ?? raw.AcademicYear,
+    };
+    const Sections = Array.isArray(raw.sections) ? raw.sections : (Array.isArray(raw.Sections) ? raw.Sections : undefined);
+    const StudyTimes = Array.isArray(raw.study_times) ? raw.study_times : (Array.isArray(raw.StudyTimes) ? raw.StudyTimes : undefined);
+    return { ...base, Sections, StudyTimes } as any;
+  } catch (err) {
+    console.error("getSubjectById error:", err);
+    return null;
+  }
+};
+
 export const updateSubject = async (
   subjectId: string,
   data: Partial<SubjectUpdateDTO & { semester_id?: string | number }>

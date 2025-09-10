@@ -5,6 +5,7 @@ import (
 	"reg_system/config"
 	"reg_system/test"
 
+	// Controllers
 	"reg_system/controller/admins"
 	"reg_system/controller/bill"
 	"reg_system/controller/curriculum"
@@ -16,10 +17,13 @@ import (
 	"reg_system/controller/faculty"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
+	"reg_system/controller/reports"
+	"reg_system/controller/reporttypes"
 	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
 	subjects "reg_system/controller/subject"
+	"reg_system/controller/sections"
 	"reg_system/controller/subjectcurriculum"
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
@@ -43,6 +47,9 @@ func main() {
 	r := gin.Default()
 	r.RedirectTrailingSlash = true
 	r.Use(CORSMiddleware())
+	r.Static("/uploads", "./uploads")
+
+	// Serve uploaded files (attachments)
 	r.Static("/uploads", "./uploads")
 
 	// -------------------- Auth --------------------
@@ -72,6 +79,8 @@ func main() {
 
 		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID)
 		studentGroup.GET("/:id/scores", scores.GetScoreByStudentID)
+		// คำร้องของนักศึกษา
+		studentGroup.GET("/reports/:sid", reports.GetReportsByStu)
 	}
 
 	// -------------------- Teachers --------------------
@@ -188,7 +197,51 @@ func main() {
 				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth
 				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth
 			}
+
+			// Sections under a subject
+			// GET /subjects/:subjectId/sections -> list sections for that subject
+			subjectItem.GET("/sections", sections.GetSectionsBySubject)
 		}
+    }
+
+	// -------------------- Sections --------------------
+	sectionGroup := r.Group("/sections")
+	{
+		sectionGroup.GET("/", sections.GetSectionAll)
+		sectionGroup.GET("/:sectionId", sections.GetSectionByID)
+		sectionGroup.POST("/", sections.CreateSection)
+		sectionGroup.PUT("/:sectionId", sections.UpdateSection)
+		sectionGroup.DELETE("/:sectionId", sections.DeleteSection)
+	}
+
+	// -------------------- Reports --------------------
+	reportGroup := r.Group("/reports")
+	{
+		reportGroup.GET("/", reports.GetReportAll)
+		reportGroup.GET("/:id", reports.GetReportByID)
+		reportGroup.POST("/", reports.CreateReport)
+		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)
+		reportGroup.PUT("/:id/status", reports.UpdateStatus)
+		// comments
+		reportGroup.GET("/:id/comments", reports.GetReportComments)
+		reportGroup.POST("/:id/comments", reports.CreateReportComment)
+		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment)
+		reportGroup.DELETE("/:id", reports.DeleteReportAlias)
+	}
+
+	// -------------------- Report Types --------------------
+	r.GET("/report-types", reporttypes.ListReportTypes)
+	r.GET("/report-types/:id", reporttypes.GetReportTypeByID)
+	r.POST("/report-types", reporttypes.CreateReportType)
+	r.PUT("/report-types/:id", reporttypes.UpdateReportType)
+	r.DELETE("/report-types/:id", reporttypes.DeleteReportType)
+
+	// -------------------- Reviewers --------------------
+	reviewerGroup := r.Group("/reviewers")
+	{
+		reviewerGroup.GET("/", reports.ListReviewers) // dropdown options
+		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername)
+		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)
 	}
 
 	//---------------------------------------------------------

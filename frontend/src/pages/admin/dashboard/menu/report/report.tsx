@@ -1,9 +1,14 @@
-// src/pages/dashboard/menu/register.tsx
-import React from 'react';
-import { Layout } from 'antd';
-import './report.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
+// src/pages/AdminReportPage.tsx (simplified hub)
+import React, { useState } from "react";
+import { Layout, Button } from "antd";
+import AddType from "./addtype";
+import DropType from "./droptype";
+import StudentRequests from "./studentrequests";
+import "./report.css";
 
 const { Header, Content, Footer } = Layout;
+
+type View = "list" | "addtype" | "droptype";
 
 // register.tsx  – only wrapperStyle changed
 const wrapperStyle: React.CSSProperties = {
@@ -18,7 +23,6 @@ const wrapperStyle: React.CSSProperties = {
   flexDirection: 'column',
   overflow: 'hidden',
 };
-
 
 const headerStyle: React.CSSProperties = {
   background: '#2e236c',            // ม่วงเข้ม
@@ -43,16 +47,41 @@ const footerStyle: React.CSSProperties = {
   padding: 12,
 };
 
-const Report: React.FC = () => {
+const AdminReportPage: React.FC = () => {
+  const [view, setView] = useState<View>("list");
+
   return (
+
     <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>Header – หน้ารายงาน</Header>
-      <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
-      </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
-    </Layout>
+          <Header style={headerStyle}>ระบบคำร้อง</Header>
+          <Content style={contentStyle}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <Button type={view === "list" ? "primary" : "default"} onClick={() => setView("list")}>รายการคำร้องที่ส่งให้ฉัน</Button>
+          <Button type={view === "addtype" ? "primary" : "default"} onClick={() => setView("addtype")}>เพิ่มประเภทคำร้อง</Button>
+          <Button type={view === "droptype" ? "primary" : "default"} onClick={() => setView("droptype")}>ลบประเภทคำร้อง</Button>
+        </div>
+
+        {view === "list" && (
+          <div className="rq-center">
+            <div className="rq-container">
+              <div className="rq-panel">
+                  <div className="rq-tab" />
+                </div>
+                <StudentRequests />
+            </div>
+          </div>
+        )}
+
+        {view === "addtype" && (
+          <div className="rq-center"><div className="rq-container"><AddType /></div></div>
+        )}
+        {view === "droptype" && (
+          <div className="rq-center"><div className="rq-container"><DropType /></div></div>
+        )}
+          </Content>
+          <Footer style={footerStyle}>Arcanatech University © 2025</Footer>
+        </Layout>
   );
 };
 
-export default Report;
+export default AdminReportPage;

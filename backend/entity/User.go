@@ -9,4 +9,6 @@ type Users struct {
 	Username string `gorm:"unique" json:"username"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
+
+	Reviewers []Reviewer `gorm:"foreignKey:UserID;references:ID" json:"-"`
 }

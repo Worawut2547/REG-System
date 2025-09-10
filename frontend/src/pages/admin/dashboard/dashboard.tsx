@@ -6,7 +6,7 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 
 /* ---------- page components ---------- */
 import MainPage from './menu/mainpage/mainpage';
-//import RegisterPage from './menu/register/register';
+import RegisterPage from './menu/register/register';
 import CoursePage from './menu/course/course';
 import TimeTablePage from './menu/timetable/timetable';
 import GradePage from './menu/grade/grade';
@@ -110,7 +110,7 @@ const AdminDashboardpage: React.FC = () => {
   const renderContent = () => {
     switch (activePage) {
       case 'ลงทะเบียนเรียน':
-        return //<RegisterPage />;
+        return <RegisterPage />;
       case 'วิชาที่เปิดสอน':
         return <CoursePage />;
       case 'ตารางเรียน':

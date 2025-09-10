@@ -58,6 +58,10 @@ func SetupDatabase() {
 		&entity.Grades{},
 		&entity.Scores{},
 		&entity.Graduation{},
-
+		&entity.Report{},
+		&entity.ReportType{},
+		&entity.Attachment{},
+		&entity.Reviewer{},
+		&entity.ReviewerComment{},
 	)	
 }

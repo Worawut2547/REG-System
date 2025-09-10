@@ -14,6 +14,8 @@ type Subject struct {
 
     FacultyID string   `json:"FacultyID"`
     Faculty   *Faculty `gorm:"foreignKey:FacultyID;references:FacultyID"`
+    // ความสัมพันธ์กับ StudyTime (One-to-Many)
+	Sections   []Section           `gorm:"foreignKey:SubjectID;references:SubjectID" json:"sections"`
 
     TeacherID string     `json:"TeacherID"`
     Teacher   *Teachers  `gorm:"foreignKey:TeacherID;references:TeacherID"`
