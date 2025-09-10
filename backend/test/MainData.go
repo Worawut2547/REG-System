@@ -31,6 +31,7 @@ func ExampleData() {
 	//ScoresExample()
 
 	GradeExample()
+	GraduationExample()
 
 	teacher := entity.Teachers{
 		TeacherID:  "T2900364",
@@ -67,6 +68,7 @@ func ExampleData() {
 		StatusStudentID: "10",
 		CurriculumID:    "curr23",
 		TeacherID:       "T2900364",
+		Gpax:            3.00,
 	}
 	db.FirstOrCreate(&student)
 	hashedPasswordStudent, _ := config.HashPassword(student.CitizenID)

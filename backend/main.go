@@ -14,6 +14,7 @@ import (
 
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
+	"reg_system/controller/graduation"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
 	"reg_system/controller/registration"
@@ -24,7 +25,6 @@ import (
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
 	"reg_system/controller/users"
-	"reg_system/controller/graduation"
 
 	"github.com/gin-gonic/gin"
 )
@@ -93,7 +93,7 @@ func main() {
 	// -------------------- Majors --------------------
 	majorGroup := r.Group("/majors")
 	{
-		majorGroup.GET("/", major.GetMajorAll)  // admin  :Earth
+		majorGroup.GET("/", major.GetMajorAll) // admin  :Earth
 		majorGroup.POST("/", major.CreateMajor)
 	}
 
@@ -138,9 +138,9 @@ func main() {
 	// -------------------- Curriculums --------------------
 	curriculumGroup := r.Group("/curriculums")
 	{
-		curriculumGroup.GET("/", curriculum.GetCurriculumAll)                 // admin, student, teacher  :Earth
+		curriculumGroup.GET("/", curriculum.GetCurriculumAll) // admin, student, teacher  :Earth
 		curriculumGroup.GET("/:curriculumId", curriculum.GetCurriculumByID)
-		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin  :Earth  
+		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin  :Earth
 		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // admin  :Earth
 		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // admin  :Earth
 		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // admin  :Earth
@@ -160,7 +160,7 @@ func main() {
 	// -------------------- Subject-Curriculums (link) --------------------
 	subjectCurriculumGroup := r.Group("/subject-curriculums")
 	{
-		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)       // admin, student, teacher  :Earth
+		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll) // admin, student, teacher  :Earth
 		subjectCurriculumGroup.GET("/:id", subjectcurriculum.GetSubjectCurriculumByID)
 		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // admin  :Earth
 		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // admin  :Earth
@@ -182,7 +182,7 @@ func main() {
 
 			times := subjectItem.Group("/times")
 			{
-				times.GET("", subjectstudytime.GetBySubject)      // admin  :Earth
+				times.GET("", subjectstudytime.GetBySubject) // admin  :Earth
 				times.GET("/:timeId", subjectstudytime.GetOne)
 				times.POST("", subjectstudytime.Create)           // admin  :Earth
 				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth
@@ -196,13 +196,12 @@ func main() {
 	{
 		billGroup.GET("/:id", bill.GetBillByStudentID) //student
 		billGroup.POST("/:id/create", bill.CreateBill) // student
-		billGroup.POST("/upload/:id", bill.UploadReceipt) //student
+		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt)//student
 		billGroup.GET("/preview/:id", bill.ShowFile) // admin
 		billGroup.GET("/download/:id", bill.DownloadBill)
 		billGroup.GET("/admin/all", bill.GetAllBills) // admin
-		billGroup.PUT("/:id", bill.UpdateBillStatus) // ใช้สำหรับอนุมัติใบเสร็จ
+		billGroup.PUT("/:id", bill.UpdateBillStatus)  // ใช้สำหรับอนุมัติใบเสร็จ
 	}
-	
 
 	//---------------------------------------------------------
 	// Grades
@@ -216,8 +215,8 @@ func main() {
 	// Grades
 	scoreGroup := r.Group("/scores")
 	{
-		scoreGroup.GET("/:id",scores.GetScoreByStudentID)
-		scoreGroup.POST("/",scores.CreateScores)
+		scoreGroup.GET("/:id", scores.GetScoreByStudentID)
+		scoreGroup.POST("/", scores.CreateScores)
 	}
 
 	//---------------------------------------------------------

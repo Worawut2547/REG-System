@@ -32,9 +32,14 @@ export interface APISubject {
 
 export interface BillResponse {
   id: number;
-  subjects: Subject[];
+  student_id: string;
+  full_name: string;
+  total_price: number;
   status: string;
-  filePath?: string | null;
+  file_path?: string;
+  date: string;
+  year: number;
+  term: number;
 }
 
 // ======================================================
@@ -96,7 +101,7 @@ export interface BillResponse {
   }
 };*/
 
-export const getBillByStudentID = async (): Promise<{
+/*export const getBillByStudentID = async (): Promise<{
   id: number;
   subjects: APISubject[];
   status: string;
@@ -129,7 +134,47 @@ export const getBillByStudentID = async (): Promise<{
     console.error("Error fetching bill student data:", error);
     throw error;
   }
+};*/
+
+export const getBillByStudentID = async (): Promise<{
+  id: number;
+  subjects: APISubject[];
+  statusMap: { [key: string]: string };
+  filePathMap: { [key: string]: string };
+  totalPriceMap: { [key: string]: number };
+}> => {
+  try {
+    const sid = localStorage.getItem("username");
+    if (!sid) throw new Error("ไม่พบ Student ID ใน localStorage");
+
+    const response = await axios.get(`${apiUrl}/bills/${sid}`);
+    const data = response.data;
+
+    const subjects: APISubject[] = data.subjects.map((s: any) => ({
+      subject_id: s.subject_id,
+      subject_name: s.subject_name,
+      credit: s.credit,
+      term: s.term,
+      academicYear: s.academic_year,
+    }));
+
+    const statusMap: { [key: string]: string } = data.status_map || {};
+    const filePathMap: { [key: string]: string } = data.file_path_map || {};
+    const totalPriceMap: { [key: string]: number } = data.total_price_map || {};
+
+    return {
+      id: data.id,
+      subjects,
+      statusMap,
+      filePathMap,
+      totalPriceMap,
+    };
+  } catch (error) {
+    console.error("Error fetching bill student data:", error);
+    throw error;
+  }
 };
+
 
 
 
@@ -152,14 +197,15 @@ export const getAllBills = async (): Promise<BillResponse[]> => {
 // ======================================================
 // นักเรียนอัปโหลดใบเสร็จ
 // ======================================================
-export const uploadReceipt = async (billID: number, file: File) => {
+export const uploadReceipt = async (studentID: string, file: File, year: number, term: number) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await axios.post(`${apiUrl}/bills/upload/${billID}`, formData, {
+    const response = await axios.post(`${apiUrl}/bills/upload/${studentID}/${year}/${term}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+
 
     return response.data;
   } catch (error) {
@@ -167,6 +213,7 @@ export const uploadReceipt = async (billID: number, file: File) => {
     throw error;
   }
 };
+
 
 // ======================================================
 // แอดมินอนุมัติใบเสร็จ
