@@ -18,6 +18,8 @@ var RolePermission = map[string][]string{
 		"create.sub", "update.sub", "delete.sub",
 		"create.sub-time" , "update.sub-time", "delete.sub-time",
 		"admin.read.bill", "admin.read.all.bill", "admin.update.bill",
+
+		"read.graduation",
 	},
 
 	"student": {
@@ -25,6 +27,8 @@ var RolePermission = map[string][]string{
 		"student.read.grade",
 		"student.read.score",
 		"student.read.bill.self", "student.create.bill.self", "student.upload.bill",
+
+		"read.graduation.self", "create.graduation",
 	},
 
 	"teacher": {
@@ -88,10 +92,16 @@ var RoutePermission = map[string]string{
 	// bill
 	"GET /bills/:id":         "student.read.bill.self",
 	"POST /bills/:id/create": "student.create.bill.self",
-	"POST /bills/upload/:id": "student.upload.bill",
+	"POST /bills/upload/:id/:year/:term": "student.upload.bill",
 	"GET /bills/preview/:id": "admin.read.bill",
 	"GET /bills/admin/all":   "admin.read.all.bill",
 	"PUT /bills/:id":         "admin.update.bill",
+
+	// graduation
+	"GET /graduations/": "read.graduation",
+	"POST /graduations/": "create.graduation",
+	"GET /graduations/:id": "read.graduation.self",
+	"PUT /graduations/:id": "any",
 
 	// anyone
 	"GET /majors/":    "any",

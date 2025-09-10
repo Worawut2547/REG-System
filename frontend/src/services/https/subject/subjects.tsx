@@ -1,5 +1,4 @@
-import axios from "axios";
-import { api , apiUrl } from "../api";
+import { api } from "../api";
 import { type SubjectInterface } from "../../../interfaces/Subjects";
 
 // ---------- DTO ตอนส่งขึ้น backend ----------

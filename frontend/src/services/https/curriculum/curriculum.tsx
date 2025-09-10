@@ -1,4 +1,4 @@
-import { api , apiUrl } from "../api";
+import { api } from "../api";
 import { type CurriculumInterface } from "../../../interfaces/Curriculum";
 
 // ---------- API DTOs ----------
@@ -148,5 +148,5 @@ export const updateCurriculum = async (
 
 export const deleteCurriculum = async (curriculumId: string): Promise<void> => {
   if (!curriculumId) throw new Error("curriculumId is required");
-  await api.delete(`${apiUrl}/curriculums/${curriculumId}`);
+  await api.delete(`/curriculums/${curriculumId}`);
 };

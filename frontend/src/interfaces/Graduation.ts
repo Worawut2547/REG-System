@@ -6,6 +6,11 @@ export interface GraduationInterface {
     statusStudent: string;
     reason: string;
     Date?: Date | null;
+
+    totalCredits: number; // ✅ จำนวนหน่วยกิตรวม
+    GPAX: number; // ✅ เกรดเฉลี่ยสะสม
+    // ✅ เพิ่มสำหรับ frontend logic
+    isVerified?: boolean;
 }
 
 export interface CreateGraduationInput {
@@ -16,5 +21,5 @@ export interface CreateGraduationInput {
 export interface UpdateGraduationInput {
     StatusStudent: string;
     RejectReason?: string;
-    GraduationID:string;
+    GraduationID: string;
 }

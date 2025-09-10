@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"reg_system/config"
@@ -26,6 +27,7 @@ type BillResponse struct {
 	FilePath   string            `json:"file_path,omitempty"`
 	Year       int               `json:"year,omitempty"`
 	Term       int               `json:"term,omitempty"`
+	StatusMap  map[string]string `json:"status_map,omitempty"` // เพิ่ม map สถานะ
 }
 
 type SubjectResponse struct {
@@ -41,7 +43,7 @@ type SubjectResponse struct {
 // ======================================================
 
 // GET /bills/:id - ดึงบิลนักเรียน
-func GetBillByStudentID(c *gin.Context) {
+/*func GetBillByStudentID(c *gin.Context) {
 	id := c.Param("id")
 	var bill entity.Bill
 	db := config.DB()
@@ -86,6 +88,89 @@ func GetBillByStudentID(c *gin.Context) {
 		FilePath:   bill.FilePath,
 		Year:       year,
 		Term:       term,
+	}
+
+	c.JSON(http.StatusOK, resp)
+}*/
+
+func GetBillByStudentID(c *gin.Context) {
+	studentID := c.Param("id")
+	db := config.DB()
+
+	var bills []entity.Bill
+	// ดึงทุก bill ของ student พร้อม preload
+	if err := db.Preload("Student.Registration.Subject.Semester").
+		Preload("Status").
+		Where("student_id = ?", studentID).
+		Find(&bills).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "bills not found"})
+		return
+	}
+
+	type SubjectKey string
+	subjectMap := map[SubjectKey]SubjectResponse{}
+	statusMap := map[string]string{}
+	filePathMap := map[string]string{}
+	totalPriceMap := map[string]int{}
+
+	for _, bill := range bills {
+		status := "-"
+		if bill.Status != nil {
+			status = bill.Status.Status
+		}
+
+		year := bill.AcademicYear
+		term := bill.Term
+		key := fmt.Sprintf("%d-%d", year, term)
+
+		// เก็บ filePath ต่อเทอม
+		if bill.FilePath != "" {
+			filePathMap[key] = bill.FilePath
+		}
+
+		// รวม totalPrice ต่อเทอม
+		totalPriceMap[key] += bill.TotalPrice
+
+		for _, reg := range bill.Student.Registration {
+			if reg.Subject != nil && reg.Subject.Semester != nil {
+				sKey := SubjectKey(fmt.Sprintf("%d-%d-%s", reg.Subject.Semester.AcademicYear, reg.Subject.Semester.Term, reg.SubjectID))
+				if _, exists := subjectMap[sKey]; !exists {
+					subjectMap[sKey] = SubjectResponse{
+						SubjectID:    reg.SubjectID,
+						SubjectName:  reg.Subject.SubjectName,
+						Credit:       reg.Subject.Credit,
+						Term:         reg.Subject.Semester.Term,
+						AcademicYear: reg.Subject.Semester.AcademicYear,
+					}
+				}
+				// เก็บ status per year-term
+				statusMap[key] = status
+			}
+		}
+	}
+
+	// แปลง map เป็น slice
+	subjects := []SubjectResponse{}
+	for _, s := range subjectMap {
+		subjects = append(subjects, s)
+	}
+
+	// กำหนด default year-term จากวิชาแรก
+	defaultYear, defaultTerm := 0, 0
+	if len(subjects) > 0 {
+		defaultYear = subjects[0].AcademicYear
+		defaultTerm = subjects[0].Term
+	}
+
+	resp := BillResponse{
+		ID:         0, // สามารถใส่ ID ของ bill ล่าสุด หรือ 0
+		TotalPrice: totalPriceMap[fmt.Sprintf("%d-%d", defaultYear, defaultTerm)],
+		Subjects:   subjects,
+		Status:     "-", // ไม่ใช้รวม status
+		StatusMap:  statusMap,
+		FilePath:   filePathMap[fmt.Sprintf("%d-%d", defaultYear, defaultTerm)],
+		Year:       defaultYear,
+		Term:       defaultTerm,
 	}
 
 	c.JSON(http.StatusOK, resp)
@@ -140,17 +225,73 @@ func CreateBill(c *gin.Context) {
 	})
 }
 
-// POST /bills/upload/:id - นักเรียนอัปโหลดใบเสร็จ
+// POST /bills/upload/:id - นักเรียนอัปโหลดใบเสร็จ --รอดูตอนGET
 func UploadReceipt(c *gin.Context) {
-	id := c.Param("id")
+	studentID := c.Param("id")
+	yearStr := c.Param("year")
+	termStr := c.Param("term")
 	db := config.DB()
 
-	var bill entity.Bill
-	if err := db.First(&bill, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "bill not found"})
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
 		return
 	}
 
+	term, err := strconv.Atoi(termStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid term"})
+		return
+	}
+
+	// หา Registration ของ student ตามปี/เทอม
+	var registrations []entity.Registration
+	if err := db.Preload("Subject.Semester").
+		Where("student_id = ?", studentID).
+		Find(&registrations).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "registrations not found"})
+		return
+	}
+
+	var selectedRegs []entity.Registration
+	for _, reg := range registrations {
+		if reg.Subject != nil && reg.Subject.Semester != nil &&
+			reg.Subject.Semester.AcademicYear == year &&
+			reg.Subject.Semester.Term == term {
+			selectedRegs = append(selectedRegs, reg)
+		}
+	}
+
+	if len(selectedRegs) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no registrations found for this year and term"})
+		return
+	}
+
+	// หา Bill ของ student ปี/เทอมนี้ ถ้าไม่มีให้สร้างใหม่
+	var bill entity.Bill
+	if err := db.Where("student_id = ? AND academic_year = ? AND term = ?", studentID, year, term).First(&bill).Error; err != nil {
+		// สร้าง bill ใหม่
+		bill = entity.Bill{
+			StudentID:    studentID,
+			AcademicYear: year,
+			Term:         term,
+			TotalPrice:   0, // คำนวณได้ถ้าต้องการ
+			StatusID:     2, // รอตรวจสอบ
+			Registration: selectedRegs,
+		}
+		if err := db.Create(&bill).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create bill"})
+			return
+		}
+	} else {
+		// ถ้ามีแล้ว อัปเดต Registration (กรณีเราต้องการเชื่อม)
+		if err := db.Model(&bill).Association("Registration").Replace(selectedRegs); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill registrations"})
+			return
+		}
+	}
+
+	// อัปโหลดไฟล์
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file not found"})
@@ -174,7 +315,7 @@ func UploadReceipt(c *gin.Context) {
 
 	// อัปเดต bill: FilePath + StatusID = 2 (รอตรวจสอบ)
 	if err := db.Model(&bill).Updates(map[string]interface{}{
-		"FilePath": fileName, // เก็บเฉพาะชื่อไฟล์
+		"FilePath": fileName,
 		"StatusID": 2,
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill"})
@@ -189,7 +330,7 @@ func UploadReceipt(c *gin.Context) {
 }
 
 // GET /bills/admin/all - ดึงบิลทั้งหมด สำหรับแอดมิน
-func GetAllBills(c *gin.Context) {
+/*func GetAllBills(c *gin.Context) {
 	db := config.DB()
 
 	var bills []entity.Bill
@@ -209,6 +350,20 @@ func GetAllBills(c *gin.Context) {
 		Date       string `json:"date"`
 		Year       int    `json:"year"`
 		Term       int    `json:"term"`
+	}
+
+	// สร้าง map สำหรับเก็บบิลล่าสุดต่อ student+year+term
+	latestBills := map[string]entity.Bill{}
+	for _, b := range bills {
+		year, term := 0, 0
+		if len(b.Student.Registration) > 0 && b.Student.Registration[0].Subject.Semester != nil {
+			year = b.Student.Registration[0].Subject.Semester.AcademicYear
+			term = b.Student.Registration[0].Subject.Semester.Term
+		}
+		key := fmt.Sprintf("%s-%d-%d", b.StudentID, year, term)
+		if existing, ok := latestBills[key]; !ok || b.ID > existing.ID {
+			latestBills[key] = b
+		}
 	}
 
 	var resp []AdminBill
@@ -237,6 +392,103 @@ func GetAllBills(c *gin.Context) {
 			Date:       bill.Date.Format("2006-01-02"),
 			Year:       year,
 			Term:       term,
+		})
+	}
+
+	c.JSON(http.StatusOK, resp)
+}*/
+
+func GetAllBills(c *gin.Context) {
+	db := config.DB()
+
+	var bills []entity.Bill
+	if err := db.Preload("Registration.Subject.Semester").
+		Preload("Student").
+		Preload("Status").
+		Find(&bills).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bills"})
+		return
+	}
+
+	type AdminBill struct {
+		ID         int    `json:"id"`
+		StudentID  string `json:"student_id"`
+		FullName   string `json:"full_name"`
+		TotalPrice int    `json:"total_price"`
+		Status     string `json:"status"`
+		FilePath   string `json:"file_path,omitempty"`
+		Date       string `json:"date"`
+		Year       int    `json:"year"`
+		Term       int    `json:"term"`
+	}
+
+	ratePerCredit := 800 // ✅ เรทต่อหน่วยกิต
+	resp := []AdminBill{}
+
+	// สร้าง map เก็บข้อมูลแบบ student+year+term
+	type BillKey struct {
+		StudentID string
+		Year      int
+		Term      int
+	}
+	grouped := map[BillKey][]services.Subject{}
+	statusMap := map[BillKey]string{}
+	filePathMap := map[BillKey]string{}
+	latestID := map[BillKey]int{}
+	dateMap := map[BillKey]string{}
+	nameMap := map[BillKey]string{}
+
+	for _, bill := range bills {
+		if bill.Student == nil {
+			continue
+		}
+
+		fullName := bill.Student.FirstName + " " + bill.Student.LastName
+
+		// ✅ ใช้ bill.Registration ไม่ใช่ Student.Registration
+		for _, reg := range bill.Registration {
+			if reg.Subject != nil && reg.Subject.Semester != nil {
+				key := BillKey{
+					StudentID: bill.StudentID,
+					Year:      reg.Subject.Semester.AcademicYear,
+					Term:      reg.Subject.Semester.Term,
+				}
+				// เก็บ subject
+				grouped[key] = append(grouped[key], services.Subject{
+					SubjectID:   reg.Subject.SubjectID,
+					SubjectName: reg.Subject.SubjectName,
+					Credit:      reg.Subject.Credit,
+				})
+
+				// เก็บค่าอื่น ๆ
+				if bill.Status != nil {
+					statusMap[key] = bill.Status.Status
+				}
+				if bill.FilePath != "" {
+					filePathMap[key] = bill.FilePath
+				}
+				if existing, ok := latestID[key]; !ok || bill.ID > existing {
+					latestID[key] = bill.ID
+					dateMap[key] = bill.Date.Format("2006-01-02")
+					nameMap[key] = fullName
+				}
+			}
+		}
+	}
+
+	// ✅ แปลงเป็น response
+	for key, subjects := range grouped {
+		totalPrice := services.CalculateTotalPrice(subjects, ratePerCredit)
+		resp = append(resp, AdminBill{
+			ID:         latestID[key],
+			StudentID:  key.StudentID,
+			FullName:   nameMap[key],
+			TotalPrice: totalPrice,
+			Status:     statusMap[key],
+			FilePath:   filePathMap[key],
+			Date:       dateMap[key],
+			Year:       key.Year,
+			Term:       key.Term,
 		})
 	}
 

@@ -1,16 +1,7 @@
 import axios from "axios";
 import type { CreateGraduationInput, GraduationInterface } from "../../../interfaces/Graduation";
 
-import { apiUrl } from "../api";
-
-//const apiUrl = "/graduations";
-//const apiUrl = "http://localhost:8080/graduations";
-
-// Mapping รหัส status เป็นข้อความ
-/*const statusMap: Record<string, string> = {
-    "30": "อนุมัติ",
-    "40": "ปฏิเสธ",
-};*/
+import { api } from "../api";
 
 // --------------------------
 // อัปเดตคำขอแจ้งจบ (Admin) รอแก้
@@ -26,7 +17,7 @@ export const statusStudentMap: Record<string, string> = {
 // ดึงข้อมูลผู้แจ้งจบทั้งหมด
 export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
     try {
-        const res = await axios.get(`${apiUrl}/graduations/`);
+        const res = await api.get(`/graduations/`);
         console.log("api graduations", res.data)
         const items = res.data?.data ?? [];
 
@@ -38,6 +29,9 @@ export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
             statusStudent: item.StatusStudent ?? "รอตรวจสอบ",
             reason: item.RejectReason ?? "",
             Date: item.Date ? new Date(item.Date) : null,
+
+            totalCredits: item.TotalCredits ?? 0, // ✅ ดึงมาจาก backend
+            GPAX: item.GPA ?? 0,
         }));
     } catch (err) {
         console.error("Error fetching all graduations:", err);
@@ -52,7 +46,7 @@ export const createGraduation = async (
     data: CreateGraduationInput
 ): Promise<GraduationInterface> => {
     try {
-        const res = await axios.post(`${apiUrl}/graduations/`, data);
+        const res = await api.post(`/graduations/`, data);
         console.log("api create graduation:", res.data);
         const item = res.data?.data;
 
@@ -66,6 +60,9 @@ export const createGraduation = async (
             statusStudent: item.StatusStudent ?? "รอตรวจสอบ",
             reason: item.RejectReason ?? "",
             Date: item.Date ? new Date(item.Date) : null,
+
+            totalCredits: item.TotalCredits ?? 0, // ✅ ดึงมาจาก backend
+            GPAX: item.Gpax ?? 0,
         };
     } catch (err: any) {
         console.error("Failed to create graduation:", err.response?.data || err.message);
@@ -82,10 +79,15 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
         const studentID = localStorage.getItem("username"); // หรือ StudentID จริง
         if (!studentID) return null;
 
-        const res = await axios.get(`${apiUrl}/graduations/${studentID}`);
+        console.log("Fetching graduation for studentID:", studentID);
+        //console.log("URL:", `${apiUrl}/graduations/${studentID}`);
+
+        const res = await api.get(`api/graduations/${studentID}`);
         const data = res.data?.data;
 
         if (!data) return null;
+
+        console.log("Graduation reason:", data.RejectReason);
 
         return {
             id: data.GraduationID?.toString() || "",
@@ -93,10 +95,12 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
             fullName: `${data.FirstName ?? ""} ${data.LastName ?? ""}`.trim(),
             curriculum: data.Curriculum ?? "",
             statusStudent: data.StatusStudent ?? "รอตรวจสอบ",
+            GPAX: data.GPA ?? 0,
             reason: data.RejectReason ?? "",
             Date: data.Date ? new Date(data.Date) : null,
+
+            totalCredits: data.TotalCredits?? 0, // ✅ ดึงมาจาก backend
         };
-        console.log("Graduation reason:", data.RejectReason);
     } catch (err) {
         console.error("Error fetching my graduation:", err);
         return null;
@@ -115,7 +119,7 @@ export const updateGraduation = async (
             RejectReason: rejectReason ?? null, // ถ้าไม่มี rejectReason ให้เป็น null
         };
 
-        const res = await axios.put(`${apiUrl}/graduations/${graduationID}`, payload, {
+        const res = await api.put(`/graduations/${graduationID}`, payload, {
             withCredentials: true,
         });
 

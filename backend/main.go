@@ -206,7 +206,7 @@ func main() {
 	{
 		billGroup.GET("/:id", bill.GetBillByStudentID)    //student ทำเเล้ว
 		billGroup.POST("/:id/create", bill.CreateBill)    // student ทำเเล้ว
-		billGroup.POST("/upload/:id", bill.UploadReceipt) //student ทำเเล้ว
+		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt) //student ทำเเล้ว
 		billGroup.GET("/preview/:id", bill.ShowFile)      // admin ทำเเล้ว
 		billGroup.GET("/download/:id", bill.DownloadBill)
 		billGroup.GET("/admin/all", bill.GetAllBills) // admin ทำเเล้ว

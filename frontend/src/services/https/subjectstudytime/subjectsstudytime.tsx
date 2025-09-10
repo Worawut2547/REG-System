@@ -1,6 +1,5 @@
-import axios from "axios";
 import { type SubjectStudyTimeInterface } from "../../../interfaces/SubjectsStudyTime";
-import { api , apiUrl } from "../api";
+import { api } from "../api";
 
 type StudyTimeAPI = {
   id?: number | string;
@@ -60,8 +59,8 @@ export const getStudyTimeOne = async (
   if (timeId === null || timeId === undefined) throw new Error("timeId is required");
 
   try {
-    const response = await axios.get<StudyTimeAPI>(
-      `${apiUrl}/subjects/${subjectId}/times/${timeId}`
+    const response = await api.get<StudyTimeAPI>(
+      `/subjects/${subjectId}/times/${timeId}`
     );
     return mapStudyTime(response.data);
   } catch (error) {
