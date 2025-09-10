@@ -1,11 +1,13 @@
 package teachers
 
 import (
+	"errors"
 	"net/http"
 	"reg_system/config"
 	"reg_system/entity"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Get Teacher by ID
@@ -13,24 +15,35 @@ func GetTeacherID(c *gin.Context) {
 	tid := c.Param("id")
 
 	teacher := new(entity.Teachers)
-	db := config.DB()
 
-	result := db.Preload("Gender").
+	// สร้าง transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	err := tx.
+		Preload("Gender").
 		Preload("Faculty").
 		Preload("Major").
 		Preload("Position").
 		Preload("Subject").
-		First(&teacher, "teacher_id = ?", tid)
+		First(&teacher, "teacher_id = ?", tid).Error
 
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+	if err != nil {
+		tx.Rollback()
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// not found
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			// database error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
+
 		return
 	}
 
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
-		return
-	}
+	// commit transaction
+	tx.Commit()
 
 	// เอาค่า {Gender , FacultyName , MajorName , Position} ออกมาเเสดง
 	genderName := ""
@@ -69,6 +82,11 @@ func GetTeacherID(c *gin.Context) {
 		"FacultyName": facultyName,
 		"MajorName":   majorName,
 		"Position":    positionName,
+		"Address":     teacher.Address,
+		"Religion":    teacher.Religion,
+		"Nationality": teacher.Nationality,
+		"Ethnicity":   teacher.Ethnicity,
+		"BirthDay":    teacher.BirthDay,		
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -81,27 +99,49 @@ func CreateTeacher(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// สร้าง transaction เพื่อความปลอดภัย
 	db := config.DB()
+	tx := db.Begin()
 
-	result := db.Create(&teacher)
-
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+	// ตรวจสอบว่ามี username นี้ในระบบเเล้วหรือยัง เพื่อกัน username ซ้ำกัน
+	// โดยเช็คจากตาราง Users
+	existingUser := &entity.Users{}
+	err := tx.First(&existingUser, "username = ?", teacher.TeacherID).Error
+	if err == nil {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Teacher ID already exists in Users table"})
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
-	// เพิ่ม รหัสนักศึกษา , เลขบัตรปชช ลงตาราง Users หลังเพิ่มข้อมูลนักเรียนเเล้ว
+
+	// เพิ่ม teacher ลงฐานข้อมูล
+	if err := tx.Create(&teacher).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create teacher"})
+		return
+	}
+
+	// กำหนด Username: รหัสอาจารย์ , Password: เลขบัตรปชช
 	hashPassword, _ := config.HashPassword(teacher.CitizenID)
 	user := &entity.Users{
 		Username: teacher.TeacherID, // ดึงรหัสนักศึกษาออกมา
 		Password: hashPassword,
 		Role:     "teacher", //กำหนด Role
 	}
-	if err := db.Create(&user).Error; err != nil {
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
+
+	// commit transaction
+	tx.Commit()
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":    "Create student success",
+		"message":    "Create teacher success",
 		"Teacher_id": teacher.TeacherID,
 		"FirstName":  teacher.FirstName,
 		"LastName":   teacher.LastName,
@@ -110,23 +150,31 @@ func CreateTeacher(c *gin.Context) {
 
 func GetTeacherAll(c *gin.Context) {
 	var teachers []entity.Teachers
-	db := config.DB()
 
-	results := db.
+	// สร้าง transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	err := tx.
 		Preload("Major").
 		Preload("Faculty").
 		Preload("Position").
-		Find(&teachers)
+		Find(&teachers).Error
 
-	if results.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": results.Error.Error()})
+	if err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// not found
+			c.JSON(http.StatusNotFound, gin.H{"error": "students not found"})
+		} else {
+			// database error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
 		return
 	}
 
-	if results.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
-		return
-	}
+	// commit transaction
+	tx.Commit()
 
 	// เเปลงข้อมูล Struct -> Map Slice
 	// เพื่อเลือกส่งข้อมูลที่ต้องการออกไป
@@ -173,40 +221,96 @@ func GetTeacherAll(c *gin.Context) {
 
 func DeleteTeacher(c *gin.Context) {
 	tid := c.Param("id")
-	teacher := new(entity.Teachers)
-	db := config.DB()
 
-	result := db.Delete(&teacher, "teacher_id = ?", tid)
+	// สร้าง transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	result := tx.Delete(&entity.Teachers{}, "teacher_id = ?", tid)
 	if result.Error != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
+
+	// เช็คว่ามี Teacher จริงหรือไม่
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
+	}
+
+	tx.Commit()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Delete teacher success"})
 }
 
 func UpdateTeacher(c *gin.Context) {
 	tid := c.Param("id")
-	db := config.DB()
 
-	teacher := new(entity.Teachers)
-	if err := c.ShouldBind(&teacher); err != nil {
+	// สร้าง transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	input := new(entity.Teachers)
+	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// หา Teacher ก่อน Update
+	teacher := &entity.Teachers{}
+	if err := tx.First(&teacher, "teacher_id = ?", tid).Error; err != nil {
+		tx.Rollback()
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// not found
+			c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
+		} else {
+			// database error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
+		return
+	}
+
 	// อัพเดทข้อมูลอาจารย์
-	result := db.Model(&teacher).Where("teacher_id = ?", tid).Updates(&teacher)
-
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+	if err := tx.Model(teacher).Updates(input).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update teacher"})
 		return
 	}
 
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
+	// commit transaction
+	tx.Commit()
+
+	c.JSON(http.StatusOK, teacher)
+}
+
+func GetStudentByTeacherID(c *gin.Context) {
+	tid := c.Param("id")
+	var teacher entity.Teachers
+
+	// สร้าง transaction
+	db := config.DB()
+	tx := db.Begin()
+
+	err := tx.
+		Preload("Student").
+		Preload("Student.Degree").
+		Find(&teacher, "teacher_id = ?", tid).Error
+
+	if err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// not found
+			c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
+		} else {
+			// database error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
 		return
 	}
+
+	tx.Commit()
 
 	c.JSON(http.StatusOK, teacher)
 }
@@ -216,18 +320,26 @@ func GetSubjectByTeacherID(c *gin.Context) {
 	var teacher entity.Teachers
 
 	db := config.DB()
-	result := db.Preload("Subject").
+	tx := db.Begin()
+
+	err := tx.
+		Preload("Subject").
 		Preload("Subject.Semester").
-		First(&teacher, "teacher_id = ?", tid)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		First(&teacher, "teacher_id = ?", tid).Error
+
+	if err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// not found
+			c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
+		} else {
+			// database error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
 		return
 	}
 
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "teacher not found"})
-		return
-	}
+	tx.Commit()
 
 	if len(teacher.Subject) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "teacher subject not found"})
@@ -237,10 +349,10 @@ func GetSubjectByTeacherID(c *gin.Context) {
 	var response []SubjectTeacherResponse
 	for _, subj := range teacher.Subject {
 		response = append(response, SubjectTeacherResponse{
-			SubjectID:   subj.SubjectID,
-			SubjectName: subj.SubjectName,
-			Credit:      subj.Credit,
-			Term: subj.Semester.Term,
+			SubjectID:    subj.SubjectID,
+			SubjectName:  subj.SubjectName,
+			Credit:       subj.Credit,
+			Term:         subj.Semester.Term,
 			AcademicYear: subj.Semester.AcademicYear,
 		})
 	}

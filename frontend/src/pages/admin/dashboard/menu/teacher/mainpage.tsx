@@ -45,7 +45,7 @@ const TeacherPage = () => {
 
   return (
     <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>จัดการนักศึกษา</Header>
+      <Header style={headerStyle}>จัดการอาจารย์</Header>
       <Content style={contentStyle}>
         {showCreate ? (
           <CreateTeacher onBack={() => setShowCreate(false)} />

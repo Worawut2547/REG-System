@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // ✅ ADD
 import name_white from "../../../assets/name_white.png";
 import shortLogo from "../../../assets/logo_white.png";
-import { type StudentInterface } from '../../../interfaces/Student';
+import { type AdminInterface } from '../../../interfaces/Admin'
 
 /* ---------- page components ---------- */
 import MainPage from './menu/mainpage/mainpage';
@@ -12,7 +12,7 @@ import TimeTablePage from './menu/timetable/timetable';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
-import ProfilePage from './menu/profile/mainpage';
+import StudentPage from './menu/profile/mainpage';
 import TeacherPage from './menu/teacher/teacher';
 import ReportPage from './menu/report/report';
 import GraduatePage from './menu/graduate/graduate';
@@ -47,10 +47,30 @@ const { Header, Sider, Content } = Layout;
 const StudentDashboardpage: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [activePage, setActivePage] = useState<string>('หน้าหลัก');
-  const [student, setStudent] = useState<StudentInterface | null>(null);
-
+  const [student, setStudent] = useState<AdminInterface | null>(null);
 
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ ADD
+
+  // ✅ ADD: map ชื่อเมนู ↔ slug สำหรับใช้ใน URL
+  const keyToSlug: Record<string, string> = {
+    'หน้าหลัก': 'home',
+    'ลงทะเบียนเรียน': 'register',
+    'วิชาที่เปิดสอน': 'course',
+    'ตารางเรียน': 'timetable',
+    'ผลการเรียน': 'grade',
+    'คะแนน': 'score',
+    'ใบแจ้งยอดชำระ': 'payment',
+    'นักศึกษา': 'student',
+    'อาจารย์': 'teacher',
+    'คำร้อง': 'report',
+    'แจ้งจบการศึกษา': 'graduate',
+    'หลักสูตร': 'curriculum',
+    'เปลี่ยนรหัสผ่าน': 'password',
+  };
+  const slugToKey: Record<string, string> = Object.fromEntries( // ✅ ADD
+    Object.entries(keyToSlug).map(([k, v]) => [v, k])
+  );
 
   useEffect(() => {
     // ดึง username จาก localStorage
@@ -67,11 +87,22 @@ const StudentDashboardpage: React.FC = () => {
     }
   }, []);
 
+  // ✅ ADD: sync activePage จาก query ?tab=... ทุกครั้งที่ URL เปลี่ยน
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab') ?? 'home';
+    const key = slugToKey[tab] ?? 'หน้าหลัก';
+    setActivePage(key);
+  }, [location.search, slugToKey]); 
+
   const handleMenuClick = (e: { key: string }) => {
     if (e.key === 'ออกจากระบบ') {
       navigate('/');
     } else {
       setActivePage(e.key);
+      // ✅ ADD: อัปเดต URL ให้สอดคล้อง (ไม่ hardcode path ใช้ path ปัจจุบัน)
+      const slug = keyToSlug[e.key] ?? 'home';
+      navigate({ pathname: location.pathname, search: `?tab=${slug}` });
     }
   };
 
@@ -90,8 +121,8 @@ const StudentDashboardpage: React.FC = () => {
         return <ScorePage />;
       case 'ใบแจ้งยอดชำระ':
         return <PaymentPage />;
-      case 'ระเบียนประวัติ':
-        return <ProfilePage />;
+      case 'นักศึกษา':
+        return <StudentPage />;
       case 'อาจารย์':
         return <TeacherPage />;
       case 'คำร้อง':
@@ -168,7 +199,7 @@ const StudentDashboardpage: React.FC = () => {
           className="custom-menu"
           style={{ backgroundColor: '#2e236c' }}
           mode="inline"
-          defaultSelectedKeys={['หน้าหลัก']}
+          selectedKeys={[activePage]}             // ✅ ADD (แทน defaultSelectedKeys)
           onClick={handleMenuClick}
           items={[
             { key: 'หน้าหลัก', icon: <HomeOutlined />, label: 'หน้าหลัก' },
@@ -178,7 +209,7 @@ const StudentDashboardpage: React.FC = () => {
             { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
             { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
             { key: 'ใบแจ้งยอดชำระ', icon: <BankOutlined />, label: 'ใบแจ้งยอดชำระ' },
-            { key: 'ระเบียนประวัติ', icon: <UserOutlined />, label: 'ระเบียนประวัติ' },
+            { key: 'นักศึกษา', icon: <UserOutlined />, label: 'นักศึกษา' },
             { key: 'อาจารย์', icon: <ContactsOutlined />, label: 'อาจารย์' },
             { key: 'คำร้อง', icon: <ExclamationCircleOutlined />, label: 'คำร้อง' },
             { key: 'แจ้งจบการศึกษา', icon: <FormOutlined />, label: 'แจ้งจบการศึกษา' },

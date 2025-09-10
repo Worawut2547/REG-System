@@ -1,0 +1,30 @@
+
+/* สีพื้น (แล้วแต่ที่คุณตั้งไว้) */
+.table-row-light { background-color: #ffffff; }
+.table-row-dark  { background-color: #fafafa; }
+
+/* หัวตาราง + เส้นแบ่งเหมือนเดิมของคุณ */
+.custom-table-header .ant-table-thead > tr > th {
+  background: #2e236c; color: #fff; font-weight: bold; font-size: 16px;
+  border-bottom: 2px solid #ffffffff; border-right: 2px solid #ffffffff;
+}
+.custom-table-header .ant-table-tbody > tr > td {
+  border-bottom: 2px solid #ffffffff; border-right: 2px solid #ffffffff;
+}
+.custom-table-header .ant-table-tbody > tr > td:last-child,
+.custom-table-header .ant-table-thead > tr > th:last-child {
+  border-right: none;
+}
+
+/* ❌ ปิด hover ทั้งหมด */
+.custom-table-header .ant-table-tbody > tr:hover > td {
+  background-color: inherit !important;
+}
+
+/* ✅ เปิด hover ทั้งแถว เฉพาะเมื่อโฟกัสอยู่บนช่อง checkbox (selection column) */
+.custom-table-header .ant-table-tbody > tr:has(td.ant-table-selection-column:hover) > td {
+  background-color: #ecebff !important; /* ปรับเฉดได้ตามธีม */
+  transition: background 0.15s ease;
+}
+
+

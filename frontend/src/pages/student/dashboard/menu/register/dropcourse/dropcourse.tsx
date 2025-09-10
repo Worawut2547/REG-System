@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Layout, Table, Button, Typography, Card, Popconfirm, message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
-import { deleteRegistration } from "../../../../../../services/https/registration/registration";
-import { getNameStudent } from "../../../../../../services/https/student/student";
+import { deleteRegistration, getMyRegistrations } from "../../../../../../services/https/registration/registration";
 import { getSubjectById } from "../../../../../../services/https/subject/subjects";
 
 const { Content } = Layout;
@@ -44,9 +43,8 @@ const DropCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =
   const reload = async () => {
     setLoading(true);
     try {
-      // ดึงโปรไฟล์นักศึกษาที่มีรายการ Registration (มี ID ครบ) เพื่อให้ลบได้
-      const profile = await getNameStudent(studentId);
-      const regs = Array.isArray(profile?.Registration) ? profile.Registration : [];
+      // ดึงรายการลงทะเบียนของนักศึกษาจาก endpoint โดยตรง (มี ID ครบสำหรับลบ)
+      const regs = await getMyRegistrations(studentId);
       const uniqueSids = Array.from(new Set(regs.map((r: any) => String(r.SubjectID ?? r.subject_id ?? '')).filter(Boolean)));
       const subMap: Record<string, any> = {};
       for (const sid of uniqueSids) {
@@ -75,8 +73,8 @@ const DropCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =
         return {
           key: String(r.ID ?? r.id ?? `${r.SubjectID}-${r.SectionID}-${r.Date}`),
           SubjectID: r.SubjectID ?? r.subject_id,
-          SubjectName: String(sub?.SubjectName ?? ""),
-          Credit: sub?.Credit ?? undefined,
+          SubjectName: String(r.SubjectName ?? sub?.SubjectName ?? ""),
+          Credit: r.Credit ?? sub?.Credit ?? undefined,
           SectionID: r.SectionID ?? r.section_id ?? 0,
           Group: groupVal,
           Schedule: sched,

@@ -4,69 +4,28 @@ import type { CascaderProps, TableColumnsType, UploadProps } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import jsPDF from 'jspdf';
 import './payment.css';
+import logo from '../../../../../assets/logo.png';
+import { getBillByStudentID, uploadReceipt } from '../../../../../services/https/bill/bill';
 
 const { Content } = Layout;
 
-interface Option {
-  value: string;
-  label: string;
-  children?: Option[];
-}
+type APISubject = {
+  academicYear: number;
+  term: number;
+  subject_id: string;
+  subject_name: string;
+  credit: number;
+};
 
-interface DataType {
+type DataType = {
   key: string;
   SubjectID: string;
   SubjectName: string;
   credit: number;
   amount: number;
-}
-
-interface StudentData {
-  fullname: string;
-  studentId: string;
-  curriculum: string;
-  passedCredit: number;
-  gpax: number;
-}
-
-// ปีการศึกษา + เทอม
-const currentYear = 2568;
-const numYears = 3;
-const options: Option[] = Array.from({ length: numYears }, (_, i) => {
-  const year = (currentYear - i).toString();
-  return {
-    value: year,
-    label: year,
-    children: [
-      { value: '1', label: '1' },
-      { value: '2', label: '2' },
-      { value: '3', label: '3' },
-    ],
-  };
-});
-
-// ข้อมูล mock
-const courses: Record<string, Record<string, DataType[]>> = {
-  '2568': {
-    '1': [
-      { key: '1', SubjectID: 'CS101', SubjectName: 'โปรแกรมมิงเบื้องต้น', credit: 3, amount: 1500 },
-      { key: '2', SubjectID: 'CS102', SubjectName: 'โครงสร้างข้อมูล', credit: 4, amount: 2000 },
-    ],
-    '2': [
-      { key: '3', SubjectID: 'CS201', SubjectName: 'ฐานข้อมูล', credit: 3, amount: 1800 },
-      { key: '4', SubjectID: 'CS202', SubjectName: 'เครือข่ายคอมพิวเตอร์', credit: 3, amount: 1800 },
-    ],
-    '3': [
-      { key: '5', SubjectID: 'CS301', SubjectName: 'วิศวกรรมซอฟต์แวร์', credit: 3, amount: 2000 },
-    ],
-  },
-  '2567': {
-    '1': [
-      { key: '6', SubjectID: 'CS101', SubjectName: 'โปรแกรมมิงเบื้องต้น', credit: 3, amount: 1500 },
-      { key: '7', SubjectID: 'CS102', SubjectName: 'โครงสร้างข้อมูล', credit: 4, amount: 2000 },
-    ],
-  },
 };
+
+const pricePerCredit = 800;
 
 const columns: TableColumnsType<DataType> = [
   { title: 'รหัสวิชา', dataIndex: 'SubjectID', key: 'รหัสวิชา' },
@@ -75,135 +34,197 @@ const columns: TableColumnsType<DataType> = [
   { title: 'จำนวนเงิน', dataIndex: 'amount', key: 'จำนวนเงิน' },
 ];
 
-const uploadProps: UploadProps = {
-  beforeUpload: () => false,
-  onChange(info) {
-    if (info.fileList.length > 0) {
-      message.success(`อัปโหลดไฟล์ ${info.file.name} สำเร็จ`);
-    }
-  },
-  maxCount: 1,
-};
-
-const mockStudent: StudentData = {
-  fullname: 'สมชาย ใจดี',
-  studentId: 'B6630652',
-  curriculum: 'วิทยาการคอมพิวเตอร์',
-  passedCredit: 120,
-  gpax: 3.5,
-};
-
-// แปลงตัวเลขเป็นอารบิก
 const toArabicNumber = (num: number | string) => {
   return String(num).replace(/[๐-๙]/g, d => '0123456789'[parseInt(d, 10)]);
 };
 
-const Element: React.FC = () => {
-  const [status, setStatus] = useState<string | null>(null);
+const PaymentPage: React.FC = () => {
+  const [subjects, setSubjects] = useState<APISubject[]>([]);
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedTerm, setSelectedTerm] = useState<string>("");
+  const [statusMap, setStatusMap] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
-  const [student, setStudent] = useState<StudentData | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string>('2568');
-  const [selectedTerm, setSelectedTerm] = useState<string>('1');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [billID, setBillID] = useState<number | null>(null);
 
   useEffect(() => {
-    async function fetchStatus() {
+    const fetchSubjects = async () => {
       try {
-        setLoading(true);
-        const result = { status: 'รอชำระเงิน' };
-        setStatus(result.status);
+        // ดึงข้อมูลจาก backend
+        const data: { id: number; subjects: APISubject[]; status: string } = await getBillByStudentID();
+        setSubjects(data.subjects || []);
+        setBillID(data.id || null);
+
+        // กำหนดสถานะจาก backend แทนการตั้ง 'ค้างชำระ' เอง
+        const newStatusMap: { [key: string]: string } = {};
+        data.subjects.forEach(s => {
+          const key = `${s.academicYear}-${s.term}`;
+          // ใช้ค่า status จาก backend
+          newStatusMap[key] = data.status || 'ค้างชำระ';
+        });
+        setStatusMap(newStatusMap);
+
+        // แยกปี/เทอม
+        const years = Array.from(new Set(data.subjects.map(s => String(s.academicYear)))).sort().reverse();
+        if (years.length > 0) setSelectedYear(years[0]);
+        const terms = Array.from(
+          new Set(data.subjects.filter(s => String(s.academicYear) === years[0]).map(s => String(s.term)))
+        ).sort();
+        if (terms.length > 0) setSelectedTerm(terms[0]);
       } catch (err) {
         console.error(err);
-        setStatus('ไม่สามารถโหลดสถานะได้');
       } finally {
         setLoading(false);
       }
-    }
-    fetchStatus();
-    setStudent(mockStudent);
+    };
+    fetchSubjects();
   }, []);
 
-  const handleCascaderChange: CascaderProps<Option>['onChange'] = (value) => {
+
+  const handleCascaderChange: CascaderProps['onChange'] = (value) => {
     if (value && value.length === 2) {
-      setSelectedYear(value[0]);
-      setSelectedTerm(value[1]);
+      setSelectedYear(String(value[0]));
+      setSelectedTerm(String(value[1]));
     }
   };
 
-  const termCourses = courses[selectedYear]?.[selectedTerm] || [];
-  const totalCredit = termCourses.reduce((sum, c) => sum + c.credit, 0);
-  const totalAmount = termCourses.reduce((sum, c) => sum + c.amount, 0);
+  const yearOptions = Array.from(new Set(subjects.map(s => String(s.academicYear)))).sort().reverse();
+  const options = yearOptions.map(year => {
+    const terms = Array.from(new Set(subjects.filter(s => String(s.academicYear) === year).map(s => String(s.term)))).sort();
+    return {
+      value: year,
+      label: year,
+      children: terms.map(term => ({ value: term, label: term }))
+    };
+  });
+
+  const termSubjects = subjects
+    .filter(s => String(s.academicYear) === selectedYear && String(s.term) === selectedTerm)
+    .map((s, idx) => ({
+      key: String(idx + 1),
+      SubjectID: s.subject_id,
+      SubjectName: s.subject_name,
+      credit: s.credit,
+      amount: s.credit * pricePerCredit,
+    }));
+
+
+  const totalCredit = termSubjects.reduce((sum, s) => sum + s.credit, 0);
+  const totalAmount = termSubjects.reduce((sum, s) => sum + s.amount, 0);
+
+  const uploadProps: UploadProps = {
+    beforeUpload: (file) => {
+      setSelectedFile(file);
+      return false;
+    },
+    onRemove: () => setSelectedFile(null),
+    maxCount: 1,
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !billID) {
+      message.warning('กรุณาเลือกไฟล์ก่อนอัปโหลด');
+      return;
+    }
+
+    try {
+      const res = await uploadReceipt(billID, selectedFile);
+      setStatusMap(res.status); // <-- อัปเดตสถานะจาก backend
+      message.success({
+        content: 'อัปโหลดใบเสร็จเรียบร้อยแล้ว',
+        duration: 2,
+        style: { marginTop: '20vh', fontSize: '16px' },
+      });
+      setSelectedFile(null);
+
+      // อัปเดต statusMap สำหรับปี/เทอมที่เลือก
+      const key = `${selectedYear}-${selectedTerm}`;
+      setStatusMap(prev => ({ ...prev, [key]: 'รอตรวจสอบ' }));
+    } catch (err) {
+      console.error(err);
+      message.error({
+        content: 'อัปโหลดใบเสร็จไม่สำเร็จ',
+        duration: 2,
+        style: { marginTop: '20vh', fontSize: '16px' },
+      });
+    }
+  };
 
   const loadFont = async () => {
-    const response = await fetch('/fonts/THSarabunIT๙.ttf');
-    if (!response.ok) throw new Error('ไม่สามารถโหลดฟอนต์ได้');
+    const response = await fetch('/fonts/Sarabun-Regular.ttf');
+    if (!response.ok) throw new Error('โหลดฟอนต์ไม่สำเร็จ');
     const buffer = await response.arrayBuffer();
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
-    }
+    const binary = String.fromCharCode(...new Uint8Array(buffer));
     return btoa(binary);
   };
 
   const handleOpenPDF = async () => {
-    if (!student) return;
-
-    try {
-      const doc = new jsPDF();
-
-      // โหลดฟอนต์
-      const fontBase64 = await loadFont();
-      doc.addFileToVFS('THSarabunIT๙.ttf', fontBase64);
-      doc.addFont('THSarabunIT๙.ttf', 'THSarabunIT', 'normal');
-      doc.setFont('THSarabunIT');
-
-      // หัวเรื่อง
-      doc.setFontSize(16);
-      doc.text('ใบแจ้งยอดชำระ', 105, 20, { align: 'center' });
-      doc.setFontSize(12);
-      doc.text(`นักศึกษา: ${student.fullname} (${student.studentId})`, 14, 50);
-      doc.text(`หลักสูตร: ${student.curriculum}`, 14, 58);
-      doc.text(`ปีการศึกษา: ${toArabicNumber(selectedYear)} เทอม: ${toArabicNumber(selectedTerm)}`, 14, 66);
-
-      let y = 80;
-      doc.text('รหัสวิชา  ชื่อวิชา                  หน่วยกิต  จำนวนเงิน', 14, y);
-      y += 6;
-
-      termCourses.forEach(c => {
-        doc.text(
-          `${c.SubjectID}  ${c.SubjectName}  ${toArabicNumber(c.credit)}  ${toArabicNumber(c.amount)}`,
-          14,
-          y
-        );
-        y += 6;
-      });
-
-      y += 6;
-      doc.text(
-        `รวมหน่วยกิต: ${toArabicNumber(totalCredit)}  รวมจำนวนเงิน: ${toArabicNumber(totalAmount)}`,
-        14,
-        y
-      );
-
-      // Footer
-      y += 12;
-      doc.text('กรุณาชำระเงินภายในวันที่ 30 กันยายน 2568', 14, y);
-      y += 6;
-      doc.text('ช่องทางการชำระเงิน', 14, y);
-      y += 6;
-      doc.text('ธนาคารกสิกรไทย เลขที่บัญชี 12356789', 14, y);
-      y += 6;
-      doc.text('ชื่อบัญชี บริษัทจัดหาเงินไม่ จำกัด', 14, y);
-
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
-      window.open(url);
-    } catch (err) {
-      console.error('PDF error:', err);
-      alert('เกิดข้อผิดพลาดในการสร้าง PDF ดู console');
+    if (termSubjects.length === 0) {
+      message.warning('ไม่มีข้อมูลรายวิชาให้สร้าง PDF');
+      return;
     }
+    const doc = new jsPDF();
+    const fontBase64 = await loadFont();
+    doc.addFileToVFS('Sarabun-Regular.ttf', fontBase64);
+    doc.addFont('Sarabun-Regular.ttf', 'THSarabun', 'normal');
+    doc.setFont('THSarabun');
+
+    doc.addImage(logo, 'PNG', 14, 10, 30, 30);
+    doc.setFontSize(16);
+    doc.setFont('bold');
+    doc.text('ARCANATECH UNIVERSITY', 105, 20, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text('Payment', 105, 30, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.setFont('normal');
+    doc.text(`Academic Year: ${toArabicNumber(selectedYear)}    Term: ${toArabicNumber(selectedTerm)}`, 14, 50);
+
+    let startY = 60;
+    const colX = { code: 14, name: 40, credit: 140, amount: 160 };
+
+    doc.setFont('bold');
+    doc.setFillColor(230, 230, 230);
+    doc.rect(14, startY - 4, 180, 8, 'F');
+    doc.text('Subject Code', colX.code, startY);
+    doc.text('Subject Name', colX.name, startY);
+    doc.text('Credit', colX.credit, startY, { align: 'right' });
+    doc.text('Amount', colX.amount, startY, { align: 'right' });
+
+    doc.setLineWidth(0.5);
+    doc.line(14, startY + 2, 194, startY + 2);
+
+    startY += 10;
+    doc.setFont('normal');
+    termSubjects.forEach(item => {
+      doc.text(item.SubjectID, colX.code, startY);
+      doc.text(item.SubjectName, colX.name, startY);
+      doc.text(toArabicNumber(item.credit), colX.credit, startY, { align: 'right' });
+      doc.text(toArabicNumber(item.amount), colX.amount, startY, { align: 'right' });
+      startY += 8;
+    });
+
+    startY += 4;
+    doc.setFont('bold');
+    doc.text(`Total Credit: ${toArabicNumber(totalCredit)}    Total Price: ${toArabicNumber(totalAmount)}`, colX.name, startY);
+
+    startY += 6;
+    doc.setLineWidth(0.5);
+    doc.line(14, startY, 194, startY);
+
+    startY += 6;
+    doc.setFont('normal');
+    doc.text('Please pay by September 30, 2025.', 14, startY);
+    startY += 6;
+    doc.text('Payment channels', 14, startY);
+    startY += 6;
+    doc.text('Kasikorn Bank, account number 12356789', 14, startY);
+    startY += 6;
+    doc.text('Account Name: Unlimited Financing Company', 14, startY);
+
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    window.open(url);
   };
 
   return (
@@ -211,17 +232,33 @@ const Element: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ fontWeight: 600, fontSize: 18, color: '#000', paddingBottom: 4 }}>ปีการศึกษา</div>
-          <Cascader defaultValue={['2568', '1']} options={options} onChange={handleCascaderChange} />
-          <div style={{ fontWeight: 'bold', fontSize: 18, color: '#cf1322' }}>
-            {loading ? <Spin size="small" /> : status}
-          </div>
+          <Cascader
+            options={options}
+            value={selectedYear && selectedTerm ? [selectedYear, selectedTerm] : undefined}
+            onChange={handleCascaderChange}
+            placeholder="เลือกปีการศึกษา / เทอม"
+          />
+          {loading ? (
+            <Spin size="small" style={{ marginLeft: 8 }} />
+          ) : (
+            <div style={{
+              fontWeight: 'bold',
+              fontSize: 18,
+              color: statusMap[`${selectedYear}-${selectedTerm}`] === 'รอตรวจสอบ' ? '#fa8c16' :
+                statusMap[`${selectedYear}-${selectedTerm}`] === 'ชำระแล้ว' ? '#52c41a' :
+                  '#cf1322',
+              marginLeft: 8,
+            }}>
+              {statusMap[`${selectedYear}-${selectedTerm}`] || 'ค้างชำระ'}
+            </div>
+          )}
         </div>
         <Button type="primary" onClick={handleOpenPDF}>ใบแจ้งยอดชำระ</Button>
       </div>
 
       <Table<DataType>
         columns={columns}
-        dataSource={termCourses}
+        dataSource={termSubjects}
         pagination={false}
         bordered
         summary={() => (
@@ -242,12 +279,15 @@ const Element: React.FC = () => {
         </div>
         <div>
           <Upload {...uploadProps}>
-            <Button icon={<UploadOutlined />}>อัปโหลดใบเสร็จโอนเงิน</Button>
+            <Button icon={<UploadOutlined />}>เลือกไฟล์ใบเสร็จ</Button>
           </Upload>
+          <Button type="primary" style={{ marginLeft: 8 }} onClick={handleUpload}>
+            อัปโหลดใบเสร็จ
+          </Button>
         </div>
       </div>
     </Content>
   );
 };
 
-export default Element;
+export default PaymentPage;

@@ -7,12 +7,13 @@ import {
   Avatar,
   Form,
   Input,
-  message,
   Row,
   Col,
   Typography,
 } from "antd";
 import { PlusOutlined, UserOutlined, ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import Swal from "sweetalert2";
+
 import { type StudentInterface } from "../../../../../../interfaces/Student";
 import { getNameStudent, updateStudentProfile } from "../../../../../../services/https/student/student";
 import "./edit.css";
@@ -42,6 +43,8 @@ export const EditStudentPage: React.FC<ShowNameStudentProps> = ({ onBack }) => {
             LastName: student.LastName,
             Phone: student.Phone,
             Email: student.Email,
+            CurriculumName: student.CurriculumName,
+            GPAX: student.GPAX,
             Address: student.Address,
             BirthDay: student.BirthDay,
             Nationality: student.Nationality,
@@ -75,11 +78,20 @@ export const EditStudentPage: React.FC<ShowNameStudentProps> = ({ onBack }) => {
   const onFinish = async (values: any) => {
     try {
       await updateStudentProfile(values);
-      message.success("แก้ไขข้อมูลสำเร็จ");
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "เเก้ไขข้อมูลสำเร็จ",
+        confirmButtonColor: "#3085d6",
+      });
       if (onBack) onBack();
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการแก้ไขนักศึกษา:", error);
-      message.error("เกิดข้อผิดพลาดในการแก้ไขนักศึกษา");
+      Swal.fire({
+        icon: "error",
+        title: "ผิดพลาด",
+        text: "เเก้ไขข้อมูลไม่สำเร็จ",
+      });
     }
   };
 
@@ -287,20 +299,35 @@ export const EditStudentPage: React.FC<ShowNameStudentProps> = ({ onBack }) => {
             </Title>
             <Row gutter={16}>
               <Col xs={24} sm={12}>
+                <Form.Item label={<Text style={labelStyle}>ระดับการศึกษา</Text>} style={formItemStyle}>
+                  <Text style={{ color: "#555", fontSize: 16 }}>{student?.Degree || "-"}</Text>
+                </Form.Item>
+              </Col>
+
+              <Col xs={24} sm={12}>
                 <Form.Item label={<Text style={labelStyle}>คณะ</Text>} style={formItemStyle}>
                   <Text style={{ color: "#555", fontSize: 16 }}>{student?.FacultyName || "-"}</Text>
                 </Form.Item>
               </Col>
+
               <Col xs={24} sm={12}>
                 <Form.Item label={<Text style={labelStyle}>สาขา</Text>} style={formItemStyle}>
                   <Text style={{ color: "#555", fontSize: 16 }}>{student?.MajorName || "-"}</Text>
                 </Form.Item>
               </Col>
+
               <Col xs={24} sm={12}>
-                <Form.Item label={<Text style={labelStyle}>ระดับการศึกษา</Text>} style={formItemStyle}>
-                  <Text style={{ color: "#555", fontSize: 16 }}>{student?.Degree || "-"}</Text>
+                <Form.Item label={<Text style={labelStyle}>หลักสูตร</Text>} style={formItemStyle}>
+                  <Text style={{ color: "#555", fontSize: 16 }}>{student?.CurriculumName || "-"}</Text>
                 </Form.Item>
               </Col>
+
+              <Col xs={24} sm={12}>
+                <Form.Item label={<Text style={labelStyle}>เกรดเฉลี่ย</Text>} style={formItemStyle}>
+                  <Text style={{ color: "#555", fontSize: 16 }}>{student?.GPAX || "-"}</Text>
+                </Form.Item>
+              </Col>
+
               <Col xs={24} sm={12}>
                 <Form.Item label={<Text style={labelStyle}>สถานะทางการศึกษา</Text>} style={formItemStyle}>
                   <Text style={{ color: "#555", fontSize: 16 }}>{student?.StatusStudent || "-"}</Text>

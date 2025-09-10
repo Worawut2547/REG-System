@@ -2,7 +2,7 @@ import axios from "axios";
 import { apiUrl } from "../../api";
 import { type CurriculumInterface } from "../../../interfaces/Curriculum";
 
-// ---------- API DTOs (ใช้ต่อได้ในไฟล์อื่น) ----------
+// ---------- API DTOs ----------
 export type CurriculumCreateDTO = {
   curriculum_id: string;
   curriculum_name: string;
@@ -10,21 +10,22 @@ export type CurriculumCreateDTO = {
   start_year: number;
   faculty_id: string;
   major_id?: string;
-  book_id?: string; // 🔁 ต้องเป็น string ตามที่ BE ต้องการ
+  // หมายเหตุ: BE รุ่นใหม่ไม่รับ book_id ใน create แล้ว
   description?: string;
 };
 
-// สำหรับอัปเดต (เช่นหน้า CHANGE.tsx)
 export type CurriculumUpdateDTO = Partial<{
   curriculum_name: string;
   total_credit: number;
   start_year: number;
   faculty_id: string;
   major_id: string;
-  book_id: string; // 🔁 string เช่นกัน
+  // ถ้าต้องการเก็บ book_id ในอนาคต ค่อยเปิดฟิลด์นี้
+  book_id: string;
   description: string;
 }>;
 
+// รูปแบบจาก BE (รองรับได้ทั้ง snake/camel + books array)
 export type CurriculumAPI = {
   curriculum_id?: string;
   CurriculumID?: string;
@@ -36,64 +37,73 @@ export type CurriculumAPI = {
   FacultyID?: string;
   major_id?: string;
   MajorID?: string;
-  book_id?: number | string;
+  book_id?: number | string; // อาจไม่มีในรุ่นล่าสุด
   description?: string;
   faculty_name?: string;
   major_name?: string;
-  book_path?: string;
+  book_path?: string; // อาจแนบมาบ้าง
+  books?: Array<{ id: number; book_path: string }>; // ✅ สำคัญ
 };
 
-// ฝั่ง BE อาจตอบ { message, data: {...} } หรือ {...} ตรง ๆ
+// BE อาจตอบ { message, data: {...} } หรือ {...} ตรง ๆ
 type CreateRespShape =
   | { message?: string; data?: CurriculumAPI }
   | CurriculumAPI;
 
-// ---------- Mappers ----------
-const mapCurriculumFromAPI = (c: CurriculumAPI): CurriculumInterface => ({
-  CurriculumID: c.curriculum_id ?? c.CurriculumID ?? "",
-  CurriculumName: c.curriculum_name ?? c.CurriculumName ?? "",
-  TotalCredit: Number(c.total_credit ?? 0),
-  StartYear: Number(c.start_year ?? 0),
-  FacultyID: c.faculty_id ?? c.FacultyID ?? "",
-  MajorID: c.major_id ?? c.MajorID ?? "",
-  BookID:
-    c.book_id !== undefined &&
-    c.book_id !== null &&
-    String(c.book_id).trim() !== ""
-      ? Number(c.book_id)
-      : undefined,
-  Description: c.description ?? "",
-  FacultyName: c.faculty_name ?? "",
-  MajorName: c.major_name ?? "",
-  BookPath: c.book_path ?? "",
-});
+// ---------- Helpers ----------
+function toNum(v: unknown, def = 0): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return def;
+}
 
-// ดึง payload ให้ได้ CurriculumAPI เสมอ ไม่ว่าจะห่อใน {data: ...} หรือไม่
 function unwrapCurriculum(payload: CreateRespShape): CurriculumAPI {
-  if (
-    typeof payload === "object" &&
-    payload !== null &&
-    "data" in payload &&
-    payload.data
-  ) {
-    return payload.data as CurriculumAPI;
+  if (typeof payload === "object" && payload !== null && "data" in payload) {
+    const d = (payload as { data?: CurriculumAPI }).data;
+    if (d) return d;
   }
   return payload as CurriculumAPI;
 }
+
+// ---------- Mapper (รองรับ books) ----------
+const mapCurriculumFromAPI = (c: CurriculumAPI): CurriculumInterface => {
+  // ดึงจาก books[0] เป็นค่าเริ่มต้น (ถ้าไม่มี book_id ตรง ๆ)
+  const firstBook = Array.isArray(c.books) && c.books.length > 0 ? c.books[0] : undefined;
+  const bookIdFromList = firstBook?.id;
+  const bookPathFromList = firstBook?.book_path;
+
+  // ใช้ book_id จากฟิลด์ (ถ้ามี) > ไม่มีก็ fallback books[0].id
+  const rawBookId = c.book_id !== undefined && c.book_id !== null ? String(c.book_id) : "";
+  const mappedBookId =
+    rawBookId.trim() !== "" ? toNum(rawBookId) : (bookIdFromList ?? undefined);
+
+  // ใช้ book_path ตรง ๆ ถ้ามี > ไม่มีก็ fallback books[0].book_path
+  const mappedBookPath = c.book_path ?? bookPathFromList ?? "";
+
+  return {
+    CurriculumID: c.curriculum_id ?? c.CurriculumID ?? "",
+    CurriculumName: c.curriculum_name ?? c.CurriculumName ?? "",
+    TotalCredit: toNum(c.total_credit, 0),
+    StartYear: toNum(c.start_year, 0),
+    FacultyID: c.faculty_id ?? c.FacultyID ?? "",
+    MajorID: c.major_id ?? c.MajorID ?? "",
+    BookID: mappedBookId,           // ✅ คีย์เดิมของ FE — ได้ค่าจาก books[0] ถ้าไม่มี book_id
+    Description: c.description ?? "",
+    FacultyName: c.faculty_name ?? "",
+    MajorName: c.major_name ?? "",
+    BookPath: mappedBookPath,       // เผื่อใช้ในอนาคต/แสดงผล
+  };
+};
 
 // ---------- Services ----------
 export const createCurriculum = async (
   data: CurriculumInterface
 ): Promise<CurriculumInterface> => {
-  const { CurriculumID, CurriculumName, TotalCredit, StartYear, FacultyID } =
-    data;
-  if (
-    !CurriculumID ||
-    !CurriculumName ||
-    TotalCredit == null ||
-    StartYear == null ||
-    !FacultyID
-  ) {
+  const { CurriculumID, CurriculumName, TotalCredit, StartYear, FacultyID } = data;
+  if (!CurriculumID || !CurriculumName || TotalCredit == null || StartYear == null || !FacultyID) {
     throw new Error("Missing required curriculum fields");
   }
 
@@ -104,51 +114,32 @@ export const createCurriculum = async (
     start_year: Number(StartYear),
     faculty_id: FacultyID,
     major_id: data.MajorID || undefined,
-    // 🔁 แปลง BookID (number | undefined) -> string | undefined
-    book_id:
-      data.BookID !== undefined && data.BookID !== null
-        ? String(data.BookID)
-        : undefined,
     description: (data.Description ?? "").trim() || undefined,
   };
 
-  const res = await axios.post<CreateRespShape>(
-    `${apiUrl}/curriculums/`,
-    payload,
-    { headers: { "Content-Type": "application/json" } }
-  );
+  const res = await axios.post<CreateRespShape>(`${apiUrl}/curriculums/`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
 
   const body = unwrapCurriculum(res.data);
   return mapCurriculumFromAPI(body);
 };
 
 export const getCurriculumAll = async (): Promise<CurriculumInterface[]> => {
-  const res = await axios.get<CurriculumAPI[] | { data?: CurriculumAPI[] }>(
-    `${apiUrl}/curriculums/`
-  );
-
-  // รองรับทั้งแบบ array ตรง ๆ และแบบ { data: [...] }
-  const arr: CurriculumAPI[] = Array.isArray(res.data)
-    ? res.data
-    : res.data?.data ?? [];
-
+  const res = await axios.get<CurriculumAPI[] | { data?: CurriculumAPI[] }>(`${apiUrl}/curriculums/`);
+  const arr: CurriculumAPI[] = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
   return arr.map(mapCurriculumFromAPI);
 };
 
-// ใช้ในหน้า CHANGE.tsx: dto เป็นคีย์ snake_case ให้ตรงกับ BE
 export const updateCurriculum = async (
   curriculumId: string,
   data: CurriculumUpdateDTO
 ): Promise<void> => {
   if (!curriculumId) throw new Error("curriculumId is required");
 
-  // ถ้าโดนส่งมาเป็น number (เผื่อกรณีอื่น) ก็แปลงให้
   const payload: CurriculumUpdateDTO = {
     ...data,
-    book_id:
-      data.book_id !== undefined && data.book_id !== null
-        ? String(data.book_id as unknown as string)
-        : undefined,
+    // ถ้าวันหน้าจะเปิดให้แก้หนังสือผ่านตัวนี้ ค่อยใส่ book_id
   };
 
   await axios.put(`${apiUrl}/curriculums/${curriculumId}`, payload, {

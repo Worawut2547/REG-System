@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Table, Typography, Button, Input, message } from "antd";
+import { Table, Typography, Button, Input, message, Row, Col } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import { getStudentBySubjectID } from "../../../../../../services/https/registration/registration";
 import { createGradeStudent } from "../../../../../../services/https/grade/grade"
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 type Student = {
   StudentID: string;
@@ -21,6 +22,7 @@ type Props = {
 
 const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => {
   const [students, setStudents] = useState<Student[]>([]);
+  const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -30,7 +32,7 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
       setLoading(true);
       try {
         const res = await getStudentBySubjectID(subjectCode);
-        const mapped = res.data.map((item: any) => ({
+        const mapped = res.map((item: any) => ({
           StudentID: item.StudentID,
           FirstName: item.FirstName,
           LastName: item.LastName,
@@ -39,7 +41,7 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
         }));
         setStudents(mapped);
       } catch (err) {
-        console.error(err);
+        console.error("เกิดข้อผิดพลาด", err);
         message.error("ไม่สามารถโหลดข้อมูลนักศึกษาได้");
       } finally {
         setLoading(false);
@@ -48,6 +50,11 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
 
     fetchStudents();
   }, [subjectCode]);
+
+  // --- Filter นักเรียนด้วย search ---
+  const filteredStudents = students.filter((s) =>
+    s.StudentID.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   // อัปเดตเกรดใน state เมื่อพิมพ์
   const handleGradeChange = (id: string, value: string) => {
@@ -118,9 +125,24 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
         ย้อนกลับ
       </Button>
       <Title level={3}>{subjectCode} - {subjectName}</Title>
+      {/* --- Search --- */}
+      <Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
+        <Col>
+          <div style={{ backgroundColor: "#2e236c", padding: "4px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 8 }}>
+            <Text style={{ color: "white", fontSize: 12 }}>ค้นหาด้วยรหัสนักศึกษา</Text>
+            <Input
+              placeholder="Search..."
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 180, height: 28, fontSize: 12, backgroundColor: "white" }}
+            />
+          </div>
+        </Col>
+      </Row>
       <Table
         columns={columns}
-        dataSource={students}
+        dataSource={filteredStudents}
         rowKey="StudentID"
         loading={loading}
         pagination={false}

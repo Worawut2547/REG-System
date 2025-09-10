@@ -1,55 +1,60 @@
 // src/pages/dashboard/menu/register.tsx
-import React from 'react';
-import { Layout } from 'antd';
-import './curriculum.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
-
+import { Layout } from "antd";
+import SHOW from "./Show.tsx";
 const { Header, Content, Footer } = Layout;
 
-// register.tsx  – only wrapperStyle changed
 const wrapperStyle: React.CSSProperties = {
-  /* keep your corner-rounding / shadow if you like */
   borderRadius: 8,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-
-  /* 👇 stretch full size of parent Content */
-  width: '100%',          // fill X
-  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
-  display: 'flex',        // so Header/Content/Footer stack vertically
-  flexDirection: 'column',
-  overflow: 'hidden',
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  width: "100%",
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
 };
-
 const headerStyle: React.CSSProperties = {
-  background: '#2e236c',            // ม่วงเข้ม
-  color: 'white',
-  textAlign: 'center',
-  padding: 16,
+  height: 64,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#2e236c",
+  color: "white",
+  padding: "0 16px",
   fontSize: 20,
+  zIndex: 1000,
 };
-
 const contentStyle: React.CSSProperties = {
-  background: '#f5f5f5',            // เทาอ่อน
+  background: "#f5f5f5",
   padding: 24,
   minHeight: 400,
-  color: '#333',
-  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
+  color: "#333",
+  overflowY: "auto",
 };
-
 const footerStyle: React.CSSProperties = {
-  background: '#1890ff',            // ฟ้า Ant Design
-  color: 'white',
-  textAlign: 'center',
+  background: "#1890ff",
+  color: "white",
+  textAlign: "center",
   padding: 12,
 };
 
 const Curriculum: React.FC = () => {
   return (
     <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>Header – หน้าหลักสูตร</Header>
+      <Header style={headerStyle}>
+        <div
+          style={{
+            color: "white",
+            fontWeight: "bold",
+            justifyContent: "center",
+          }}
+        >
+          Curriculum ระบบจัดการหลักสูตร
+        </div>
+      </Header>
       <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
+        <SHOW />
       </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
+      <Footer style={footerStyle}>Arcana University © 2025</Footer>
     </Layout>
   );
 };

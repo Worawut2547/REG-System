@@ -2,7 +2,7 @@
 import React from 'react';
 import { Layout } from 'antd';
 import './payment.css'; 
-import Element from './element';
+import PaymentPage from './element';
 const { Header, Content, Footer } = Layout;
 
 // register.tsx  – only wrapperStyle changed
@@ -47,7 +47,7 @@ const Payment: React.FC = () => {
     <Layout style={wrapperStyle}>
       <Header style={headerStyle}>Header – หน้าจ่ายเงิน</Header>
       <Content style={contentStyle}>
-        <Element />
+        <PaymentPage />
       </Content>
       <Footer style={footerStyle}>Footer © 2025</Footer>
     </Layout>

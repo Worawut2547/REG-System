@@ -64,7 +64,7 @@ const Course: React.FC = () => {
               position: "absolute", // Allow absolute positioning
               top: "27%", // Adjust the distance from the top
               left: "93%", // Center horizontally
-              transform: "translateX(-93%)", // Center horizontally exactly
+              transform: "translateX(-50 , 50)", // Center horizontally exactly
               width: 100,
               height: 30,
               fontSize: 15,

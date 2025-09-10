@@ -5,7 +5,7 @@ import { SearchOutlined, DeleteOutlined, SendOutlined } from "@ant-design/icons"
 
 import { getSubjectAll, getSubjectById } from "../../../../../../services/https/subject/subjects";
 import { getNameStudent } from "../../../../../../services/https/student/student";
-import { createRegistration } from "../../../../../../services/https/registration/registration";
+import { createRegistration, getMyRegistrations } from "../../../../../../services/https/registration/registration";
 import type { SubjectInterface } from "../../../../../../interfaces/Subjects";
 import type { RegistrationInterface } from "../../../../../../interfaces/Registration";
 import AddCourseReview from "./AddCourseReview";
@@ -268,12 +268,13 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
   const reloadMyList = async () => {
     setMyLoading(true);
     try {
-      // โหลดโปรไฟล์เพื่อดึง Registration (รูปแบบตรงกับ interfaces/Registration)
-      const profile = await getNameStudent(studentId);
-      const regs = Array.isArray(profile?.Registration) ? profile.Registration : [];
-      const baseRows: BasketRow[] = regs.map((r: any) => ({
+      // ดึงรายการลงทะเบียนจาก endpoint โดยตรง เพื่อให้มีข้อมูลครบ
+      const regs = await getMyRegistrations(studentId);
+      const baseRows: BasketRow[] = (Array.isArray(regs) ? regs : []).map((r: any) => ({
         key: String(r.ID ?? r.id ?? `${r.SubjectID}-${r.SectionID}-${r.Date}`),
         SubjectID: String(r.SubjectID ?? r.subject_id ?? ''),
+        SubjectName: r.SubjectName ?? undefined,
+        Credit: r.Credit ?? undefined,
         SectionID: Number(r.SectionID ?? r.section_id ?? 0),
         Group: undefined,
         Schedule: "",
