@@ -232,3 +232,4 @@ func UpdateGraduation(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Graduation status updated successfully"})
 }
+//NEW
