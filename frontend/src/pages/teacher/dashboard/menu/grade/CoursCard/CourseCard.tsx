@@ -17,10 +17,10 @@ const CourseCard: React.FC<Props> = ({ code, name, credit, color, onClick }) => 
     onClick={onClick}
     style={{
       backgroundColor: color,
-      color: "white",
+      color: "black",
       textAlign: "center",
       width: "100%",
-      height: 250,
+      height: 200,
       display: "flex",
       flexDirection: "column",
       justifyContent: "center",
@@ -32,9 +32,9 @@ const CourseCard: React.FC<Props> = ({ code, name, credit, color, onClick }) => 
     onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.03)")}
     onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
   >
-    <Title level={3} style={{ color: "white", margin: 0 }}>{code}</Title>
-    <Title level={3} style={{ color: "white", marginTop: 10 }}>{name}</Title>
-    <Text style={{ fontWeight: "bold", fontSize: 16, color: "white" }}>
+    <Title level={3} style={{ color: "black", margin: 0 }}>{code}</Title>
+    <Title level={3} style={{ color: "black", marginTop: 10 }}>{name}</Title>
+    <Text style={{ fontWeight: "bold", fontSize: 16, color: "black" }}>
       {credit} หน่วยกิต
     </Text>
   </Card>

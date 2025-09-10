@@ -1,7 +1,7 @@
 import axios from "axios";
 import { type StatusStudentInterface } from "../../../interfaces/StatusStudent";
 
-import { apiUrl } from "../../api";
+import { apiUrl } from "../api";
 
 export const getStatusStudentAll = async (): Promise<StatusStudentInterface[]> => {
     //console.log("Fetching student data for:", username);

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { apiUrl } from "../../api";
+import { api , apiUrl } from "../api";
 export interface DataType {
   key: string;
   StudentID: string;
@@ -108,7 +108,7 @@ export const getBillByStudentID = async (): Promise<{
     const sid = localStorage.getItem('username');
     if (!sid) throw new Error("ไม่พบ Student ID ใน localStorage");
 
-    const response = await axios.get(`${apiUrl}/bills/${sid}`);
+    const response = await api.get(`/bills/${sid}`);
     const data = response.data;
 
     return {
@@ -138,7 +138,7 @@ export const getBillByStudentID = async (): Promise<{
 // ======================================================
 export const getAllBills = async (): Promise<BillResponse[]> => {
   try {
-    const response = await axios.get(`${apiUrl}/bills/admin/all`);
+    const response = await api.get(`/bills/admin/all`);
     console.log("api bill data:", response.data);
 
     return response.data
@@ -157,7 +157,7 @@ export const uploadReceipt = async (billID: number, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await axios.post(`${apiUrl}/bills/upload/${billID}`, formData, {
+    const response = await api.post(`/bills/upload/${billID}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
@@ -173,7 +173,7 @@ export const uploadReceipt = async (billID: number, file: File) => {
 // ======================================================
 export const approveBill = async (billId: string) => {
   try {
-    const res = await axios.put(`${apiUrl}/bills/${billId}`, { status_id: 3 }, { withCredentials: true });
+    const res = await api.put(`/bills/${billId}`, { status_id: 3 }, { withCredentials: true });
     return res.data;
   } catch (err) {
     console.error('Failed to approve bill:', err);

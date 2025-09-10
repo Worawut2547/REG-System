@@ -62,14 +62,14 @@ func RegistrationExample() {
 		{
 			RegistrationID: "REG009",
 			Date:           time.Now(),
-			StudentID:      "B6630654",
-			SubjectID:      "233031",
+			StudentID:      "B6616052",
+			SubjectID:      "233052",
 		},
 		{
 			RegistrationID: "REG010",
 			Date:           time.Now(),
-			StudentID:      "B6630654",
-			SubjectID:      "233072",
+			StudentID:      "B6616052",
+			SubjectID:      "233032",
 		},
 	}
 
