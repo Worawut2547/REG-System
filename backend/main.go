@@ -10,7 +10,7 @@ import (
 	"reg_system/controller/curriculum"
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
-	"reg_system/controller/score"
+	scores "reg_system/controller/score"
 
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
@@ -19,7 +19,7 @@ import (
 	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
-	"reg_system/controller/subject"
+	subjects "reg_system/controller/subject"
 	"reg_system/controller/subjectcurriculum"
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"

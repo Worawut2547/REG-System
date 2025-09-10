@@ -40,6 +40,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       </Select>
 
       <span style={{ fontSize: 18, marginLeft: 30 }}>ภาคการศึกษา :</span>
+
       <Select
         value={selectedTerm}
         style={{ width: 150 }}
@@ -56,3 +57,4 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 export default FilterPanel;
+

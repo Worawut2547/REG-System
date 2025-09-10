@@ -91,8 +91,10 @@ const ScorePage: React.FC = () => {
                 )}
             </Content>
             <Footer style={{ padding: 12, textAlign: "center", background: "#1890ff", color: "white" , borderBottomRightRadius: "8px" , borderBottomLeftRadius: "8px"}}>Footer © 2025</Footer>
+
         </Layout>
     );
 };
 
 export default ScorePage;
+

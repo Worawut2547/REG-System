@@ -1,6 +1,6 @@
 import React from "react";
 import { Row, Col, Divider } from "antd";
-import CourseCard from "../CourseCard.tsx/Course";
+import CourseCard from "../CourseCard.tsx/course.tsx";
 import YearTermFilter from "../Filter/YearTerm.tsx";
 
 type Course = {

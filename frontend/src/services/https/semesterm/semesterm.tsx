@@ -84,3 +84,4 @@ export const formatSemesterLabel = (s: SemesterInterface): string => {
   const year = s.AcademicYear ?? "";
   return term && year ? `${term}/${year}` : s.SemesterID ?? "";
 };
+

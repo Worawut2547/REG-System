@@ -18,3 +18,4 @@ func BillStatus() {
 		db.FirstOrCreate(&s, entity.BillStatus{Status: s.Status})
 	}
 }
+

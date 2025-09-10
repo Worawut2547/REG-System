@@ -66,7 +66,6 @@ const StudentScorePage: React.FC<Props> = ({ subjectCode, subjectName, onBack })
     fetchStudents();
   }, [subjectCode]);
 
-  // --- Filter students ---
   const filteredStudents = students.filter((s) =>
     s.StudentID.toLowerCase().includes(searchText.toLowerCase())
   );

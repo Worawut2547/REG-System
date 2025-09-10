@@ -26,3 +26,4 @@ type CurriculumBook struct {
 
 // Optional: explicit table name (avoid collision with old book_paths)
 func (CurriculumBook) TableName() string { return "curriculum_books" }
+

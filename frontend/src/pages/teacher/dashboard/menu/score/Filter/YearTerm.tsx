@@ -31,3 +31,4 @@ const YearTermFilter: React.FC<Props> = ({ year, term, setYear, setTerm, yearOpt
 );
 
 export default YearTermFilter;
+

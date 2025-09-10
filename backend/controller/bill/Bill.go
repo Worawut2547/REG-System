@@ -329,4 +329,3 @@ func UpdateBillStatus(c *gin.Context) {
 //   billGroup.GET("/admin/all", GetAllBills)
 //   billGroup.GET("/preview/:id", PreviewBill)
 //   billGroup.GET("/download/:id", DownloadBill)
-// }

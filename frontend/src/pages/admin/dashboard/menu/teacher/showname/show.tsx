@@ -195,3 +195,4 @@ const ShowTeacherPage: React.FC<ShowStudentPageProps> = ({ onCreate }) => {
 }
 
 export default ShowTeacherPage;
+

@@ -203,3 +203,4 @@ const GraduateStatus: React.FC = () => {
 };
 
 export default GraduateStatus;
+

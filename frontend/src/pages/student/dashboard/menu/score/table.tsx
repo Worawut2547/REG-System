@@ -83,7 +83,6 @@ const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
             rowKey={(record) => record.evaluation}
             size="small"
             bordered
-
             components={{
               header: {
                 cell: (props: any) => (
@@ -126,6 +125,5 @@ const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
     </>
   );
 };
-
 
 export default CourseTable;

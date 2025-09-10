@@ -92,5 +92,4 @@ func RegistrationExample() {
 
 		แก้แล้ว → registration และ bill ของ B6630652 จะถูกสร้าง → /bills/B6630652 จะทำงานได้
 	*/
-
 }
