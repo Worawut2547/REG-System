@@ -24,7 +24,7 @@ func CreateGraduation(c *gin.Context) {
 	//มีการแก้ไข 2 บบรทัดด้านล่าง AutoMigrate เพื่อทำการสร้างตารางขึ้นมาอัตโนมัติ **ตอนแรกไม่มีตารางนี้
 	//และใช้ gorm transaction เพื่อให้การสร้างคำขอแจ้งจบและการอัพเดทสถานะนักเรียนเป็น atomic operation
 	db := config.DB()
-	db.AutoMigrate(&entity.Graduation{}) 
+	db.AutoMigrate(&entity.Graduation{})
 
 	input := &entity.Graduation{}
 
@@ -80,16 +80,11 @@ func GetMyGraduation(c *gin.Context) {
 		return
 	}
 
-	// ดึง registrations พร้อม Subject
 	var regs []entity.Registration
-	db.Preload("Subject").Where("student_id = ?", studentID).Find(&regs)
-
-	// คำนวณ totalCredits
-	totalCredits := 0
-	for _, reg := range regs {
-		if reg.Subject != nil {
-			totalCredits += reg.Subject.Credit
-		}
+	err := db.Preload("Subject").Where("student_id = ?", studentID).Find(&regs).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	status := ""
@@ -105,8 +100,15 @@ func GetMyGraduation(c *gin.Context) {
 		CurriculumID = graduation.Student.Curriculum.CurriculumID
 	}
 
+	// ✅ ใช้ service คำนวณ totalCredits
+	totalCredits, err := services.CalculateTotalCredits(studentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate total credits"})
+		return
+	}
+
 	// คำนวณ GPA
-	gpa := services.CalculateGPA(graduation.Student.Grade)
+    gpa := services.CalculateGPA(graduation.Student.Grade)
 
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"GraduationID":  graduation.ID,
@@ -124,6 +126,7 @@ func GetMyGraduation(c *gin.Context) {
 		"GPA":          gpa,
 	}})
 }
+
 
 // ----------------------
 // 3. ดึงคำขอแจ้งจบทั้งหมด (Admin)
@@ -201,7 +204,6 @@ func GetAllGraduation(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": response})
 }
-
 
 // ----------------------
 // 4. อัพเดทสถานะคำขอแจ้งจบ (Admin)

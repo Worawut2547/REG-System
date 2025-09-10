@@ -82,9 +82,10 @@ const GraduateStatus: React.FC = () => {
           curriculum: grad.curriculum,
           status: grad.statusStudent,
           rejectReason: grad.reason,
-          totalCredits: grad.totalCredits,
-          gpax: grad.GPAX,
+          totalCredits: grad.totalCredits, // fallback 0
+          gpax: grad.GPAX ?? 0,
         });
+
       } else {
         const student: StudentInterface | null = await getNameStudent(username);
         if (student) {
@@ -199,7 +200,7 @@ const GraduateStatus: React.FC = () => {
       {/* แจ้งจบแล้วรอแอดมิน */}
       {data.status === "แจ้งจบการศึกษา" && (
         <div style={{ textAlign: 'center', marginTop: 24, fontWeight: 'bold', color: '#1890ff' }}>
-          แจ้งจบแล้ว รอการตรวจสอบจากแอดมิน
+          แจ้งจบแล้วสำเร็จแล้ว รอดำเนินการจากเจ้าหน้าที่
         </div>
       )}
 

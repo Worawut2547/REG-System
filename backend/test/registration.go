@@ -10,6 +10,25 @@ func RegistrationExample() {
 	db := config.DB()
 
 	registrations := []entity.Registration{
+
+		// เทอม 1
+		{RegistrationID: "REG001", Date: time.Now(), StudentID: "B6616052", SubjectID: "233001"},
+		{RegistrationID: "REG002", Date: time.Now(), StudentID: "B6616052", SubjectID: "233031"},
+		{RegistrationID: "REG003", Date: time.Now(), StudentID: "B6616052", SubjectID: "233072"},
+		{RegistrationID: "REG004", Date: time.Now(), StudentID: "B6616052", SubjectID: "233012"},
+
+		// เทอม 2
+		{RegistrationID: "REG011", Date: time.Now(), StudentID: "B6616052", SubjectID: "233032"},
+		{RegistrationID: "REG012", Date: time.Now(), StudentID: "B6616052", SubjectID: "233052"},
+		{RegistrationID: "REG013", Date: time.Now(), StudentID: "B6616052", SubjectID: "233054"},
+		{RegistrationID: "REG014", Date: time.Now(), StudentID: "B6616052", SubjectID: "234053"},
+
+		// เทอม 3
+		{RegistrationID: "REG021", Date: time.Now(), StudentID: "B6616052", SubjectID: "233053"},
+		{RegistrationID: "REG022", Date: time.Now(), StudentID: "B6616052", SubjectID: "233074"},
+		{RegistrationID: "REG023", Date: time.Now(), StudentID: "B6616052", SubjectID: "234033"},
+		{RegistrationID: "REG024", Date: time.Now(), StudentID: "B6616052", SubjectID: "234052"},
+		
 		// เทอม 1
 		{RegistrationID: "REG005", Date: time.Now(), StudentID: "B6630652", SubjectID: "233001"},
 		{RegistrationID: "REG006", Date: time.Now(), StudentID: "B6630652", SubjectID: "233031"},
@@ -44,6 +63,8 @@ func RegistrationExample() {
 		{RegistrationID: "REG126", Date: time.Now(), StudentID: "B6630654", SubjectID: "233074"},
 		{RegistrationID: "REG127", Date: time.Now(), StudentID: "B6630654", SubjectID: "234033"},
 		//{RegistrationID: "REG128", Date: time.Now(), StudentID: "B6630654", SubjectID: "234052"},
+
+
 	}
 	
 

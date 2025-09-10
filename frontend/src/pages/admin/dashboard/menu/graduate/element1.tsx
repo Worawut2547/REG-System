@@ -23,16 +23,22 @@ const Element1: React.FC = () => {
   const [selectedRecord, setSelectedRecord] = useState<GraduationInterface | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // โหลดข้อมูลทั้งหมด
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await getAllGraduations();
 
-      // map isChecked จาก statusStudent
-      const mappedData = res.map(item => ({
-        ...item,
-        isChecked: item.statusStudent !== 'รอตรวจสอบ', // true = ตรวจสอบแล้ว
+      // map backend field ให้ตรงกับ GraduationInterface
+      const mappedData: GraduationInterface[] = res.map(item => ({
+        id: item.id,
+        StudentID: item.StudentID,
+        fullName: item.fullName,
+        curriculum: item.curriculum,
+        totalCredits: item.totalCredits ?? 0,
+        GPAX: item.GPAX,
+        statusStudent: item.statusStudent,
+        reason: item.reason ?? '',
+        Date: item.Date ? new Date(item.Date) : undefined,
       }));
 
       setData(mappedData);
@@ -60,7 +66,21 @@ const Element1: React.FC = () => {
       message.success('อัปเดตสถานะสำเร็จ');
       setIsModalVisible(false);
       setSelectedRecord(null);
-      fetchData(); // refresh table
+
+      // update state ของ record ล่าสุดทันทีโดยไม่ต้อง fetch ใหม่
+      setData(prev =>
+        prev.map(item =>
+          item.id === selectedRecord?.id
+            ? {
+              ...item,
+              statusStudent: status === '30' ? 'อนุมัติสำเร็จการศึกษา' : 'ไม่อนุมัติให้สำเร็จการศึกษา',
+              reason: reason ?? '',
+              isVerified: true, // ✅ เพิ่มบรรทัดนี้
+            }
+            : item
+        )
+      );
+
     } catch (err) {
       message.error('ไม่สามารถอัปเดตสถานะได้');
     }
@@ -78,36 +98,40 @@ const Element1: React.FC = () => {
       item.StudentID.toLowerCase().includes(searchText.toLowerCase())
     )
     .sort((a, b) => {
-      const aChecked = a.isChecked;
-      const bChecked = b.isChecked;
+      const aChecked = a.statusStudent !== 'แจ้งจบการศึกษา';
+      const bChecked = b.statusStudent !== 'แจ้งจบการศึกษา';
       if (aChecked === bChecked) return 0;
       return aChecked ? 1 : -1;
     });
 
   const columns: TableColumnsType<GraduationInterface> = [
+    { title: 'ลำดับ', key: 'index', render: (_, __, index) => index + 1, width: 60 },
     { title: 'รหัสนักศึกษา', dataIndex: 'StudentID', key: 'StudentID' },
     { title: 'ชื่อ-สกุล', dataIndex: 'fullName', key: 'fullName' },
-    { title: 'โครงสร้างหลักสูตร', dataIndex: 'curriculum', key: 'curriculum' },
-    { title: 'เกรดเฉลี่ยสะสม', dataIndex: 'GPAX', key: 'GPAX' },
+    { title: 'หลักสูตร', dataIndex: 'curriculum', key: 'curriculum' },
+    { title: 'หน่วยกิตรวม', dataIndex: 'totalCredits', key: 'totalCredits' },
+    { title: 'GPA', dataIndex: 'GPAX', key: 'GPAX' },
     { title: 'สถานะ', dataIndex: 'statusStudent', key: 'statusStudent' },
     { title: 'เหตุผลปฏิเสธ', dataIndex: 'reason', key: 'reason' },
     {
       title: 'ตรวจสอบ',
       key: 'verify',
       render: (_, record) => {
-        if (!record.isChecked) {
-          return <Tag color="orange">ยังไม่ตรวจสอบ</Tag>;
-        } else if (record.statusStudent === 'รอตรวจสอบ') {
-          return (
-            <Button type="primary" onClick={() => handleVerify(record)}>
-              ตรวจสอบ
-            </Button>
-          );
+        // หา element ล่าสุดของนักศึกษาคนนี้
+        const latestGraduation = data
+          .filter(d => d.StudentID === record.StudentID)
+          .sort((a, b) => Number(b.id) - Number(a.id))[0]; // เอา id ล่าสุด
+
+        const isLatest = latestGraduation ? latestGraduation.id === record.id : false;
+
+        if (isLatest && record.statusStudent === 'แจ้งจบการศึกษา') {
+          return <Button type="primary" onClick={() => handleVerify(record)}>ตรวจสอบ</Button>;
         } else {
           return <Tag color="green">ตรวจสอบแล้ว</Tag>;
         }
       },
-    },
+    }
+
   ];
 
   return (

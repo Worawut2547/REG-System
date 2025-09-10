@@ -75,17 +75,19 @@ export const createGraduation = async (
 // --------------------------
 export const getMyGraduation = async (): Promise<GraduationInterface | null> => {
     try {
-        const studentID = localStorage.getItem("username");
+
+        const studentID = localStorage.getItem("username"); // หรือ StudentID จริง
         if (!studentID) return null;
 
+        console.log("Fetching graduation for studentID:", studentID);
+        console.log("URL:", `${apiUrl}/graduations/${studentID}`);
+
         const res = await axios.get(`${apiUrl}/graduations/${studentID}`);
-        const data = res.data?.data; // data ต้องเป็น object ไม่ใช่ array
+        const data = res.data?.data;
 
         if (!data) return null;
 
         console.log("Graduation reason:", data.RejectReason);
-        console.log("GPAX from backend:", data.GPA);
-        console.log("TotalCredits from backend:", data.TotalCredits);
 
         return {
             id: data.GraduationID?.toString() || "",
@@ -96,14 +98,11 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
             GPAX: data.GPA ?? 0,
             reason: data.RejectReason ?? "",
             Date: data.Date ? new Date(data.Date) : null,
-            totalCredits: data.TotalCredits ?? 0, // ✅ จะออก
+
+            totalCredits: data.TotalCredits?? 0, // ✅ ดึงมาจาก backend
         };
-    } catch (err: any) {
-        if (axios.isAxiosError(err)) {
-            console.error("Axios error response:", err.response?.data);
-        } else {
-            console.error(err);
-        }
+    } catch (err) {
+        console.error("Error fetching my graduation:", err);
         return null;
     }
 };

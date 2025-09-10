@@ -10,7 +10,7 @@ export interface GraduationInterface {
     totalCredits: number; // ✅ จำนวนหน่วยกิตรวม
     GPAX: number; // ✅ เกรดเฉลี่ยสะสม
     // ✅ เพิ่มสำหรับ frontend logic
-    isChecked?: boolean;
+    isVerified?: boolean;
 }
 
 export interface CreateGraduationInput {
