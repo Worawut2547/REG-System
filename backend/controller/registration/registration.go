@@ -50,48 +50,50 @@ func GetRegistrationAll(c *gin.Context) {
 }
 
 func GetRegistrationByStudentID(c *gin.Context) {
-	sid := c.Param("id")
-	var registration []entity.Registration
-	db := config.DB()
+    sid := c.Param("id")
+    var registration []entity.Registration
+    db := config.DB()
 
-	result := db.
-		Preload("Subject").
-		Preload("Subject.StudyTimes").
-		Find(&registration, "student_id = ?", sid)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
+    result := db.
+        Preload("Subject").
+        Preload("Subject.StudyTimes").
+        Find(&registration, "student_id = ?", sid)
+    if result.Error != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+        return
+    }
 
-	var response []RegistrationResponse
+    // Always return an array (possibly empty)
+    var response []RegistrationResponse
 
-	for _, reg := range registration {
-		subjectName := ""
-		credit := 0
-		section := 0
-		var startAt time.Time
-		var endAt time.Time
+    for _, reg := range registration {
+        subjectName := ""
+        credit := 0
+        var startAt time.Time
+        var endAt time.Time
 
-		if reg.Subject != nil {
-			subjectName = reg.Subject.SubjectName
-			credit = reg.Subject.Credit
-		}
+        if reg.Subject != nil {
+            subjectName = reg.Subject.SubjectName
+            credit = reg.Subject.Credit
+            if len(reg.Subject.StudyTimes) > 0 {
+                st := reg.Subject.StudyTimes[0]
+                startAt = st.StartAt
+                endAt = st.EndAt
+            }
+        }
 
-		for _, st := range reg.Subject.StudyTimes {
-			startAt = st.StartAt
-			endAt = st.EndAt
-		}
-
-		response = append(response, RegistrationResponse{
-			SubjectID:   reg.SubjectID,
-			SubjectName: subjectName,
-			Credit:      credit,
-			Section:     section,
-			StartAt:     startAt,
-			EndAt:       endAt,
-		})
-	}
-	c.JSON(http.StatusOK, &response)
+        response = append(response, RegistrationResponse{
+            ID:             reg.ID,
+            RegistrationID: reg.RegistrationID,
+            SubjectID:      reg.SubjectID,
+            SubjectName:    subjectName,
+            Credit:         credit,
+            SectionID:      reg.SectionID,
+            StartAt:        startAt,
+            EndAt:          endAt,
+        })
+    }
+    c.JSON(http.StatusOK, response)
 }
 
 func UpdateRegistration(c *gin.Context) {
@@ -137,13 +139,14 @@ func DeleteRegistration(c *gin.Context) {
 }
 
 type RegistrationResponse struct {
-	SubjectID   string `json:"SubjectID"`
-	SubjectName string `json:"SubjectName"`
-	Section     int    `json:"Section"`
-	Credit      int    `json:"Credit"`
-
-	StartAt time.Time `json:"StartAt"`
-	EndAt   time.Time `json:"EndAt"`
+    ID             int       `json:"ID"`
+    RegistrationID string    `json:"RegistrationID"`
+    SubjectID      string    `json:"SubjectID"`
+    SubjectName    string    `json:"SubjectName"`
+    Credit         int       `json:"Credit"`
+    SectionID      int       `json:"SectionID"`
+    StartAt        time.Time `json:"StartAt"`
+    EndAt          time.Time `json:"EndAt"`
 }
 
 func GetStudentBySubjectID(c *gin.Context) {

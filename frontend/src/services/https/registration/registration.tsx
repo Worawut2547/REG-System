@@ -58,12 +58,12 @@ export const deleteRegistration = async (id: number | string) => {
 };
 
 // สำหรับอาจารย์: ดึงรายชื่อนักศึกษาที่ลงทะเบียนในวิชาตามรหัสวิชา
-// หมายเหตุ: คืนทั้ง axios response เพื่อให้ผู้ใช้เลือก .data เอง (ให้ตรงกับโค้ดผู้ใช้ปัจจุบัน)
-export const getStudentBySubjectID = async (subjectId: string) => {
+// หมายเหตุ: รวมเป็นฟังก์ชันเดียว คืนค่าเป็น data (array)
+export const getStudentBySubjectID = async <T = any>(subjectId: string): Promise<T[]> => {
   if (!subjectId) throw new Error("subjectId is required");
   try {
     const res = await axios.get(`${apiUrl}/registrations/subjects/${encodeURIComponent(subjectId)}`);
-    return res; // ผู้ใช้ที่เรียกจะ .data ต่อเอง
+    return res.data;
   } catch (error) {
     console.error("Error fetching students by subject:", error);
     throw error;

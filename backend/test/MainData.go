@@ -29,6 +29,8 @@ func ExampleData() {
 	SubjectExample()
 	GradeExample()
 	//ScoresExample()
+	ReportExampleData()
+	SectionExample()
 
 	GradeExample()
 
@@ -96,3 +98,4 @@ func ExampleData() {
 	}
 	db.Create(&userAdmin)
 }
+

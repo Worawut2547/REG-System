@@ -7,7 +7,7 @@ import (
     "reg_system/config"
     "reg_system/entity"
 
-    "github.com/google/uuid"
+	"github.com/google/uuid"
 )
 
 

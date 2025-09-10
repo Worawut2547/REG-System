@@ -128,12 +128,9 @@ func GetSubjectID(c *gin.Context) {
 	if err := db.
 		Preload("Major").
 		Preload("Faculty").
-		Preload("Semester").
 		Preload("StudyTimes", func(db *gorm.DB) *gorm.DB { return db.Order("start_at ASC") }).
 		Preload("Semester").
-        Preload("Sections").
 		First(&sub, "subject_id = ?", id).Error; err != nil {
-
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "subject not found"})
 			return
@@ -143,17 +140,16 @@ func GetSubjectID(c *gin.Context) {
 	}
 
 	resp := map[string]interface{}{
-		"subject_id":    sub.SubjectID,
-		"subject_name":  sub.SubjectName,
-		"credit":        sub.Credit,
-		"major_id":      sub.MajorID,
-		"faculty_id":    sub.FacultyID,
-		"semester_id":   sub.SemesterID,
-		"term":          sub.Semester.Term,
+		"subject_id":   sub.SubjectID,
+		"subject_name": sub.SubjectName,
+		"credit":       sub.Credit,
+		"major_id":     sub.MajorID,
+		"faculty_id":   sub.FacultyID,
+		"semester_id":  sub.SemesterID,
+		"term":  sub.Semester.Term,
 		"academic_year": sub.Semester.AcademicYear,
 		"teacher_id":    sub.TeacherID,
 		// include sections for frontend selection
-        "sections":      sub.Sections,
         //"study_times":  sub.StudyTimes,
 	}
 	if sub.Major != nil {

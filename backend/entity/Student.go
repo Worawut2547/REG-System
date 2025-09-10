@@ -34,7 +34,6 @@ type Students struct {
 
 	Reports []Report `gorm:"foreignKey:StudentID;references:StudentID" json:"-"`
 
-	/*RegistrationID int `json:"RegistrationID"` // Foreign Key*/
 	Registration []Registration `gorm:"foreignKey:StudentID;references:StudentID" json:"Registration"` // ระบุความสัมพันธ์ 1--1 [Registration]
 
 	CurriculumID string      `json:"CurriculumID"`                                    // Foreign Key

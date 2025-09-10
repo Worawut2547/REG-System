@@ -109,8 +109,13 @@ export const getSubjectById = async (subjectId: string): Promise<(SubjectInterfa
   const sid = (subjectId || "").trim();
   if (!sid) return null;
   try {
-    const res = await axios.get(`${apiUrl}/subjects/${encodeURIComponent(sid)}`);
-    const raw = res.data || {};
+    // Backend /subjects/:id does NOT include sections; fetch them explicitly
+    const [resSub, resSecs] = await Promise.all([
+      axios.get(`${apiUrl}/subjects/${encodeURIComponent(sid)}`),
+      axios.get(`${apiUrl}/subjects/${encodeURIComponent(sid)}/sections`),
+    ]);
+
+    const raw = resSub.data || {};
     const base: SubjectInterface = {
       SubjectID: raw.subject_id ?? raw.SubjectID ?? sid,
       SubjectName: raw.subject_name ?? raw.SubjectName ?? "",
@@ -120,9 +125,10 @@ export const getSubjectById = async (subjectId: string): Promise<(SubjectInterfa
       Term: raw.term ?? raw.Term,
       AcademicYear: raw.academic_year ?? raw.AcademicYear,
     };
-    const Sections = Array.isArray(raw.sections) ? raw.sections : (Array.isArray(raw.Sections) ? raw.Sections : undefined);
-    const StudyTimes = Array.isArray(raw.study_times) ? raw.study_times : (Array.isArray(raw.StudyTimes) ? raw.StudyTimes : undefined);
-    return { ...base, Sections, StudyTimes } as any;
+
+    const Sections = Array.isArray(resSecs.data) ? resSecs.data : undefined;
+    // study times are served under /subjects/:id/times; keep undefined here
+    return { ...base, Sections } as any;
   } catch (err) {
     console.error("getSubjectById error:", err);
     return null;

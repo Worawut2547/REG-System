@@ -175,9 +175,15 @@ func main() {
 	// -------------------- Subjects & Study Times --------------------
 	subjectGroup := r.Group("/subjects")
 	{
-		subjectGroup.GET("/", subjects.GetSubjectAll)  // admin, student, teacher  :Earth
-		subjectGroup.POST("/", subjects.CreateSubject) // admin  :Earth
+		// รายการวิชาทั้งหมด
+		subjectGroup.GET("/", subjects.GetSubjectAll)
+		subjectGroup.GET("", subjects.GetSubjectAll)
 
+		// สร้างวิชาใหม่
+		subjectGroup.POST("/", subjects.CreateSubject)
+		subjectGroup.POST("", subjects.CreateSubject)
+
+		// กลุ่มเส้นทางของวิชาเฉพาะตัว (RESTful)
 		subjectItem := subjectGroup.Group("/:subjectId")
 		{
 			subjectItem.GET("", subjects.GetSubjectID)
