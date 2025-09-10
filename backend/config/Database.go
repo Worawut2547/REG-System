@@ -63,5 +63,6 @@ func SetupDatabase() {
 		&entity.Attachment{},
 		&entity.Reviewer{},
 		&entity.ReviewerComment{},
+
 	)	
 }

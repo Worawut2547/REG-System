@@ -49,9 +49,6 @@ func main() {
 	r.Use(CORSMiddleware())
 	r.Static("/uploads", "./uploads")
 
-	// Serve uploaded files (attachments)
-	r.Static("/uploads", "./uploads")
-
 	// -------------------- Auth --------------------
 	r.POST("/signin", users.SignIn)
 
