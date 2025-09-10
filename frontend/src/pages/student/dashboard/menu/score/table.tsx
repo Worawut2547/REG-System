@@ -5,16 +5,16 @@ import type { ColumnsType } from "antd/es/table";
 
 export interface Score {
   evaluation: string;
-  total: number | string;
-  point: number | string;
+  total: number | string; // จะใช้เก็บ FullScore
+  point: number | string; // คะแนนจริง
 }
 
 export interface CourseData {
   course: string;
   scores: Score[];
   summary: {
-    total: number;
-    net: number;
+    total: number; // รวมคะแนนจริง
+    net: number;   // รวมคะแนนเต็ม
   };
 }
 
@@ -38,9 +38,16 @@ const columns: ColumnsType<Score> = [
     key: "total",
     width: 80,
     align: "center",
-    render: (text, record) => (record.evaluation === "สรุป" ? "" : text), // <-- ซ่อนค่าแถวสรุป
+    render: (text, record) =>
+      record.evaluation === "สรุป" ? record.total : text, // แสดง FullScore ของแต่ละประเภท
   },
-  { title: "Point", dataIndex: "point", key: "point", width: 80, align: "center" },
+  {
+    title: "Point",
+    dataIndex: "point",
+    key: "point",
+    width: 80,
+    align: "center",
+  },
 ];
 
 const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
@@ -52,19 +59,23 @@ const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
           style={{
             marginBottom: 30,
             background: "#f5f5f5",
-            borderRadius: 8,
-            padding: 12,
+            borderRadius: 8, // มุมรวมทั้งหมดของ box
+            fontSize: 18,
           }}
         >
-          <h3 style={{ marginBottom: 10, color: "black" }}>{courseData.course}</h3>
+          <h3 style={{ marginBottom: 10, color: "black" }}>{courseData.course} {}</h3>
           <Table<Score>
             className="course-table"
             dataSource={[
-              ...courseData.scores,
+              ...courseData.scores.map((s) => ({
+                evaluation: s.evaluation,
+                total: s.total,
+                point: s.point,
+              })),
               {
                 evaluation: "สรุป",
-                total: courseData.summary.total, // ค่า Total ยังคงมีอยู่ แต่จะไม่แสดง
-                point: courseData.summary.total, // แสดงรวมคะแนนใน Point
+                total: courseData.summary.net,
+                point: courseData.summary.total,
               },
             ]}
             columns={columns}
@@ -72,9 +83,7 @@ const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
             rowKey={(record) => record.evaluation}
             size="small"
             bordered
-            rowClassName={(record) =>
-              record.evaluation === "สรุป" ? "summary-row no-hover" : "no-hover"
-            }
+
             components={{
               header: {
                 cell: (props: any) => (
@@ -87,17 +96,36 @@ const CourseTable: React.FC<CourseTableProps> = ({ courses }) => {
                       fontWeight: "bold",
                       fontSize: "16px",
                       padding: "8px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     }}
                   />
                 ),
               },
+              body: {
+                row: (rowProps: any) => {
+                  const isSummary = rowProps['data-row-key'] === "สรุป";
+                  return (
+                    <tr
+                      {...rowProps}
+                      style={{
+                        ...rowProps.style,
+                        backgroundColor: isSummary ? "#e7e8edff" : undefined,
+                        fontWeight: isSummary ? "bold" : undefined,
+                        borderBottomLeftRadius: isSummary ? 8 : 0,
+                        borderBottomRightRadius: isSummary ? 8 : 0,
+                        boxShadow: isSummary ? "0 5px 8px rgba(0,0,0,0.1)" : undefined,
+                      }}
+                    />
+                  );
+                },
+              },
             }}
           />
-
         </div>
       ))}
     </>
   );
 };
+
 
 export default CourseTable;

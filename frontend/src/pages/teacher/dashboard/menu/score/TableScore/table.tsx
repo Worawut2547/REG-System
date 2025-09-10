@@ -1,6 +1,6 @@
 // --- StudentScorePage.tsx ---
 import React, { useEffect, useState } from "react";
-import { Table, Button, Input, Row, Col, Typography, message, Divider, Modal, Select } from "antd";
+import { Table, Button, Input, Row, Col, Typography, message, Divider, Modal, Select, InputNumber } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { getStudentBySubjectID } from "../../../../../../services/https/registration/registration";
 import { createScoreStudent } from "../../../../../../services/https/score/score";
@@ -100,8 +100,12 @@ const StudentScorePage: React.FC<Props> = ({ subjectCode, subjectName, onBack })
       const payload = students
         .filter(s => Array.isArray(s.Scores) && s.Scores.some(sc => sc.List === selectedCategory))
         .map(s => {
-          const sc = Array.isArray(s.Scores) ? s.Scores.find(sc => sc.List === selectedCategory) : undefined;
+          const sc = Array.isArray(s.Scores)
+            ? s.Scores.find(sc => sc.List === selectedCategory)
+            : undefined;
+
           if (!sc) return null;
+
           return {
             ID: s.ID,
             StudentID: s.StudentID,
@@ -110,10 +114,13 @@ const StudentScorePage: React.FC<Props> = ({ subjectCode, subjectName, onBack })
             Score: sc.Score,
             FullScore: categoryFullScores[selectedCategory] ?? sc.FullScore,
             List: sc.List,
-          };
-        });
+            Scores: s.Scores,
+          } as ScoreInterface;
+        })
+        .filter((item): item is ScoreInterface => item !== null);
 
       await createScoreStudent(payload);
+
       message.success(`บันทึกคะแนน ${selectedCategory} เรียบร้อย`);
       setSubmittedCategories(prev => [...prev, selectedCategory]);
       setSelectedCategory("Main");
@@ -152,31 +159,25 @@ const StudentScorePage: React.FC<Props> = ({ subjectCode, subjectName, onBack })
         const isSubmitted = submittedCategories.includes(selectedCategory);
 
         return (
-          <Input
-            type="number"
-            value={sc ? sc.Score : 0}
+          <InputNumber
+            defaultValue={sc ? sc.Score : 0}   // ใช้ defaultValue แทน value
             disabled={isSubmitted}
-            onChange={e => {
-              const newScore = Number(e.target.value);
+            onChange={(newValue) => {
+              const newScore = Number(newValue ?? 0);
               setStudents(prev =>
                 prev.map(s => {
                   if (s.StudentID === record.StudentID) {
-                    let existing;
-                    if (Array.isArray(s.Scores)) {
-                      existing = s.Scores.find(sc => sc.List === selectedCategory);
-                    }
+                    if (!Array.isArray(s.Scores)) s.Scores = [];
+                    const existing = s.Scores.find(sc => sc.List === selectedCategory);
                     if (existing) {
                       existing.Score = newScore;
                       existing.FullScore = categoryFullScores[selectedCategory] ?? existing.FullScore;
                     } else {
-                      s.Scores = [
-                        ...(Array.isArray(s.Scores) ? s.Scores : []),
-                        {
-                          Score: newScore,
-                          FullScore: categoryFullScores[selectedCategory] ?? 0,
-                          List: selectedCategory,
-                        },
-                      ];
+                      s.Scores.push({
+                        Score: newScore,
+                        FullScore: categoryFullScores[selectedCategory] ?? 0,
+                        List: selectedCategory,
+                      });
                     }
                   }
                   return s;
@@ -184,9 +185,11 @@ const StudentScorePage: React.FC<Props> = ({ subjectCode, subjectName, onBack })
               );
             }}
             style={{ width: 120, textAlign: "center" }}
+            min={0}
+            max={categoryFullScores[selectedCategory] ?? 100}
           />
         );
-      },
+      }
     },
   ];
 
@@ -194,8 +197,8 @@ const StudentScorePage: React.FC<Props> = ({ subjectCode, subjectName, onBack })
     selectedCategory === "Main" ? mainColumns : categoryColumns;
 
   return (
-    <div style={{ padding: 24 }}>
-      <Button onClick={onBack} style={{ marginBottom: 16 }}>ย้อนกลับ</Button>
+    <div >
+      <Button onClick={onBack} style={{ marginBottom: 16 }}>BACK</Button>
       <Title style={{ fontSize: 30 }} level={3}>{subjectCode} - {subjectName}</Title>
 
       <Divider />

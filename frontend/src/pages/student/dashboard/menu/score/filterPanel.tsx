@@ -23,7 +23,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 }) => {
   return (
     <Space style={{ marginBottom: 10, fontSize: 18, fontWeight: "bold" }}>
-      <span>ปีการศึกษา</span>
+      <span>ปีการศึกษา :</span>
       <Select
         value={selectedYear}
         style={{ width: 150 }}
@@ -39,7 +39,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         ))}
       </Select>
 
-      <span style={{ fontSize: 18, marginLeft: 30 }}>ภาคการศึกษา</span>
+      <span style={{ fontSize: 18, marginLeft: 30 }}>ภาคการศึกษา :</span>
       <Select
         value={selectedTerm}
         style={{ width: 150 }}
