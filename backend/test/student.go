@@ -24,7 +24,6 @@ func StudentExample() {
 			StatusStudentID: "10",
 			CurriculumID:    "curr23",
 			TeacherID:       "T2900364",
-			Gpax:            3.00,
 		},
 		{
 			StudentID:       "B6630654",
@@ -40,7 +39,6 @@ func StudentExample() {
 			StatusStudentID: "10",
 			CurriculumID:    "curr23",
 			TeacherID:       "T2900366",
-			Gpax:            3.50,
 		},
 	}
 

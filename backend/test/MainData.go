@@ -16,7 +16,7 @@ func ExampleData() {
 	SemesterExample()
 	GenderExample()
 	StatusExample()
-	BookPathExample()
+	CurriculumBookExample()
 	CurriculumExample()
 
 	RegistrationExample()
@@ -24,12 +24,14 @@ func ExampleData() {
 	BillExample()
 	BillStatus()
 
-	BookPathExample()
+	CurriculumBookExample()
 	CurriculumExample()
 	SubjectExample()
 	GradeExample()
+	//ScoresExample()
 
 	GradeExample()
+	GraduationExample()
 
 	teacher := entity.Teachers{
 		TeacherID:  "T2900364",

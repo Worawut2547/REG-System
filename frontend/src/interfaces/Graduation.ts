@@ -8,7 +8,9 @@ export interface GraduationInterface {
     Date?: Date | null;
 
     totalCredits: number; // ✅ จำนวนหน่วยกิตรวม
-    gpax: number; // ✅ เกรดเฉลี่ยสะสม
+    GPAX: number; // ✅ เกรดเฉลี่ยสะสม
+    // ✅ เพิ่มสำหรับ frontend logic
+    isChecked?: boolean;
 }
 
 export interface CreateGraduationInput {
@@ -19,5 +21,5 @@ export interface CreateGraduationInput {
 export interface UpdateGraduationInput {
     StatusStudent: string;
     RejectReason?: string;
-    GraduationID:string;
+    GraduationID: string;
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Table, Button, Input, message } from 'antd';
+import { Layout, Table, Button, Input, message, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
 import CheckGraduate from './check';
 import './graduate.css';
@@ -28,7 +28,14 @@ const Element1: React.FC = () => {
     setLoading(true);
     try {
       const res = await getAllGraduations();
-      setData(res);
+
+      // map isChecked จาก statusStudent
+      const mappedData = res.map(item => ({
+        ...item,
+        isChecked: item.statusStudent !== 'รอตรวจสอบ', // true = ตรวจสอบแล้ว
+      }));
+
+      setData(mappedData);
     } catch (err) {
       message.error('ไม่สามารถดึงข้อมูลผู้แจ้งจบได้');
     } finally {
@@ -49,11 +56,7 @@ const Element1: React.FC = () => {
     if (!selectedRecord) return;
 
     try {
-      await updateGraduation(
-        selectedRecord.id,
-        status,
-        reason
-      );
+      await updateGraduation(selectedRecord.id, status, reason);
       message.success('อัปเดตสถานะสำเร็จ');
       setIsModalVisible(false);
       setSelectedRecord(null);
@@ -63,33 +66,47 @@ const Element1: React.FC = () => {
     }
   };
 
-
-
-
   const handleCancel = () => {
     setIsModalVisible(false);
     setSelectedRecord(null);
   };
 
-  const filteredData = data.filter(item =>
-    item.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
-    item.StudentID.toLowerCase().includes(searchText.toLowerCase())
-  );
+  // filter และ sort ให้แถวตรวจสอบแล้วอยู่ด้านล่าง
+  const filteredData = data
+    .filter(item =>
+      item.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.StudentID.toLowerCase().includes(searchText.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aChecked = a.isChecked;
+      const bChecked = b.isChecked;
+      if (aChecked === bChecked) return 0;
+      return aChecked ? 1 : -1;
+    });
 
   const columns: TableColumnsType<GraduationInterface> = [
     { title: 'รหัสนักศึกษา', dataIndex: 'StudentID', key: 'StudentID' },
     { title: 'ชื่อ-สกุล', dataIndex: 'fullName', key: 'fullName' },
     { title: 'โครงสร้างหลักสูตร', dataIndex: 'curriculum', key: 'curriculum' },
+    { title: 'เกรดเฉลี่ยสะสม', dataIndex: 'GPAX', key: 'GPAX' },
     { title: 'สถานะ', dataIndex: 'statusStudent', key: 'statusStudent' },
     { title: 'เหตุผลปฏิเสธ', dataIndex: 'reason', key: 'reason' },
     {
       title: 'ตรวจสอบ',
       key: 'verify',
-      render: (_, record) => (
-        <Button type="primary" onClick={() => handleVerify(record)}>
-          ตรวจสอบ
-        </Button>
-      ),
+      render: (_, record) => {
+        if (!record.isChecked) {
+          return <Tag color="orange">ยังไม่ตรวจสอบ</Tag>;
+        } else if (record.statusStudent === 'รอตรวจสอบ') {
+          return (
+            <Button type="primary" onClick={() => handleVerify(record)}>
+              ตรวจสอบ
+            </Button>
+          );
+        } else {
+          return <Tag color="green">ตรวจสอบแล้ว</Tag>;
+        }
+      },
     },
   ];
 
@@ -99,7 +116,7 @@ const Element1: React.FC = () => {
         <Input
           placeholder="ค้นหา ชื่อหรือรหัสนักศึกษา"
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={e => setSearchText(e.target.value)}
           style={{ width: 300, height: 50, fontSize: 14 }}
         />
       </div>

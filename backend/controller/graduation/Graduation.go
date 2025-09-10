@@ -2,9 +2,11 @@ package graduation
 
 import (
 	//"fmt"
-	//"log"
+	"log"
 	"net/http"
 	"reg_system/config"
+	"reg_system/services"
+
 	//"reg_system/controller/graduation"
 	"reg_system/entity"
 
@@ -18,6 +20,12 @@ import (
 // 1. สร้างคำขอแจ้งจบ (นักศึกษา)
 // ----------------------
 func CreateGraduation(c *gin.Context) {
+
+	//มีการแก้ไข 2 บบรทัดด้านล่าง AutoMigrate เพื่อทำการสร้างตารางขึ้นมาอัตโนมัติ **ตอนแรกไม่มีตารางนี้
+	//และใช้ gorm transaction เพื่อให้การสร้างคำขอแจ้งจบและการอัพเดทสถานะนักเรียนเป็น atomic operation
+	db := config.DB()
+	db.AutoMigrate(&entity.Graduation{}) 
+
 	input := &entity.Graduation{}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -25,8 +33,6 @@ func CreateGraduation(c *gin.Context) {
 		return
 	}
 
-	db := config.DB()
-	
 	graduation := entity.Graduation{
 		StudentID:    input.StudentID,
 		CurriculumID: input.CurriculumID,
@@ -67,7 +73,8 @@ func GetMyGraduation(c *gin.Context) {
 
 	if err := db.Preload("Student").
 		Preload("Student.StatusStudent").
-		Preload("Curriculum").
+		Preload("Student.Curriculum").
+		Preload("Student.Grade.Subject").
 		First(&graduation, "student_id = ?", studentID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Graduation request not found"})
 		return
@@ -90,30 +97,31 @@ func GetMyGraduation(c *gin.Context) {
 		status = graduation.Student.StatusStudent.Status
 	}
 
-	curriculumName := ""
-	if graduation.Curriculum != nil {
-		curriculumName = graduation.Curriculum.CurriculumName
+	// ดึง curriculum ของ student
+	CurriculumName := ""
+	CurriculumID := ""
+	if graduation.Student != nil && graduation.Student.Curriculum != nil {
+		CurriculumName = graduation.Student.Curriculum.CurriculumName
+		CurriculumID = graduation.Student.Curriculum.CurriculumID
 	}
 
-	/*Gpax := 0.0
-	if graduation.Student != nil {
-		Gpax = float64(graduation.Student.Gpax)
-	}*/
+	// คำนวณ GPA
+	gpa := services.CalculateGPA(graduation.Student.Grade)
 
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"GraduationID":  graduation.ID,
 		"StudentID":     graduation.StudentID,
 		"FirstName":     graduation.Student.FirstName,
 		"LastName":      graduation.Student.LastName,
-		"CurriculumID":  graduation.CurriculumID,
-		"Curriculum":    curriculumName,
+		"CurriculumID":  CurriculumID,
+		"Curriculum":    CurriculumName,
 		"StatusStudent": status,
 		"RejectReason":  graduation.RejectReason,
 		"Date":          graduation.Date,
 
 		// ✅ เพิ่มหน่วยกิต
 		"TotalCredits": totalCredits,
-		"Gpax":         graduation.Student.Gpax,
+		"GPA":          gpa,
 	}})
 }
 
@@ -124,9 +132,11 @@ func GetAllGraduation(c *gin.Context) {
 	db := config.DB()
 	var graduations []entity.Graduation
 
+	// ดึง graduations พร้อม preload
 	if err := db.Preload("Student").
 		Preload("Student.StatusStudent").
-		Preload("Curriculum").
+		Preload("Student.Curriculum").
+		Preload("Student.Grade.Subject").
 		Find(&graduations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch graduations"})
 		return
@@ -134,7 +144,6 @@ func GetAllGraduation(c *gin.Context) {
 
 	var response []gin.H
 	for _, g := range graduations {
-
 		var totalCredits int
 		db.Table("registrations").
 			Joins("JOIN subjects ON registrations.subject_id = subjects.subject_id").
@@ -147,29 +156,52 @@ func GetAllGraduation(c *gin.Context) {
 			status = g.Student.StatusStudent.Status
 		}
 
+		// ✅ ดึง curriculum จาก student
 		curriculumName := ""
-		if g.Curriculum != nil {
-			curriculumName = g.Curriculum.CurriculumName
+		curriculumID := ""
+		if g.Student != nil {
+			curriculumID = g.Student.CurriculumID
+			if g.Student.Curriculum != nil {
+				curriculumName = g.Student.Curriculum.CurriculumName
+			}
 		}
 
+		// GPA
+		gpa := 0.0
+		if g.Student != nil && len(g.Student.Grade) > 0 {
+			gpa = services.CalculateGPA(g.Student.Grade)
+		}
+
+		// --- Debug log ---
+		if g.Student != nil {
+			log.Println("StudentID:", g.Student.StudentID)
+			log.Println("CurriculumID:", g.Student.CurriculumID)
+			if g.Student.Curriculum != nil {
+				log.Println("CurriculumName:", g.Student.Curriculum.CurriculumName)
+			} else {
+				log.Println("Curriculum is nil")
+			}
+		}
+
+		// append response
 		response = append(response, gin.H{
 			"GraduationID":  g.ID,
 			"StudentID":     g.StudentID,
 			"FirstName":     g.Student.FirstName,
 			"LastName":      g.Student.LastName,
-			"CurriculumID":  g.CurriculumID,
+			"CurriculumID":  curriculumID,
 			"Curriculum":    curriculumName,
 			"StatusStudent": status,
 			"RejectReason":  g.RejectReason,
 			"Date":          g.Date,
-
-			// ✅ เพิ่มหน่วยกิตรวม
-			"TotalCredits": totalCredits,
+			"TotalCredits":  totalCredits,
+			"GPA":           gpa,
 		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": response})
 }
+
 
 // ----------------------
 // 4. อัพเดทสถานะคำขอแจ้งจบ (Admin)

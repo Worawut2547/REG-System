@@ -8,7 +8,7 @@ type Grades struct {
 	StudentID string    `gorm:"uniqueIndex:idx_student_subject" json:"StudentID"`
 	Students  *Students `gorm:"foreignKey:StudentID;references:StudentID"` // ระบุความสัมพันธ์ 1--1 [Student]
 
-	SubjectID string   `gorm:"uniqueIndex:idx_student_subject" json:"SubjectID"`                                          // Foreign Key
-	Subject   *Subject `gorm:"foreignKey:SubjectID;references:SubjectID"` // ระบุความสัมพันธ์ 1--many [Subject]
+	SubjectID string   `gorm:"uniqueIndex:idx_student_subject" json:"SubjectID"` // Foreign Key
+	Subject   *Subject `gorm:"foreignKey:SubjectID;references:SubjectID"`        // ระบุความสัมพันธ์ 1--many [Subject]
 
 }

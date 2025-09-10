@@ -1,57 +1,122 @@
-// src/pages/dashboard/menu/register.tsx
-import React from 'react';
-import { Layout } from 'antd';
-import './score.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
+// src/pages/dashboard/menu/studentScore/StudentScore.tsx
+import React, { useEffect, useState } from "react";
+import { Layout, Divider } from "antd";
+import FilterPanel from "./filterPanel";
+import CourseTable from "./table.tsx";
+import { type CourseData } from "./table.tsx";
+import { getScoreByStudentID } from "../../../../../services/https/score/score";
+import "./score.css";
 
 const { Header, Content, Footer } = Layout;
 
-// register.tsx  – only wrapperStyle changed
-const wrapperStyle: React.CSSProperties = {
-  /* keep your corner-rounding / shadow if you like */
-  borderRadius: 8,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+const StudentScore: React.FC = () => {
+  const [selectedYear, setSelectedYear] = useState("2568");
+  const [selectedTerm, setSelectedTerm] = useState("1");
+  const [courses, setCourses] = useState<CourseData[]>([]);
+  const [yearOptions, setYearOptions] = useState<string[]>([]);
+  const [termOptions, setTermOptions] = useState<string[]>([]);
 
-  /* 👇 stretch full size of parent Content */
-  width: '100%',          // fill X
-  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
-  display: 'flex',        // so Header/Content/Footer stack vertically
-  flexDirection: 'column',
-  overflow: 'hidden',
-};
+  useEffect(() => {
+    getScoreByStudentID().then((res) => {
+      // สร้าง options ของปี/เทอม
+      const years: string[] = Array.from(new Set(res.map((r: any) => String(r.AcademicYear))));
+      setYearOptions(years);
 
-const headerStyle: React.CSSProperties = {
-  background: '#2e236c',            // ม่วงเข้ม
-  color: 'white',
-  textAlign: 'center',
-  padding: 16,
-  fontSize: 20,
-};
+      const terms: string[] = Array.from(new Set(res.map((r: any) => String(r.Term))));
+      setTermOptions(terms);
 
-const contentStyle: React.CSSProperties = {
-  background: '#f5f5f5',            // เทาอ่อน
-  padding: 24,
-  minHeight: 400,
-  color: '#333',
-  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
-};
+      // map เป็นโครงที่ CourseTable ใช้
+      const grouped: { [key: string]: any[] } = {};
+      res.forEach((r: any) => {
+        const key = r.SubjectName;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(r);
+      });
 
-const footerStyle: React.CSSProperties = {
-  background: '#1890ff',            // ฟ้า Ant Design
-  color: 'white',
-  textAlign: 'center',
-  padding: 12,
-};
+      const transformed: CourseData[] = Object.keys(grouped).map((subject) => {
+        const records = grouped[subject];
+        const scores = records.map((r) => ({
+          evaluation: r.List,
+          point: r.Score,
+          total: r.FullScore,
+        }));
+        const total = records.reduce((sum, r) => sum + r.Score, 0);
+        return {
+          course: subject,
+          scores,
+          summary: { total, net: total },
+        };
+      });
 
-const Score: React.FC = () => {
+      setCourses(transformed);
+    });
+  }, []);
+
+  // filter ตามปี/เทอม
+  const filteredCourses = courses.filter((course) => {
+    return true; // ตอนนี้ courses ไม่มี field year/term → ต้อง filter จาก raw data
+  });
+
   return (
-    <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>Header – หน้าคะแนน</Header>
-      <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
+    <Layout
+      style={{
+        borderRadius: 8,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        width: "100%",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <Header
+        style={{
+          background: "#2e236c",
+          color: "white",
+          textAlign: "center",
+          fontSize: 24,
+          borderTopLeftRadius: 8,
+          borderTopRightRadius: 8,
+        }}
+      >
+        รายงานผลคะแนน
+      </Header>
+
+      <Content
+        style={{
+          background: "#f5f5f5",
+          padding: 24,
+          minHeight: 400,
+          color: "#333",
+          overflowY: "auto",
+        }}
+      >
+        <FilterPanel
+          selectedYear={selectedYear}
+          selectedTerm={selectedTerm}
+          setSelectedYear={setSelectedYear}
+          setSelectedTerm={setSelectedTerm}
+          yearOptions={yearOptions}
+          termOptions={termOptions}
+        />
+        <Divider />
+        <CourseTable courses={filteredCourses} />
       </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
+
+      <Footer
+        style={{
+          background: "#1890ff",
+          color: "white",
+          textAlign: "center",
+          padding: 12,
+          borderBottomLeftRadius: 8,
+          borderBottomRightRadius: 8,
+        }}
+      >
+        Footer © 2025
+      </Footer>
     </Layout>
   );
 };
 
-export default Score;
+export default StudentScore;

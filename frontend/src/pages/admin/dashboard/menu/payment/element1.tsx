@@ -23,17 +23,25 @@ const BillPage: React.FC = () => {
           StudentID: bill.student_id ?? '-',
           no: idx + 1,
           fullName: bill.full_name ?? '-',
-          receiptNo: '-', 
+          receiptNo: '-',
           paymentDate: bill.date ?? '-',
           year: String(bill.year ?? '-'),
           term: String(bill.term ?? '-'),
           totalPrice: bill.total_price ?? 0,
           filePath: bill.file_path && !bill.file_path.includes('C:\\')
-              ? `${apiUrl}/uploads/${bill.file_path}`
-              : undefined,
+            ? `${apiUrl}/uploads/${bill.file_path}`
+            : undefined,
           status: bill.status ?? 'ค้างชำระ',
         }));
+
         setData(mappedData);
+
+        // กำหนด verifiedKeys ตาม status
+        const verified = new Set(
+          mappedData.filter(d => d.status === 'ชำระแล้ว').map(d => d.key)
+        );
+        setVerifiedKeys(verified);
+
       } catch (err) {
         message.error('ไม่สามารถโหลดข้อมูลบิลนักศึกษาได้');
       } finally {
@@ -42,6 +50,7 @@ const BillPage: React.FC = () => {
     };
     fetchData();
   }, []);
+
 
   const handleVerify = (record: DataType) => {
     setSelectedRecord(record);
@@ -98,7 +107,6 @@ const BillPage: React.FC = () => {
     { title: 'ลำดับ', dataIndex: 'no', key: 'no' },
     { title: 'รหัสนักศึกษา', dataIndex: 'StudentID', key: 'StudentID' },
     { title: 'ชื่อ-สกุล', dataIndex: 'fullName', key: 'fullName' },
-    { title: 'เลขที่ใบเสร็จรับเงิน', dataIndex: 'receiptNo', key: 'receiptNo' },
     { title: 'วันที่ชำระเงิน', dataIndex: 'paymentDate', key: 'paymentDate' },
     {
       title: 'จำนวนเงินรวม',
@@ -132,7 +140,7 @@ const BillPage: React.FC = () => {
       title: 'ตรวจสอบ',
       key: 'verify',
       render: (_, record) => {
-        const isVerified = verifiedKeys.has(record.key);
+        const isVerified = verifiedKeys.has(record.key); // ถ้า verified ให้สีเหลือง
         return (
           <Button
             type={isVerified ? 'default' : 'primary'}
@@ -143,7 +151,7 @@ const BillPage: React.FC = () => {
           </Button>
         );
       },
-    },
+    }
   ];
 
   return (

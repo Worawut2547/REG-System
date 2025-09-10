@@ -41,13 +41,26 @@ import {
 import { getFacultyAll } from "../../../../../services/https/faculty/faculty";
 import { getMajorAll } from "../../../../../services/https/major/major";
 
-const { Content } = Layout;
+// ++ อาจารย์/ภาคการศึกษา
+import { getTeacherAll } from "../../../../../services/https/teacher/teacher";
+import { getSemestermAll as getSemesterAll } from "../../../../../services/https/semesterm/semesterm";
+import { type TeacherInterface } from "../../../../../interfaces/Teacher";
+import { type SemestermInterface } from "../../../../../interfaces/Semesterm";
 
+const { Content } = Layout;
 const { Option } = Select;
 
 /* ---------- Option types ---------- */
 type Faculty = { id: string; name: string };
 type Major = { id: string; name: string; facultyId?: string };
+
+type TeacherOpt = {
+  id: string;
+  firstname: string;
+  lastname: string;
+  majorId?: string;
+};
+type SemesterOpt = { id: number; term: string; academicYear: string };
 
 /* ---------- API shapes (multi-case keys) ---------- */
 type FacultyAPI = {
@@ -81,6 +94,8 @@ type SubjectTimeAPI = {
   end_time?: string;
   EndAt?: string;
 };
+
+// ++ ขยาย SubjectAPI ให้รองรับ teacher/semester + term/year
 type SubjectAPI = {
   subject_id?: string;
   subjectId?: string;
@@ -92,20 +107,37 @@ type SubjectAPI = {
   name?: string;
   credit?: number | string;
   Credit?: number | string;
-  study_times?: SubjectTimeAPI[];
-  schedule?: SubjectTimeAPI[];
+
   major_id?: string;
   majorId?: string;
   MajorID?: string;
   major_name?: string;
   majorName?: string;
   MajorName?: string;
+
   faculty_id?: string;
   facultyId?: string;
   FacultyID?: string;
   faculty_name?: string;
   facultyName?: string;
   FacultyName?: string;
+
+  teacher_id?: string | number;
+  teacherId?: string | number;
+  TeacherID?: string | number;
+
+  semester_id?: string | number;
+  semesterId?: string | number;
+  SemesterID?: string | number;
+
+  term?: string;
+  Term?: string;
+  academic_year?: string;
+  AcademicYear?: string;
+  academicYear?: string;
+
+  study_times?: SubjectTimeAPI[];
+  schedule?: SubjectTimeAPI[];
 };
 
 /* ---------- Row type used by Table ---------- */
@@ -120,6 +152,13 @@ function chunk<T>(arr: T[], size: number): T[][] {
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
+const toStr = (v: string | number | undefined | null): string =>
+  v == null ? "" : String(v);
+const toNum = (v: string | number | undefined | null): number | undefined => {
+  if (v === undefined || v === null || v === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
 
 /* ---------- Modal state for times ---------- */
 type TimeRow = { id?: number; start: dayjs.Dayjs; end: dayjs.Dayjs };
@@ -150,6 +189,12 @@ const CHANGE: React.FC = () => {
     original: [],
     rows: [],
   });
+
+  // ++ state สำหรับอาจารย์/ภาคการศึกษา
+  const [teachers, setTeachers] = useState<TeacherOpt[]>([]);
+  const [semesters, setSemesters] = useState<SemesterOpt[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [loadingSemesters, setLoadingSemesters] = useState(false);
 
   /* ---------- fetch faculties ---------- */
   const fetchFaculties = async () => {
@@ -193,6 +238,54 @@ const CHANGE: React.FC = () => {
     }
   };
 
+  // ++ fetch teachers
+  const fetchTeachers = async () => {
+    try {
+      setLoadingTeachers(true);
+      const data = await getTeacherAll();
+      const arr: TeacherInterface[] = Array.isArray(data) ? data : [];
+      setTeachers(
+        arr.map((t) => ({
+          id: toStr(t.TeacherID),
+          firstname: t.FirstName ?? "",
+          lastname: t.LastName ?? "",
+          majorId: t.MajorID ?? "",
+        }))
+      );
+    } catch (e) {
+      console.error("fetchTeachers error:", e);
+      message.error("โหลดรายชื่ออาจารย์ไม่สำเร็จ");
+    } finally {
+      setLoadingTeachers(false);
+    }
+  };
+
+  // ++ fetch semesters (id เป็น number)
+  const fetchSemesters = async () => {
+    try {
+      setLoadingSemesters(true);
+      const data = await getSemesterAll();
+      const arr: SemestermInterface[] = Array.isArray(data) ? data : [];
+      const mapped = arr
+        .map((s) => ({
+          id:
+            typeof s.SemesterID === "number"
+              ? s.SemesterID
+              : Number(s.SemesterID),
+          term: s.Term ?? "",
+          academicYear: s.AcademicYear ?? "",
+        }))
+        .filter((x) => Number.isFinite(x.id));
+      const uniq = Array.from(new Map(mapped.map((m) => [m.id, m])).values());
+      setSemesters(uniq);
+    } catch (e) {
+      console.error("fetchSemesters error:", e);
+      message.error("โหลดภาคการศึกษาไม่สำเร็จ");
+    } finally {
+      setLoadingSemesters(false);
+    }
+  };
+
   /* ---------- fetch subjects + times ---------- */
   const fetchSubjects = async () => {
     try {
@@ -204,12 +297,21 @@ const CHANGE: React.FC = () => {
         SubjectName:
           s.subject_name ?? s.subjectName ?? s.SubjectName ?? s.name ?? "",
         Credit: Number(s.credit ?? s.Credit ?? 0),
-        schedule: [],
-        formattedSchedule: [],
+
         FacultyID: s.faculty_id ?? s.facultyId ?? s.FacultyID ?? "",
         FacultyName: s.faculty_name ?? s.facultyName ?? s.FacultyName,
+
         MajorID: s.major_id ?? s.majorId ?? s.MajorID ?? "",
         MajorName: s.major_name ?? s.majorName ?? s.MajorName,
+
+        // ++ teacher, semester, term/year
+        TeacherID: toStr(s.teacher_id ?? s.teacherId ?? s.TeacherID ?? ""),
+        SemesterID: toNum(s.semester_id ?? s.semesterId ?? s.SemesterID),
+        Term: s.term ?? s.Term ?? "",
+        AcademicYear: s.academic_year ?? s.academicYear ?? s.AcademicYear ?? "",
+
+        schedule: [],
+        formattedSchedule: [],
       }));
 
       const withTimes: SubjectRow[] = await Promise.all(
@@ -241,6 +343,8 @@ const CHANGE: React.FC = () => {
   useEffect(() => {
     fetchFaculties();
     fetchMajors();
+    fetchTeachers();
+    fetchSemesters();
     fetchSubjects();
   }, []);
 
@@ -261,16 +365,18 @@ const CHANGE: React.FC = () => {
     );
   }, [subjects, query]);
 
-  /* ---------- inline edit (id/name/credit/major) ---------- */
+  /* ---------- inline edit (id/name/credit/major + teacher + semester) ---------- */
   const isEditing = (record: SubjectRow) =>
     (record.SubjectID ?? "") === editingKey;
 
   const edit = (record: SubjectRow) => {
     form.setFieldsValue({
-      SubjectID: record.SubjectID, // [CHANGE: SubjectID] ตั้งค่าให้แก้ไขได้
+      SubjectID: record.SubjectID,
       SubjectName: record.SubjectName,
       Credit: Number(record.Credit ?? 0),
       MajorID: record.MajorID ?? "",
+      TeacherID: record.TeacherID ?? "",
+      SemesterID: record.SemesterID, // number
     });
     setEditingKey(record.SubjectID ?? "");
   };
@@ -279,29 +385,56 @@ const CHANGE: React.FC = () => {
 
   const save = async (key: string) => {
     try {
-      // [CHANGE: SubjectID] รวม SubjectID ใน validateFields เพื่ออ่านค่ารหัสใหม่
       const row = (await form.validateFields()) as Pick<
         SubjectInterface,
-        "SubjectName" | "Credit" | "MajorID" | "SubjectID"
+        | "SubjectName"
+        | "Credit"
+        | "MajorID"
+        | "SubjectID"
+        | "TeacherID"
+        | "SemesterID"
       >;
 
-      const newId = String(row.SubjectID ?? "").trim(); // รหัสใหม่ (ถ้ามีการแก้)
+      // เตรียมค่าให้ถูกชนิด/เข้าคู่
+      const teacherId: string | undefined =
+        row.TeacherID && String(row.TeacherID).trim() !== ""
+          ? String(row.TeacherID).trim()
+          : undefined;
+
+      // semester_id ต้องเป็น number
+      const semesterNum: number | undefined =
+        typeof row.SemesterID === "number"
+          ? row.SemesterID
+          : toNum(row.SemesterID);
+
+      if (semesterNum !== undefined && !Number.isFinite(semesterNum)) {
+        message.error("ภาคการศึกษาไม่ถูกต้อง");
+        return;
+      }
+
+      // หา faculty_id ที่เข้าคู่กับ Major ที่เลือก
+      const majorObj = majors.find((m) => String(m.id) === String(row.MajorID));
+      // fallback: ใช้ faculty เดิมของแถว ถ้า major ไม่มี facultyId ใน option
+      const current = subjects.find((s) => String(s.SubjectID) === String(key));
+      const facultyIdToSend = majorObj?.facultyId ?? current?.FacultyID ?? "";
+
       setSubmitting(true);
 
-      // [CHANGE: SubjectID] ถ้ารหัสเปลี่ยน ส่งทั้ง subject_id และ new_subject_id
-      // เพื่อรองรับหลายรูปแบบ backend (อันที่ไม่รองรับจะถูกเพิกเฉย)
       await updateSubject(key, {
         subject_name: row.SubjectName ?? "",
         credit: Number(row.Credit ?? 0),
         major_id: row.MajorID ?? "",
-        ...(newId && newId !== key
-          ? { subject_id: newId, new_subject_id: newId }
+        ...(facultyIdToSend ? { faculty_id: facultyIdToSend } : {}),
+        ...(teacherId ? { teacher_id: teacherId } : {}),
+        ...(typeof semesterNum === "number"
+          ? { semester_id: semesterNum }
           : {}),
+        // ไม่ส่ง subject_id/new_subject_id (backend ยังไม่รองรับ)
       });
 
       message.success("บันทึกการแก้ไขวิชาสำเร็จ");
       setEditingKey("");
-      fetchSubjects();
+      await fetchSubjects();
     } catch (err) {
       console.error("save error:", err);
       message.error("บันทึกการแก้ไขไม่สำเร็จ");
@@ -441,7 +574,7 @@ const CHANGE: React.FC = () => {
   /* ---------- Editable columns ---------- */
   interface EditableColumnType extends ColumnType<SubjectRow> {
     editable?: boolean;
-    inputType?: "number" | "text" | "select";
+    inputType?: "number" | "text" | "select" | "teacher" | "semester";
   }
 
   const columns: EditableColumnType[] = [
@@ -449,8 +582,8 @@ const CHANGE: React.FC = () => {
       title: "รหัสวิชา",
       dataIndex: "SubjectID",
       width: "10%",
-      editable: true, // [CHANGE: SubjectID] ทำให้คอลัมน์นี้แก้ไขได้
-      inputType: "text", // [CHANGE: SubjectID] ใช้กล่องข้อความ
+      editable: true,
+      inputType: "text",
     },
     {
       title: "ชื่อรายวิชา",
@@ -485,6 +618,32 @@ const CHANGE: React.FC = () => {
       width: 200,
       render: (_: unknown, row: SubjectRow) =>
         row.MajorName ?? (majors.find((m) => m.id === row.MajorID)?.name || ""),
+    },
+    {
+      title: "อาจารย์",
+      dataIndex: "TeacherID",
+      editable: true,
+      inputType: "teacher",
+      width: 200,
+      render: (_: unknown, row: SubjectRow) => {
+        const t = teachers.find(
+          (tt) => String(tt.id) === String(row.TeacherID)
+        );
+        return t ? `${t.firstname} ${t.lastname}`.trim() : "-";
+      },
+    },
+    {
+      title: "ภาคการศึกษา",
+      dataIndex: "SemesterID",
+      editable: true,
+      inputType: "semester",
+      width: 200,
+      render: (_: unknown, row: SubjectRow) => {
+        const s = semesters.find((ss) => ss.id === (row.SemesterID as number));
+        const term = row.Term || s?.term;
+        const year = row.AcademicYear || s?.academicYear;
+        return term && year ? `${term}/${year}` : "-";
+      },
     },
     {
       title: "เวลาเรียน",
@@ -568,8 +727,8 @@ const CHANGE: React.FC = () => {
   type EditableCellProps = {
     editing: boolean;
     dataIndex: string;
-    columnTitle?: ColumnType<SubjectRow>["title"]; // ✅ รับได้ทั้ง ReactNode หรือ function
-    inputType: "number" | "text" | "select";
+    columnTitle?: ColumnType<SubjectRow>["title"];
+    inputType: "number" | "text" | "select" | "teacher" | "semester";
     record: SubjectRow;
     index?: number;
     children?: React.ReactNode;
@@ -617,15 +776,53 @@ const CHANGE: React.FC = () => {
           ))}
         </Select>
       );
+    } else if (inputType === "teacher") {
+      // กรองอาจารย์ตามสาขาที่ถูกเลือก (ถ้าแก้ Major ในฟอร์ม ให้ใช้ค่าจากฟอร์ม)
+      const chosenMajor: string =
+        (form.getFieldValue("MajorID") as string) ?? record.MajorID ?? "";
+      const options = teachers.filter(
+        (t) => !t.majorId || t.majorId === chosenMajor
+      );
+      inputNode = (
+        <Select
+          style={{ minWidth: 200 }}
+          loading={loadingTeachers}
+          defaultValue={record.TeacherID}
+          onChange={(val) => form.setFieldValue("TeacherID", val)}
+        >
+          {options.map((t) => (
+            <Option key={t.id} value={t.id}>
+              {`${t.firstname} ${t.lastname}`.trim()}
+            </Option>
+          ))}
+        </Select>
+      );
+    } else if (inputType === "semester") {
+      inputNode = (
+        <Select
+          style={{ minWidth: 200 }}
+          loading={loadingSemesters}
+          defaultValue={record.SemesterID}
+          onChange={(val) => form.setFieldValue("SemesterID", val)}
+        >
+          {semesters.map((s) => (
+            <Option key={s.id} value={s.id}>
+              {`${s.term}/${s.academicYear}`}
+            </Option>
+          ))}
+        </Select>
+      );
     }
 
     // map dataIndex ของคอลัมน์ -> ชื่อฟิลด์ที่ใช้ในฟอร์ม
     const nameMap: Record<string, string> = {
-      SubjectID: "SubjectID", // [CHANGE: SubjectID] ให้ฟอร์มคุมรหัสวิชา
+      SubjectID: "SubjectID",
       SubjectName: "SubjectName",
       Credit: "Credit",
-      MajorName: "MajorID", // แก้ผ่าน MajorID (ส่ง id)
+      MajorName: "MajorID", // แก้ Major ผ่าน id
       MajorID: "MajorID",
+      TeacherID: "TeacherID",
+      SemesterID: "SemesterID", // number
     };
     const fieldName = nameMap[dataIndex] ?? dataIndex;
 
@@ -651,16 +848,17 @@ const CHANGE: React.FC = () => {
                   ]
                 : fieldName === "MajorID"
                 ? [{ required: true, message: "กรุณาเลือกสาขา" }]
+                : fieldName === "TeacherID"
+                ? [{ required: true, message: "กรุณาเลือกอาจารย์" }]
+                : fieldName === "SemesterID"
+                ? [{ required: true, message: "กรุณาเลือกภาคการศึกษา" }]
                 : fieldName === "SubjectID"
                 ? [
-                    // [VALIDATE: SubjectID] ต้องกรอกรหัส
                     { required: true, message: "กรุณากรอกรหัสวิชา" },
-                    // [VALIDATE: SubjectID] รูปแบบอนุญาต A–Z, a–z, 0–9, และขีดกลาง
                     {
                       pattern: /^[A-Za-z0-9-]+$/,
                       message: "ใช้ได้เฉพาะตัวอักษร/ตัวเลข/ขีดกลาง (-)",
                     },
-                    // [VALIDATE: SubjectID] เช็คไม่ให้ซ้ำกับรายวิชาอื่น
                     {
                       validator: async (_rule, value) => {
                         const v = String(value ?? "").trim();
@@ -709,11 +907,20 @@ const CHANGE: React.FC = () => {
             columns={mergedColumns}
             rowKey="SubjectID"
             pagination={{ onChange: cancel }}
-            loading={submitting || loadingFaculties || loadingMajors}
+            loading={
+              submitting ||
+              loadingFaculties ||
+              loadingMajors ||
+              loadingTeachers ||
+              loadingSemesters
+            }
             className="custom-table-header"
             rowClassName={(_rec, i) =>
               i % 2 === 0 ? "table-row-light" : "table-row-dark"
             }
+            // sticky
+            // scroll={{ x: "max-content" }} // ให้ table เป็นตัวเลื่อนแนวนอนเอง หัว-ตัว sync กัน
+            // tableLayout="auto" // ให้คอลัมน์กว้างตามเนื้อหา (ไม่ fixed)
           />
         </Form>
 
@@ -752,30 +959,38 @@ const CHANGE: React.FC = () => {
           </div>
         </Modal>
 
-        {/* Styles */}
+        {/* C — Table styles */}
         <style>{`
-          .table-row-light { background-color: #dad1d1ff; }
-          .table-row-dark  { background-color: #dad1d1ff; }
+          /* ใช้สีเส้นหลักให้ตรงกัน */
+          :root { --grid-color: #f0e9e9ff; }
 
           .custom-table-header .ant-table-thead > tr > th {
-            background: #2e236c;
-            color: #fff;
-            font-weight: bold;
-            font-size: 13px;
-            border-bottom: 2px solid #ffffffff;
-            border-right: 2px solid #ffffffff;
+            border-right: 1px solid var(--grid-color) !important;
+            border-bottom: 1px solid var(--grid-color) !important;
           }
           .custom-table-header .ant-table-tbody > tr > td {
-            border-bottom: 2px solid #ffffffff;
-            border-right: 2px solid #ffffffff;
+            border-right: 1px solid var(--grid-color) !important;
+            border-bottom: 1px solid var(--grid-color) !important;
           }
-          .custom-table-header .ant-table-tbody > tr > td:last-child,
-          .custom-table-header .ant-table-thead > tr > th:last-child {
-            border-right: none;
+
+          /* ⛔️ ปิดเส้นขาว (split line) ของหัวตาราง */
+          .custom-table-header .ant-table-thead > tr > th::before {
+            background: transparent !important;
+            width: 0 !important;
           }
-          .custom-table-header .ant-table-tbody > tr:hover > td {
-            background-color: #dad1d1ff !important;
-            transition: background 0.2s;
+          /* กันกรณี sticky header */
+          .custom-table-header .ant-table-sticky-holder .ant-table-thead > tr > th::before {
+            background: transparent !important;
+            width: 0 !important;
+          }
+          /* เผื่อบางธีมมี ::after ด้วย */
+          .custom-table-header .ant-table-thead > tr > th::after {
+            display: none !important;
+          }
+
+          /* วิธีทางเลือก: เปลี่ยนตัวแปรสี split line ให้โปร่งใส (AntD v5) */
+          .custom-table-header .ant-table {
+            --ant-table-header-column-split-color: transparent;
           }
         `}</style>
       </Content>
