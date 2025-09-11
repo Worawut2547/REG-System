@@ -6,62 +6,18 @@ import (
 	"reg_system/services"
 )
 
-// Map role -> permission
-/*var RolePermission = map[string][]string{
-	"admin": {
-		"admin.read.self",
-		"student.create", "student.read", "student.delete",
-		"teacher.create", "teacher.delete",
-		"create.curr", "update.curr", "delete.curr",
-		"create.sub-curr", "delete.sub-curr",
-		"create.curr-book",
-		"create.sub", "update.sub", "delete.sub",
-		"create.sub-time" , "update.sub-time", "delete.sub-time",
-		"admin.read.bill", "admin.read.all.bill", "admin.update.bill",
-
-		"read.graduation",
-	},
-
-	"student": {
-		"student.read.self", "student.update.self",
-		"student.read.grade",
-		"student.read.score",
-		"student.read.bill.self", "student.create.bill.self", "student.upload.bill",
-
-		"read.graduation.self", "create.graduation",
-
-		"read.registration.self", "create.registration", "delete.registration.self",
-
-		"create.report",
-		"read.report.self",
-
-		"read.review",
-	},
-
-	"teacher": {
-		//"teacher.read.self", 
-		"teacher.update.self", "teacher.teach",
-		"teacher.show.student",
-		"teacher.create.grade",
-		"teacher.create.score",
-	},
-}*/
-
 // Route -> Permission Mapping
 var RoutePermission = map[string][]string{
 	// admin
 	"GET /admin/:id": {"admin", "student"},
-
 	// student
-	"GET /students/":       {"admin"},
-	"GET /students/:id":    {"student"},
-	"PUT /students/:id":    {"student"},
-	"DELETE /students/:id": {"admin"},
-	"POST /students/":      {"admin"},
-
-	"GET /students/:id/grades": {"student"},
-	"GET /students/:id/scores": {"student"},
-
+	"GET /students/":             {"admin"},
+	"GET /students/:id":          {"student"},
+	"PUT /students/:id":          {"student"},
+	"DELETE /students/:id":       {"admin"},
+	"POST /students/":            {"admin"},
+	"GET /students/:id/grades":   {"student"},
+	"GET /students/:id/scores":   {"student"},
 	"GET /students/reports/:sid": {"student"},
 
 	// teacher
@@ -72,9 +28,8 @@ var RoutePermission = map[string][]string{
 	"POST /teachers/":                 {"admin"},
 	"GET /teachers/:id/subjects":      {"teacher"},
 	"GET /registrations/subjects/:id": {"teacher"},
-
-	"POST /teachers/grades": {"teacher"},
-	"POST /teachers/scores": {"teacher"},
+	"POST /teachers/grades":           {"teacher"},
+	"POST /teachers/scores":           {"teacher"},
 
 	// curriculum
 	"POST /curriculums/":                {"admin"},
@@ -89,73 +44,68 @@ var RoutePermission = map[string][]string{
 	"DELETE /subject-curriculums/:id": {"admin"},
 
 	// subject
-	"POST /subjects/": {"admin"},
+	"POST /subjects/":             {"admin"},
 	"DELETE /subjects/:subjectId": {"admin"},
-	"PUT /subjects/:subjectId": {"admin"},
-
+	"PUT /subjects/:subjectId":    {"admin"},
+	
 	// subject study time
-	//"GET /subjects/:subjectId/times": "read.sub-time",
-	"POST /subjects/:subjectId/times": {"admin"},
+	"POST /subjects/:subjectId/times":           {"admin"},
 	"DELETE /subjects/:subjectId/times/:timeId": {"admin"},
-	"PUT /subjects/:subjectId/times/:timeId": {"admin"},
+	"PUT /subjects/:subjectId/times/:timeId":    {"admin"},
 
 	// bill
-	"GET /bills/:id":         {"student"},
-	"POST /bills/:id/create": {"student"},
+	"GET /bills/:id":                     {"student"},
+	"POST /bills/:id/create":             {"student"},
 	"POST /bills/upload/:id/:year/:term": {"student"},
-	"GET /bills/preview/:id": {"admin"},
-	"GET /bills/admin/all":   {"admin"},
-	"PUT /bills/:id":         {"admin"},
+	"GET /bills/preview/:id":             {"admin"},
+	"GET /bills/admin/all":               {"admin"},
+	"PUT /bills/:id":                     {"admin"},
 
 	// graduation
-	"GET /graduations/": {"admin"},
-	"POST /graduations/": {"student"},
+	"GET /graduations/":    {"admin"},
+	"POST /graduations/":   {"student"},
 	"GET /graduations/:id": {"student"},
 	"PUT /graduations/:id": {"admin , student"},
 
 	// registration
-	"GET /registrations/:id": {"student"},
-	"POST /registrations/": {"student"},
+	"GET /registrations/:id":    {"student"},
+	"POST /registrations/":      {"student"},
 	"DELETE /registrations/:id": {"student"},
 
 	// report
-	"GET /reports/":      {"admin", "teacher"},
-	"GET /reports/:id": {"admin", "teacher"},
-	"POST /reports/": {"student"},
-	"GET /reports/:id/comments": {"admin", "teacher", "student"},
+	"GET /reports/":              {"admin", "teacher"},
+	"GET /reports/:id":           {"admin", "teacher"},
+	"POST /reports/":             {"student"},
+	"GET /reports/:id/comments":  {"admin", "teacher", "student"},
 	"POST /reports/:id/comments": {"teacher", "admin"},
-	"PUT /reports/:id/status": {"teacher", "admin"},
+	"PUT /reports/:id/status":    {"teacher", "admin"},
 
 	// report type
 	//"GET /report-types/"
-	"POST /report-types/": {"admin"},
+	"POST /report-types/":      {"admin"},
 	"DELETE /report-types/:id": {"admin"},
-	"PUT /report-types/:id": {"admin"},
+	"PUT /report-types/:id":    {"admin"},
 
 	// reviewer
-	"GET /reviewers/": {"student"},
-	"GET /reviewers/by-username/:username": {"teacher","student"},
-	"GET /reviewers/:rid/reports": {"teacher"},
-	
+	"GET /reviewers/":                      {"student"},
+	"GET /reviewers/by-username/:username": {"teacher", "student"},
+	"GET /reviewers/:rid/reports":          {"teacher"},
 
 	// anyone
-	"GET /majors/":    {"admin", "student", "teacher"},
-	"GET /faculties/": {"admin", "student", "teacher"},
-	"GET /degrees/":   {"admin", "student", "teacher"},
-	"GET /genders/":   {"admin", "student", "teacher"},
-	"GET /positions/": {"admin", "student", "teacher"},
-
-	"GET /teachers/":   {"admin", "student", "teacher"},
-	"GET /curriculums/":         {"admin", "student", "teacher"},
-	"GET /curriculum-book/preview/:id":  {"admin", "student", "teacher"},
-	"GET /subject-curriculums/": {"admin", "student", "teacher"},
-	"GET /subjects/":            {"admin", "student", "teacher"},
-	"GET /subjects/:subjectId/times": {"admin", "student", "teacher"},
-	"GET /subjects/:subjectId": {"admin", "student", "teacher"},
-
-	"GET /report-types/": {"admin", "student", "teacher"},
-
-	"GET /teachers/:id": {"admin", "student", "teacher"},
+	"GET /majors/":                     {"admin", "student", "teacher"},
+	"GET /faculties/":                  {"admin", "student", "teacher"},
+	"GET /degrees/":                    {"admin", "student", "teacher"},
+	"GET /genders/":                    {"admin", "student", "teacher"},
+	"GET /positions/":                  {"admin", "student", "teacher"},
+	"GET /teachers/":                   {"admin", "student", "teacher"},
+	"GET /curriculums/":                {"admin", "student", "teacher"},
+	"GET /curriculum-book/preview/:id": {"admin", "student", "teacher"},
+	"GET /subject-curriculums/":        {"admin", "student", "teacher"},
+	"GET /subjects/":                   {"admin", "student", "teacher"},
+	"GET /subjects/:subjectId/times":   {"admin", "student", "teacher"},
+	"GET /subjects/:subjectId":         {"admin", "student", "teacher"},
+	"GET /report-types/":               {"admin", "student", "teacher"},
+	"GET /teachers/:id":                {"admin", "student", "teacher"},
 }
 
 func PermissionMiddleware() gin.HandlerFunc {
@@ -184,8 +134,8 @@ func PermissionMiddleware() gin.HandlerFunc {
 
 		// ถ้า role ของ user อยู่ใน allowedRoles ผ่าน
 		allowed := false
-		for _,role := range allowedRoles {
-			if claims.Role  == role {
+		for _, role := range allowedRoles {
+			if claims.Role == role {
 				allowed = true
 				break
 			}
@@ -198,30 +148,5 @@ func PermissionMiddleware() gin.HandlerFunc {
 		}
 
 		c.Next()
-
-		// ถ้า route ต้องการ permission "any" ทุก role ผ่าน
-		/*if requiredPerm == "any" {
-			c.Next()
-			return
-		}*/
-
-		// ดุึง permission ของ route
-		//permissions := RolePermission[claims.Role]
-
-		//allowed := false
-		/*for _, p := range permissions {
-			if p == requiredPerm {
-				allowed = true
-				break
-			}
-		}
-
-		if !allowed {
-			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: insufficient permissions"})
-			c.Abort()
-			return
-		}
-
-		c.Next()*/
 	}
 }
