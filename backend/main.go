@@ -233,9 +233,11 @@ func main() {
     reportTypeGroup := r.Group("/report-types")
     {
         reportTypeGroup.GET("/", reporttypes.ListReportTypes)        // admin, student, teacher
-        reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID)   
+        reportTypeGroup.GET("", reporttypes.ListReportTypes)         // admin, student, teacher
+        reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID)   // admin
         reportTypeGroup.POST("/", reporttypes.CreateReportType)      // admin
-        reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)    
+        reportTypeGroup.POST("", reporttypes.CreateReportType)       // admin
+        reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)    // admin
         reportTypeGroup.DELETE("/:id", reporttypes.DeleteReportType) // admin
     }
 

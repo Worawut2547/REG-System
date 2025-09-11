@@ -16,7 +16,8 @@ const AddType: React.FC<Props> = ({ onBack }) => {
     try {
       // ไม่ส่ง ReportType_id เพื่อให้หลังบ้าน gen ให้อัตโนมัติ
       const payload = { ReportType_Name: name.trim(), ReportTypeDescription: desc.trim() } as any;
-      await axios.post(`${apiUrl}/report-types`, payload, { headers: { 'Content-Type': 'application/json' } });
+      // Use trailing slash to avoid dev proxy losing /api due to redirect
+      await axios.post(`${apiUrl}/report-types/`, payload, { headers: { 'Content-Type': 'application/json' } });
       message.success("เพิ่มประเภทคำร้องเรียบร้อย");
       setName(""); setDesc("");
       onBack?.();

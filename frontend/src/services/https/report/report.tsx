@@ -7,7 +7,8 @@ import type { ReportTypeInterface } from "../../../interfaces/ReportType";
 // -------- Report Types --------
 export const getReportTypes = async (): Promise<ReportTypeInterface[]> => {
   try {
-    const res = await axios.get(`${apiUrl}/report-types`);
+    // Use trailing slash to avoid backend redirect that may drop the /api prefix via proxy
+    const res = await axios.get(`${apiUrl}/report-types/`);
     return Array.isArray(res.data) ? res.data : [];
   } catch (error) {
     console.error("Error fetching report types:", error);
