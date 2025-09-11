@@ -1,6 +1,5 @@
-import axios from "axios";
 import { type SubjectStudyTimeInterface } from "../../../interfaces/SubjectsStudyTime";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 
 type StudyTimeAPI = {
   id?: number | string;
@@ -38,8 +37,8 @@ export const getStudyTimesBySubject = async (
 
   try {
     // ❌ เดิมมี "/" ท้าย -> 307/พรีไฟลต์เพี้ยน
-    const response = await axios.get<StudyTimeAPI[]>(
-      `${apiUrl}/subjects/${subjectId}/times`
+    const response = await api.get<StudyTimeAPI[]>(
+      `/subjects/${subjectId}/times`
     );
     return (Array.isArray(response.data) ? response.data : []).map(mapStudyTime);
   } catch (error) {
@@ -60,8 +59,8 @@ export const getStudyTimeOne = async (
   if (timeId === null || timeId === undefined) throw new Error("timeId is required");
 
   try {
-    const response = await axios.get<StudyTimeAPI>(
-      `${apiUrl}/subjects/${subjectId}/times/${timeId}`
+    const response = await api.get<StudyTimeAPI>(
+      `/subjects/${subjectId}/times/${timeId}`
     );
     return mapStudyTime(response.data);
   } catch (error) {
@@ -82,8 +81,8 @@ export const addStudyTime = async (
   if (!subjectId) throw new Error("subjectId is required");
   try {
     // ❌ เดิมมี "/" ท้าย -> 307/พรีไฟลต์เพี้ยน
-    const response = await axios.post<StudyTimeAPI>(
-      `${apiUrl}/subjects/${subjectId}/times`,
+    const response = await api.post<StudyTimeAPI>(
+      `/subjects/${subjectId}/times`,
       data,
       { headers: { "Content-Type": "application/json" } }
     );
@@ -107,8 +106,8 @@ export const updateStudyTime = async (
   if (timeId === null || timeId === undefined) throw new Error("timeId is required");
 
   try {
-    const response = await axios.put<StudyTimeAPI>(
-      `${apiUrl}/subjects/${subjectId}/times/${timeId}`,
+    const response = await api.put<StudyTimeAPI>(
+      `/subjects/${subjectId}/times/${timeId}`,
       data,
       { headers: { "Content-Type": "application/json" } }
     );
@@ -132,7 +131,7 @@ export const deleteStudyTime = async (
 
   try {
     // ❌ เดิมลืม "/" คั่น -> /times${timeId}
-    await axios.delete(`${apiUrl}/subjects/${subjectId}/times/${timeId}`);
+    await api.delete(`/subjects/${subjectId}/times/${timeId}`);
   } catch (error) {
     console.error("Error deleting study time:", error);
     throw error;

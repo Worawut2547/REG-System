@@ -1,7 +1,6 @@
-import axios from "axios";
 import { type StudentInterface } from "../../../interfaces/Student";
 
-import { apiUrl } from "../../api";
+import { api } from "../api";
 
 
 export const getNameStudent = async (username: string) => {
@@ -10,7 +9,7 @@ export const getNameStudent = async (username: string) => {
         throw new Error("Username is required");
     }
     try {
-        const response = await axios.get(`${apiUrl}/students/${username}`);
+        const response = await api.get(`/students/${username}`);
         console.log("api student profile", response)
         return response.data;
     }
@@ -23,7 +22,7 @@ export const getNameStudent = async (username: string) => {
 export const getStudentAll = async (): Promise<StudentInterface[]> => {
     //console.log("Fetching student data for:", username);
     try {
-        const response = await axios.get(`${apiUrl}/students/`)
+        const response = await api.get(`/students/`)
         console.log("api student data:", response);
 
         return response.data;
@@ -36,7 +35,7 @@ export const getStudentAll = async (): Promise<StudentInterface[]> => {
 
 export const createStudent = async (data: StudentInterface): Promise<StudentInterface> => {
     try {
-        const response = await axios.post(`${apiUrl}/students/`, data);
+        const response = await api.post(`/students/`, data);
         return response.data;
     }
     catch (error) {
@@ -49,7 +48,7 @@ export const updateStudentProfile = async (data: StudentInterface): Promise<Stud
     const username = localStorage.getItem("username");
     console.log("api edit profile student:", data);
     try {
-        const response = await axios.put(`${apiUrl}/students/${username}`, data);
+        const response = await api.put(`/students/${username}`, data);
         return response.data
     }
     catch (error) {
@@ -60,7 +59,7 @@ export const updateStudentProfile = async (data: StudentInterface): Promise<Stud
 
 export const deleteStudent = async (sid: string) => {
     try {
-        const response = await axios.delete(`${apiUrl}/students/${sid}`);
+        const response = await api.delete(`/students/${sid}`);
         return response
     }
     catch (error) {

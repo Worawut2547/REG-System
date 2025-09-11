@@ -9,87 +9,68 @@ import (
 func RegistrationExample() {
 	db := config.DB()
 
-	// สร้างตัวอย่างการลงทะเบียน
 	registrations := []entity.Registration{
-		{
-			RegistrationID: "REG001",
-			Date:           time.Now(),
-			StudentID:      "B6616052",
-			SubjectID:      "233001",
-		},
-		{
-			RegistrationID: "REG002",
-			Date:           time.Now(),
-			StudentID:      "B6616052",
-			SubjectID:      "233031",
-		},
-		{
-			RegistrationID: "REG003",
-			Date:           time.Now(),
-			StudentID:      "B6616052",
-			SubjectID:      "233072",
-		},
-		{
-			RegistrationID: "REG004",
-			Date:           time.Now(),
-			StudentID:      "B6616052",
-			SubjectID:      "233012",
-		},
-		{
-			RegistrationID: "REG005",
-			Date:           time.Now(),
-			StudentID:      "B6630652",
-			SubjectID:      "233001",
-		},
-		{
-			RegistrationID: "REG006",
-			Date:           time.Now(),
-			StudentID:      "B6630652",
-			SubjectID:      "233031",
-		},
-		{
-			RegistrationID: "REG007",
-			Date:           time.Now(),
-			StudentID:      "B6630652",
-			SubjectID:      "233072",
-		},
-		{
-			RegistrationID: "REG008",
-			Date:           time.Now(),
-			StudentID:      "B6630654",
-			SubjectID:      "233001",
-		},
-		{
-			RegistrationID: "REG009",
-			Date:           time.Now(),
-			StudentID:      "B6630654",
-			SubjectID:      "233031",
-		},
-		{
-			RegistrationID: "REG010",
-			Date:           time.Now(),
-			StudentID:      "B6630654",
-			SubjectID:      "233072",
-		},
-	}
+		// เทอม 1
+		{RegistrationID: "REG001", Date: time.Now(), StudentID: "B6616052", SubjectID: "233001"},
+		{RegistrationID: "REG002", Date: time.Now(), StudentID: "B6616052", SubjectID: "233031"},
+		{RegistrationID: "REG003", Date: time.Now(), StudentID: "B6616052", SubjectID: "233072"},
+		{RegistrationID: "REG004", Date: time.Now(), StudentID: "B6616052", SubjectID: "233012"},
 
-	// บันทึกลง DB
-	/*for _, r := range registrations {
-		db.FirstOrCreate(&r)
-	}*/
+		// เทอม 2
+		{RegistrationID: "REG011", Date: time.Now(), StudentID: "B6616052", SubjectID: "233032"},
+		{RegistrationID: "REG012", Date: time.Now(), StudentID: "B6616052", SubjectID: "233052"},
+		{RegistrationID: "REG013", Date: time.Now(), StudentID: "B6616052", SubjectID: "233054"},
+		{RegistrationID: "REG014", Date: time.Now(), StudentID: "B6616052", SubjectID: "234053"},
+
+		// เทอม 3
+		{RegistrationID: "REG021", Date: time.Now(), StudentID: "B6616052", SubjectID: "233053"},
+		{RegistrationID: "REG022", Date: time.Now(), StudentID: "B6616052", SubjectID: "233074"},
+		{RegistrationID: "REG023", Date: time.Now(), StudentID: "B6616052", SubjectID: "234033"},
+		{RegistrationID: "REG024", Date: time.Now(), StudentID: "B6616052", SubjectID: "234052"},
+		
+		// เทอม 1
+		{RegistrationID: "REG005", Date: time.Now(), StudentID: "B6630652", SubjectID: "233001"},
+		{RegistrationID: "REG006", Date: time.Now(), StudentID: "B6630652", SubjectID: "233031"},
+		{RegistrationID: "REG007", Date: time.Now(), StudentID: "B6630652", SubjectID: "233072"},
+		{RegistrationID: "REG008", Date: time.Now(), StudentID: "B6630652", SubjectID: "233012"},
+
+		// เทอม 2
+		{RegistrationID: "REG015", Date: time.Now(), StudentID: "B6630652", SubjectID: "233032"},
+		{RegistrationID: "REG016", Date: time.Now(), StudentID: "B6630652", SubjectID: "233052"},
+		{RegistrationID: "REG017", Date: time.Now(), StudentID: "B6630652", SubjectID: "233054"},
+		{RegistrationID: "REG018", Date: time.Now(), StudentID: "B6630652", SubjectID: "234053"},
+
+		// เทอม 3
+		{RegistrationID: "REG025", Date: time.Now(), StudentID: "B6630652", SubjectID: "233053"},
+		{RegistrationID: "REG026", Date: time.Now(), StudentID: "B6630652", SubjectID: "233074"},
+		{RegistrationID: "REG027", Date: time.Now(), StudentID: "B6630652", SubjectID: "234033"},
+		{RegistrationID: "REG028", Date: time.Now(), StudentID: "B6630652", SubjectID: "234052"},
+
+		// B6630654
+		// เทอม 1
+		{RegistrationID: "REG105", Date: time.Now(), StudentID: "B6630654", SubjectID: "233001"},
+		{RegistrationID: "REG106", Date: time.Now(), StudentID: "B6630654", SubjectID: "233031"},
+		//{RegistrationID: "REG107", Date: time.Now(), StudentID: "B6630654", SubjectID: "233072"},
+		//{RegistrationID: "REG108", Date: time.Now(), StudentID: "B6630654", SubjectID: "233012"},
+		// เทอม 2
+		{RegistrationID: "REG115", Date: time.Now(), StudentID: "B6630654", SubjectID: "233032"},
+		{RegistrationID: "REG116", Date: time.Now(), StudentID: "B6630654", SubjectID: "233052"},
+		//{RegistrationID: "REG117", Date: time.Now(), StudentID: "B6630654", SubjectID: "233054"},
+		{RegistrationID: "REG118", Date: time.Now(), StudentID: "B6630654", SubjectID: "234053"},
+		// เทอม 3
+		{RegistrationID: "REG125", Date: time.Now(), StudentID: "B6630654", SubjectID: "233053"},
+		{RegistrationID: "REG126", Date: time.Now(), StudentID: "B6630654", SubjectID: "233074"},
+		{RegistrationID: "REG127", Date: time.Now(), StudentID: "B6630654", SubjectID: "234033"},
+		//{RegistrationID: "REG128", Date: time.Now(), StudentID: "B6630654", SubjectID: "234052"},
+
+
+	}
+	
+
+	// บันทึกลง DB โดยใช้ FirstOrCreate ป้องกัน duplicate
 	for _, r := range registrations {
 		db.FirstOrCreate(&r, entity.Registration{
 			RegistrationID: r.RegistrationID,
 		})
 	}
-
-	/*
-			เหตุผลที่ต้องแก้:
-
-		FirstOrCreate ต้องมีเงื่อนไขค้นหาชัดเจน (primary key หรือ unique key)
-
-		ไม่เช่นนั้น GORM อาจ ไม่สร้าง row ใหม่ สำหรับนักศึกษาอื่น
-
-		แก้แล้ว → registration และ bill ของ B6630652 จะถูกสร้าง → /bills/B6630652 จะทำงานได้
-	*/
 }

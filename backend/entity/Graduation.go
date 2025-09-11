@@ -19,6 +19,9 @@ type Graduation struct {
 	CurriculumID *string     `json:"CurriculumID,omitempty"` // optional
 	Curriculum   *Curriculum `gorm:"foreignKey:CurriculumID;references:CurriculumID"`
 
+	// ✅ ฟิลด์ใหม่ ใช้แสดงผลเท่านั้น (ไม่บันทึก DB)
+	TotalCredits int `gorm:"-" json:"TotalCredits"`
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

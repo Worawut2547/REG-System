@@ -14,6 +14,7 @@ import (
 
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
+	"reg_system/controller/graduation"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
 	"reg_system/controller/registration"
@@ -24,9 +25,10 @@ import (
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
 	"reg_system/controller/users"
-	"reg_system/controller/graduation"
 
 	"github.com/gin-gonic/gin"
+
+	"reg_system/middlewares"
 )
 
 const port = "8000"
@@ -42,8 +44,10 @@ func main() {
 	// -------------------- Gin Setup --------------------
 	r := gin.Default()
 	r.RedirectTrailingSlash = true
-	r.Use(CORSMiddleware())
+
 	r.Static("/uploads", "./uploads")
+
+	r.Use(CORSMiddleware())
 
 	// -------------------- Auth --------------------
 	r.POST("/signin", users.SignIn)
@@ -55,64 +59,70 @@ func main() {
 		userGroup.PUT("/:id", users.ChangePassword)
 	}
 
+	// AuthMiddleware ตรวจ token ก่อน
+	r.Use(middlewares.AuthMiddleware())
+
+	// จากนั้นทุก route สามารถใช้ PermissionMiddleware เเบบ global
+	r.Use(middlewares.PermissionMiddleware())
+
 	// -------------------- Admin --------------------
 	adminGroup := r.Group("/admin")
 	{
-		adminGroup.GET("/:id", admins.GetAdminID)
+		adminGroup.GET("/:id", admins.GetAdminID) //ทำเเล้ว
 	}
 
 	// -------------------- Students --------------------
 	studentGroup := r.Group("/students")
 	{
-		studentGroup.GET("/:id", students.GetStudentID)
-		studentGroup.POST("/", students.CreateStudent)
-		studentGroup.GET("/", students.GetStudentAll)
+		studentGroup.GET("/:id", students.GetStudentID) //ทำเเล้ว
+		studentGroup.POST("/", students.CreateStudent) //ทำเเล้ว
+		studentGroup.GET("/", students.GetStudentAll) //ทำเเล้ว
 		studentGroup.PUT("/:id", students.UpdateStudent)
-		studentGroup.DELETE("/:id", students.DeleteStudent)
+		studentGroup.DELETE("/:id", students.DeleteStudent) //ทำเเล้ว
 
-		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID)
-		studentGroup.GET("/:id/scores", scores.GetScoreByStudentID)
+		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID) //ทำเเล้ว
+		studentGroup.GET("/:id/scores", scores.GetScoreByStudentID) // ทำเเล้ว
 	}
 
 	// -------------------- Teachers --------------------
 	teacherGroup := r.Group("/teachers")
 	{
-		teacherGroup.GET("/:id", teachers.GetTeacherID)
-		teacherGroup.POST("/", teachers.CreateTeacher)
-		teacherGroup.GET("/", teachers.GetTeacherAll) // admin :Earth
+		teacherGroup.GET("/:id", teachers.GetTeacherID) //ทำเเล้ว
+		teacherGroup.POST("/", teachers.CreateTeacher) //ทำเเล้ว
+		teacherGroup.GET("/", teachers.GetTeacherAll) // admin :Earth //ทำเเล้ว
 		teacherGroup.PUT("/:id", teachers.UpdateTeacher)
-		teacherGroup.DELETE("/:id", teachers.DeleteTeacher)
+		teacherGroup.DELETE("/:id", teachers.DeleteTeacher) //ทำเเล้ว
 
-		teacherGroup.GET("/:id/subjects", teachers.GetSubjectByTeacherID)
-		teacherGroup.POST("/grades", grade.CreateGrade)
+		teacherGroup.GET("/:id/subjects", teachers.GetSubjectByTeacherID) //ทำเเล้ว
+		teacherGroup.POST("/grades", grade.CreateGrade) //ทำเเล้ว
 		teacherGroup.GET("/:id/students", teachers.GetStudentByTeacherID)
 
-		teacherGroup.POST("/scores", scores.CreateScores)
+		teacherGroup.POST("/scores", scores.CreateScores) //ทำเเล้ว
 	}
 
 	// -------------------- Majors --------------------
-	majorGroup := r.Group("/majors")
+	majorGroup := r.Group("/majors") //ทำเเล้ว any
 	{
-		majorGroup.GET("/", major.GetMajorAll)  // admin  :Earth
+		majorGroup.GET("/", major.GetMajorAll) // admin  :Earth
 		majorGroup.POST("/", major.CreateMajor)
 	}
 
 	// -------------------- Faculties --------------------
-	facultyGroup := r.Group("/faculties")
+	facultyGroup := r.Group("/faculties") //ทำเเล้ว any
 	{
 		facultyGroup.GET("/", faculty.GetFacultyAll) // admin, student, teacher  :Earth
 		facultyGroup.POST("/", faculty.CreateFaculty)
 	}
 
 	// -------------------- Degrees --------------------
-	degreeGroup := r.Group("/degrees")
+	degreeGroup := r.Group("/degrees") //ทำเเล้ว any
 	{
 		degreeGroup.GET("/", degree.GetDegreeAll)
 		degreeGroup.POST("/", degree.CreateDegree)
 	}
 
 	// -------------------- Positions --------------------
-	positionGroup := r.Group("/positions")
+	positionGroup := r.Group("/positions/") //ทำเเล้ว any
 	{
 		positionGroup.GET("/", position.GetPositionAll)
 		positionGroup.POST("/", position.CreatePosition)
@@ -132,18 +142,18 @@ func main() {
 		registrationGroup.PUT("/:id", registration.UpdateRegistration)
 		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
 
-		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)
+		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID) //ทำเเล้ว
 	}
 
 	// -------------------- Curriculums --------------------
 	curriculumGroup := r.Group("/curriculums")
 	{
-		curriculumGroup.GET("/", curriculum.GetCurriculumAll)                 // admin, student, teacher  :Earth
+		curriculumGroup.GET("/", curriculum.GetCurriculumAll) // admin, student, teacher  :Earth //ทำเเล้ว
 		curriculumGroup.GET("/:curriculumId", curriculum.GetCurriculumByID)
-		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin  :Earth  
-		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // admin  :Earth
-		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // admin  :Earth
-		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // admin  :Earth
+		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin  :Earth ทำเเล้ว
+		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // admin  :Earth ทำเเล้ว
+		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // admin  :Earth 
+		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // admin  :Earth ทำเเล้ว
 	}
 
 	// -------------------- Curriculum Books (files) --------------------
@@ -151,8 +161,8 @@ func main() {
 	{
 		cb.GET("/", curriculum.GetCurriculumBooks)
 		cb.GET("/:id", curriculum.GetCurriculumBookByID)
-		cb.POST("/register", curriculum.RegisterCurriculumBookByPath) // admin :Earth
-		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)      // admin, student, teacher  :Earth
+		cb.POST("/register", curriculum.RegisterCurriculumBookByPath) // admin :Earth ทำเเล้ว
+		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)      // admin, student, teacher  :Earth any(ยังไม่เสร็จ)
 		cb.GET("/download/:id", curriculum.DownloadCurriculumBook)
 		cb.DELETE("/:id", curriculum.DeleteCurriculumBook)
 	}
@@ -160,33 +170,33 @@ func main() {
 	// -------------------- Subject-Curriculums (link) --------------------
 	subjectCurriculumGroup := r.Group("/subject-curriculums")
 	{
-		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)       // admin, student, teacher  :Earth
+		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll) // admin, student, teacher  :Earth ทำเเล้ว any
 		subjectCurriculumGroup.GET("/:id", subjectcurriculum.GetSubjectCurriculumByID)
-		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // admin  :Earth
-		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // admin  :Earth
+		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // admin  :Earth ทำเเล้ว
+		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // admin  :Earth ทำเเล้ว
 	}
 
 	// -------------------- Subjects & Study Times --------------------
 	subjectGroup := r.Group("/subjects")
 	{
-		subjectGroup.GET("/", subjects.GetSubjectAll)  // admin, student, teacher  :Earth
-		subjectGroup.POST("/", subjects.CreateSubject) // admin  :Earth
+		subjectGroup.GET("/", subjects.GetSubjectAll)  // admin, student, teacher  :Earth ทำเเล้ว any
+		subjectGroup.POST("/", subjects.CreateSubject) // admin  :Earth ทำเเล้ว
 
 		subjectItem := subjectGroup.Group("/:subjectId")
 		{
 			subjectItem.GET("", subjects.GetSubjectID)
-			subjectItem.PUT("", subjects.UpdateSubject)    // admin  :Earth
-			subjectItem.DELETE("", subjects.DeleteSubject) // admin  :Earth
+			subjectItem.PUT("", subjects.UpdateSubject)    // admin  :Earth ทำเเล้ว
+			subjectItem.DELETE("", subjects.DeleteSubject) // admin  :Earth ทำเเล้ว
 
 			// -------------------- Subject Study Times --------------------
 
 			times := subjectItem.Group("/times")
 			{
-				times.GET("", subjectstudytime.GetBySubject)      // admin  :Earth
+				times.GET("", subjectstudytime.GetBySubject) // admin  :Earth ทำเเล้ว
 				times.GET("/:timeId", subjectstudytime.GetOne)
-				times.POST("", subjectstudytime.Create)           // admin  :Earth
-				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth
-				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth
+				times.POST("", subjectstudytime.Create)           // admin  :Earth ทำเเล้ว
+				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth ทำเเล้ว
+				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth ทำเเล้ว
 			}
 		}
 	}
@@ -194,15 +204,14 @@ func main() {
 	//---------------------------------------------------------
 	billGroup := r.Group("/bills")
 	{
-		billGroup.GET("/:id", bill.GetBillByStudentID) //student
-		billGroup.POST("/:id/create", bill.CreateBill) // student
-		billGroup.POST("/upload/:id", bill.UploadReceipt) //student
-		billGroup.GET("/preview/:id", bill.ShowFile) // admin
+		billGroup.GET("/:id", bill.GetBillByStudentID)    //student ทำเเล้ว
+		billGroup.POST("/:id/create", bill.CreateBill)    // student ทำเเล้ว
+		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt) //student ทำเเล้ว
+		billGroup.GET("/preview/:id", bill.ShowFile)      // admin ทำเเล้ว
 		billGroup.GET("/download/:id", bill.DownloadBill)
-		billGroup.GET("/admin/all", bill.GetAllBills) // admin
-		billGroup.PUT("/:id", bill.UpdateBillStatus) // ใช้สำหรับอนุมัติใบเสร็จ
+		billGroup.GET("/admin/all", bill.GetAllBills) // admin ทำเเล้ว
+		billGroup.PUT("/:id", bill.UpdateBillStatus)  // ใช้สำหรับอนุมัติใบเสร็จ ทำเเล้ว
 	}
-	
 
 	//---------------------------------------------------------
 	// Grades
@@ -213,17 +222,17 @@ func main() {
 	}
 
 	//---------------------------------------------------------
-	// Grades
+	// Score
 	scoreGroup := r.Group("/scores")
 	{
-		scoreGroup.GET("/:id",scores.GetScoreByStudentID)
-		scoreGroup.POST("/",scores.CreateScores)
+		scoreGroup.GET("/:id", scores.GetScoreByStudentID)
+		scoreGroup.POST("/", scores.CreateScores)
 	}
 
 	//---------------------------------------------------------
 
 	// -------------------- Genders --------------------
-	r.GET("/genders", gender.GetGenderAll)
+	r.GET("/genders/", gender.GetGenderAll) //ทำเเล้ว any
 
 	graduationGroup := r.Group("/graduations")
 	{

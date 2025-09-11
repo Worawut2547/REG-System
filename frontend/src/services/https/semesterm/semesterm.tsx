@@ -1,6 +1,6 @@
 // services/https/semesterm/semesterm.ts
 import axios from "axios";
-import { apiUrl } from "../../api";
+import { api , apiUrl } from "../api";
 // ถ้าไฟล์ interfaces/Simesterm.ts export เป็น "SemestermInterface" ให้ alias มาเป็น SemesterInterface
 import { type SemestermInterface as SemesterInterface } from "../../../interfaces/Semesterm";
 
@@ -45,18 +45,18 @@ const dedupe = (list: SemesterInterface[]): SemesterInterface[] => {
 ----------------------------------------------------- */
 export const getSemestermAll = async (): Promise<SemesterInterface[]> => {
   // ทางหลัก: /semesters/
-  try {
-    const res = await axios.get<SemAPI[]>(`${apiUrl}/semesters/`);
+  /*try {
+    const res = await api.get<SemAPI[]>(`/semesters/`);
     if (Array.isArray(res.data) && res.data.length > 0) {
       return dedupe(res.data.map(mapSemFromAPI));
     }
   } catch {
     // ปล่อยให้ fallback ต่อไป
-  }
+  }*/
 
   // Fallback: ดึงจาก /subjects/ (ต้องที่ backend ส่ง term/academic_year และถ้าได้ semester_id จะยิ่งดี)
   try {
-    const res = await axios.get<SubjectAPI[]>(`${apiUrl}/subjects/`);
+    const res = await api.get<SubjectAPI[]>(`/subjects/`);
     const arr = Array.isArray(res.data) ? res.data : [];
     const raw: SemesterInterface[] = arr.map((s) => ({
       SemesterID:  toStr(s.semester_id ?? s.SemesterID), // อาจว่างถ้า backend ไม่ส่ง

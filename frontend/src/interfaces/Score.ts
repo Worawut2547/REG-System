@@ -9,3 +9,4 @@ export interface ScoreInterface {
     List: string;
   }[];
 }
+

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Table, Button, Input, message } from 'antd';
+import { Layout, Table, Button, Input, message, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
 import CheckGraduate from './check';
 import './graduate.css';
@@ -23,12 +23,25 @@ const Element1: React.FC = () => {
   const [selectedRecord, setSelectedRecord] = useState<GraduationInterface | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // โหลดข้อมูลทั้งหมด
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await getAllGraduations();
-      setData(res);
+
+      // map backend field ให้ตรงกับ GraduationInterface
+      const mappedData: GraduationInterface[] = res.map(item => ({
+        id: item.id,
+        StudentID: item.StudentID,
+        fullName: item.fullName,
+        curriculum: item.curriculum,
+        totalCredits: item.totalCredits ?? 0,
+        GPAX: item.GPAX,
+        statusStudent: item.statusStudent,
+        reason: item.reason ?? '',
+        Date: item.Date ? new Date(item.Date) : undefined,
+      }));
+
+      setData(mappedData);
     } catch (err) {
       message.error('ไม่สามารถดึงข้อมูลผู้แจ้งจบได้');
     } finally {
@@ -49,48 +62,76 @@ const Element1: React.FC = () => {
     if (!selectedRecord) return;
 
     try {
-      await updateGraduation(
-        selectedRecord.id,
-        status,
-        reason
-      );
+      await updateGraduation(selectedRecord.id, status, reason);
       message.success('อัปเดตสถานะสำเร็จ');
       setIsModalVisible(false);
       setSelectedRecord(null);
-      fetchData(); // refresh table
+
+      // update state ของ record ล่าสุดทันทีโดยไม่ต้อง fetch ใหม่
+      setData(prev =>
+        prev.map(item =>
+          item.id === selectedRecord?.id
+            ? {
+              ...item,
+              statusStudent: status === '30' ? 'อนุมัติสำเร็จการศึกษา' : 'ไม่อนุมัติให้สำเร็จการศึกษา',
+              reason: reason ?? '',
+              isVerified: true, // ✅ เพิ่มบรรทัดนี้
+            }
+            : item
+        )
+      );
+
     } catch (err) {
       message.error('ไม่สามารถอัปเดตสถานะได้');
     }
   };
-
-
-
 
   const handleCancel = () => {
     setIsModalVisible(false);
     setSelectedRecord(null);
   };
 
-  const filteredData = data.filter(item =>
-    item.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
-    item.StudentID.toLowerCase().includes(searchText.toLowerCase())
-  );
+  // filter และ sort ให้แถวตรวจสอบแล้วอยู่ด้านล่าง
+  const filteredData = data
+    .filter(item =>
+      item.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.StudentID.toLowerCase().includes(searchText.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aChecked = a.statusStudent !== 'แจ้งจบการศึกษา';
+      const bChecked = b.statusStudent !== 'แจ้งจบการศึกษา';
+      if (aChecked === bChecked) return 0;
+      return aChecked ? 1 : -1;
+    });
 
   const columns: TableColumnsType<GraduationInterface> = [
+    { title: 'ลำดับ', key: 'index', render: (_, __, index) => index + 1, width: 60 },
     { title: 'รหัสนักศึกษา', dataIndex: 'StudentID', key: 'StudentID' },
     { title: 'ชื่อ-สกุล', dataIndex: 'fullName', key: 'fullName' },
-    { title: 'โครงสร้างหลักสูตร', dataIndex: 'curriculum', key: 'curriculum' },
+    { title: 'หลักสูตร', dataIndex: 'curriculum', key: 'curriculum' },
+    { title: 'หน่วยกิตรวม', dataIndex: 'totalCredits', key: 'totalCredits' },
+    { title: 'GPA', dataIndex: 'GPAX', key: 'GPAX' },
     { title: 'สถานะ', dataIndex: 'statusStudent', key: 'statusStudent' },
     { title: 'เหตุผลปฏิเสธ', dataIndex: 'reason', key: 'reason' },
     {
       title: 'ตรวจสอบ',
       key: 'verify',
-      render: (_, record) => (
-        <Button type="primary" onClick={() => handleVerify(record)}>
-          ตรวจสอบ
-        </Button>
-      ),
-    },
+      render: (_, record) => {
+        // หา element ล่าสุดของนักศึกษาคนนี้
+        const latestGraduation = data
+          .filter(d => d.StudentID === record.StudentID)
+          .sort((a, b) => Number(b.id) - Number(a.id))[0]; // เอา id ล่าสุด
+
+        const isLatest = latestGraduation ? latestGraduation.id === record.id : false;
+
+        if (isLatest && record.statusStudent === 'แจ้งจบการศึกษา') {
+          return <Button type="primary" onClick={() => handleVerify(record)}>ตรวจสอบ</Button>;
+        } else {
+          return <Tag color="green">ตรวจสอบแล้ว</Tag>;
+        }
+      },
+    }
+
   ];
 
   return (
@@ -99,7 +140,7 @@ const Element1: React.FC = () => {
         <Input
           placeholder="ค้นหา ชื่อหรือรหัสนักศึกษา"
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={e => setSearchText(e.target.value)}
           style={{ width: 300, height: 50, fontSize: 14 }}
         />
       </div>
