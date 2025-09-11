@@ -23,7 +23,6 @@ import (
 	"reg_system/controller/status"
 	"reg_system/controller/students"
 	subjects "reg_system/controller/subject"
-	"reg_system/controller/sections"
 	"reg_system/controller/subjectcurriculum"
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
@@ -200,22 +199,8 @@ func main() {
 				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth
 				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth
 			}
-
-			// Sections under a subject
-			// GET /subjects/:subjectId/sections -> list sections for that subject
-			subjectItem.GET("/sections", sections.GetSectionsBySubject)
 		}
     }
-
-	// -------------------- Sections --------------------
-	sectionGroup := r.Group("/sections")
-	{
-		sectionGroup.GET("/", sections.GetSectionAll)                 
-		sectionGroup.GET("/:sectionId", sections.GetSectionByID)      
-		sectionGroup.POST("/", sections.CreateSection)                // admin
-		sectionGroup.PUT("/:sectionId", sections.UpdateSection)       
-		sectionGroup.DELETE("/:sectionId", sections.DeleteSection)    // admin
-	}
 
 	// -------------------- Reports --------------------
 	reportGroup := r.Group("/reports")
