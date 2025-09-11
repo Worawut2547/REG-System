@@ -132,13 +132,13 @@ func main() {
 	//---------------------------------------------------------
 	registrationGroup := r.Group("/registrations")
 	{
-		registrationGroup.GET("/", registration.GetRegistrationAll)
-		registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)
-		registrationGroup.POST("/", registration.CreateRegistration)
-		registrationGroup.PUT("/:id", registration.UpdateRegistration)
-		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
+        registrationGroup.GET("/", registration.GetRegistrationAll)                  
+        registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)       // student
+        registrationGroup.POST("/", registration.CreateRegistration)                 // student
+        registrationGroup.PUT("/:id", registration.UpdateRegistration)               
+        registrationGroup.DELETE("/:id", registration.DeleteRegistration)            // student
 
-		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)
+        registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)   // teacher
 	}
 
 	// -------------------- Curriculums --------------------
@@ -210,41 +210,45 @@ func main() {
 	// -------------------- Sections --------------------
 	sectionGroup := r.Group("/sections")
 	{
-		sectionGroup.GET("/", sections.GetSectionAll)
-		sectionGroup.GET("/:sectionId", sections.GetSectionByID)
-		sectionGroup.POST("/", sections.CreateSection)
-		sectionGroup.PUT("/:sectionId", sections.UpdateSection)
-		sectionGroup.DELETE("/:sectionId", sections.DeleteSection)
+		sectionGroup.GET("/", sections.GetSectionAll)                 
+		sectionGroup.GET("/:sectionId", sections.GetSectionByID)      
+		sectionGroup.POST("/", sections.CreateSection)                // admin
+		sectionGroup.PUT("/:sectionId", sections.UpdateSection)       
+		sectionGroup.DELETE("/:sectionId", sections.DeleteSection)    // admin
 	}
 
 	// -------------------- Reports --------------------
 	reportGroup := r.Group("/reports")
 	{
-		reportGroup.GET("/", reports.GetReportAll)
-		reportGroup.GET("/:id", reports.GetReportByID)
-		reportGroup.POST("/", reports.CreateReport)
-		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)
-		reportGroup.PUT("/:id/status", reports.UpdateStatus)
-		// comments
-		reportGroup.GET("/:id/comments", reports.GetReportComments)
-		reportGroup.POST("/:id/comments", reports.CreateReportComment)
-		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment)
-		reportGroup.DELETE("/:id", reports.DeleteReportAlias)
+		reportGroup.GET("/", reports.GetReportAll)                                // admin, teacher
+		reportGroup.GET("/:id", reports.GetReportByID)                            // admin, teacher
+		reportGroup.POST("/", reports.CreateReport)                               // student
+		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)         
+		reportGroup.PUT("/:id/status", reports.UpdateStatus)                      // admin, teacher
+		reportGroup.GET("/:id/comments", reports.GetReportComments)               // admin, student, teacher
+		reportGroup.POST("/:id/comments", reports.CreateReportComment)            // admin, teacher
+		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment) 
+		reportGroup.DELETE("/:id", reports.DeleteReportAlias)                     // admin
 	}
 
 	// -------------------- Report Types --------------------
-	r.GET("/report-types", reporttypes.ListReportTypes)
-	r.GET("/report-types/:id", reporttypes.GetReportTypeByID)
-	r.POST("/report-types", reporttypes.CreateReportType)
-	r.PUT("/report-types/:id", reporttypes.UpdateReportType)
-	r.DELETE("/report-types/:id", reporttypes.DeleteReportType)
+    reportTypeGroup := r.Group("/report-types")
+    {
+        reportTypeGroup.GET("/", reporttypes.ListReportTypes)        // admin, student, teacher
+        reportTypeGroup.GET("", reporttypes.ListReportTypes)         // admin, student, teacher
+        reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID)   // admin
+        reportTypeGroup.POST("/", reporttypes.CreateReportType)      // admin
+        reportTypeGroup.POST("", reporttypes.CreateReportType)       // admin
+        reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)    // admin
+        reportTypeGroup.DELETE("/:id", reporttypes.DeleteReportType) // admin
+    }
 
 	// -------------------- Reviewers --------------------
 	reviewerGroup := r.Group("/reviewers")
 	{
-		reviewerGroup.GET("/", reports.ListReviewers) // dropdown options
-		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername)
-		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)
+		reviewerGroup.GET("/", reports.ListReviewers)                         // student
+		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername) // teacher
+		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)      // teacher
 	}
 
 	//---------------------------------------------------------

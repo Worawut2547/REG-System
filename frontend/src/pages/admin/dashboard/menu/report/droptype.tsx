@@ -12,7 +12,8 @@ const DropType: React.FC = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${apiUrl}/report-types`);
+      // Trailing slash prevents 301 redirect that can drop the /api prefix
+      const res = await axios.get(`${apiUrl}/report-types/`);
       setRows(Array.isArray(res.data) ? res.data : []);
     } catch (e: any) {
       message.error(e?.message || "โหลดประเภทคำร้องไม่สำเร็จ");
