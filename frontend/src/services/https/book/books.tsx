@@ -1,7 +1,7 @@
 // services/https/book/books.ts
 import axios from "axios";
 import { type BookPathInterface } from "../../../interfaces/BookPath";
-import { apiUrl } from "../../api";
+import { api , apiUrl } from "../api";
 
 // -------------------------------------------------------------
 // รูปแบบข้อมูลจาก Backend (snake_case)
@@ -27,7 +27,7 @@ type RegisterResponse =
 // -------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------
-const baseUrl = `${apiUrl}/curriculum-books`;
+const baseUrl = `/curriculum-books`;
 
 const mapBookFromAPI = (b: RawBook): BookPathInterface => ({
   ID: b.id,
@@ -81,7 +81,7 @@ export const registerBookByPath = async (
   curriculumId: string
 ): Promise<BookPathInterface> => {
   const payload = { book_path: bookPath, curriculum_id: curriculumId };
-  const { data } = await axios.post<RegisterResponse>(
+  const { data } = await api.post<RegisterResponse>(
     `${baseUrl}/register`,
     payload
   );

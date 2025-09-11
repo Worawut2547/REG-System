@@ -1,12 +1,11 @@
-import axios from "axios";
 import { type GenderInterface } from "../../../interfaces/Gender"
 
 
-import { apiUrl } from "../../api";
+import { api } from "../api";
 
 export const getGenderAll = async (): Promise<GenderInterface[]> => {
     try {
-        const responce = await axios.get(`${apiUrl}/genders`);
+        const responce = await api.get(`/genders/`);
         console.log("api gender data:", responce);
         return responce.data
     }

@@ -1,5 +1,4 @@
-import axios from "axios";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 import { type SubjectInterface } from "../../../interfaces/Subjects";
 
 // ---------- DTO ตอนส่งขึ้น backend ----------
@@ -58,7 +57,7 @@ const mapSubjectFromAPI = (s: SubjectAPI): SubjectInterface => ({
   TeacherID:    toStr(s.teacher_id ?? s.TeacherID ?? s.teacherId),
 
   // สำหรับโชว์เทอม/ปี หรือใช้ fallback จากตาราง semester ได้
-  SemesterID:   toStr(s.semester_id ?? s.SemesterID ?? s.semesterId),
+  SemesterID:   Number(s.semester_id ?? s.SemesterID ?? s.semesterId),
   Term:         s.term,
   AcademicYear: s.academic_year,
 });
@@ -89,8 +88,8 @@ export const createSubject = async (
     semester_id:  data.SemesterID ? Number(data.SemesterID) : undefined, // ส่งภาคเรียน
   };
 
-  const res = await axios.post<SubjectAPI>(
-    `${apiUrl}/subjects/`,
+  const res = await api.post<SubjectAPI>(
+    `/subjects/`,
     payload,
     { headers: { "Content-Type": "application/json" } }
   );
@@ -99,7 +98,7 @@ export const createSubject = async (
 
 // ---------- ดึงรายวิชาทั้งหมด ----------
 export const getSubjectAll = async (): Promise<SubjectInterface[]> => {
-  const res = await axios.get<SubjectAPI[]>(`${apiUrl}/subjects/`);
+  const res = await api.get<SubjectAPI[]>(`/subjects/`);
   const arr = Array.isArray(res.data) ? res.data : [];
   return arr.map(mapSubjectFromAPI);
 };
@@ -127,12 +126,12 @@ export const updateSubject = async (
     new_subject_id: data.new_subject_id,
   };
 
-  await axios.put(`${apiUrl}/subjects/${subjectId}`, payload, {
+  await api.put(`/subjects/${subjectId}`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 };
 
 export const deleteSubject = async (subjectId: string): Promise<void> => {
   if (!subjectId) throw new Error("subjectId is required");
-  await axios.delete(`${apiUrl}/subjects/${subjectId}`);
+  await api.delete(`/subjects/${subjectId}`);
 };

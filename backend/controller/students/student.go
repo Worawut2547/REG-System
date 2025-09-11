@@ -88,6 +88,10 @@ func GetStudentID(c *gin.Context) {
 	// คำนวณ GPA
 	gpa := services.CalculateGPA(students.Grade)
 
+	// คำนวณหน่วยกิตรวม
+	totalCredits, _ := services.CalculateTotalCredits(students.StudentID)
+	students.TotalCredits = totalCredits
+
 	// Step 3: สร้าง map สำหรับเก็บข้อมูลที่ต้องการส่งออก
 	//------------------------------------------------------------------
 	response := map[string]interface{}{
@@ -113,6 +117,9 @@ func GetStudentID(c *gin.Context) {
 		"CurriculumName": curriculumName,
 		"Teacher":        students.Teacher,
 		"GPAX":           gpa,
+
+		//เพิ่ม
+		"TotalCredits":	students.TotalCredits,
 
 		"Address":     students.Address,
 		"Religion":    students.Religion,
@@ -287,15 +294,15 @@ func UpdateStudent(c *gin.Context) {
 
 	// หา Student ก่อนจะ update
 	student := &entity.Students{}
-	if err := tx.First(&student , "student_id = ?",sid).Error; err != nil {
+	if err := tx.First(&student, "student_id = ?", sid).Error; err != nil {
 		tx.Rollback()
-		
-		if errors.Is(err , gorm.ErrRecordNotFound){
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// หาไม่เจอ
-			c.JSON(http.StatusNotFound , gin.H{"error": "student not found"})
-		}else{
+			c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
+		} else {
 			// database error
-			c.JSON(http.StatusInternalServerError , gin.H{"error": "database error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
 		}
 		return
 	}
@@ -304,10 +311,10 @@ func UpdateStudent(c *gin.Context) {
 	err := tx.Model(&student).Updates(&input).Error
 	if err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError , gin.H{"error": "Failed to update student"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update student"})
 		return
 	}
-	
+
 	// commit transaction
 	tx.Commit()
 
@@ -324,14 +331,14 @@ func DeleteStudent(c *gin.Context) {
 	result := tx.Delete(&entity.Students{}, "student_id = ?", sid)
 	if result.Error != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError , gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
 	// เช็คว่ามี student จริงหรือไม่
 	if result.RowsAffected == 0 {
 		tx.Rollback()
-		c.JSON(http.StatusNotFound , gin.H{"error":"student not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "student not found"})
 		return
 	}
 	tx.Commit()

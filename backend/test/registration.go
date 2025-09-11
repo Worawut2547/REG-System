@@ -10,7 +10,6 @@ func RegistrationExample() {
 	db := config.DB()
 
 	registrations := []entity.Registration{
-
 		// เทอม 1
 		{RegistrationID: "REG001", Date: time.Now(), StudentID: "B6616052", SubjectID: "233001"},
 		{RegistrationID: "REG002", Date: time.Now(), StudentID: "B6616052", SubjectID: "233031"},

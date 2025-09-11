@@ -96,6 +96,7 @@ const GraduateStatus: React.FC = () => {
             gpax: student.GPAX ?? 0,
             status: statusMap[student.StatusStudentID ?? ''] ?? 'รอตรวจสอบ',
             rejectReason: student.RejectReason ?? '',
+            totalCredits: student.TotalCredits?? 0,
           });
         }
       }

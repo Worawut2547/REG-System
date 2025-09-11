@@ -1,6 +1,5 @@
 // src/services/https/SubjectCurriculum/subjectcurriculum.ts
-import axios from "axios";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 
 export interface SubjectCurriculumInterface {
   SubjectID: string;
@@ -28,8 +27,8 @@ function isV2(body: unknown): body is CreateSCResponseV2 {
 export const getSubjectCurriculumAll = async (): Promise<
   SubjectCurriculumInterface[]
 > => {
-  const res = await axios.get<SubjectCurriculumInterface[]>(
-    `${apiUrl}/subject-curriculums/`
+  const res = await api.get<SubjectCurriculumInterface[]>(
+    `/subject-curriculums/`
   );
   return res.data;
 };
@@ -43,8 +42,8 @@ export const createSubjectCurriculum = async (
     curriculum_id: data.CurriculumID, // ⬅️ ถ้าใช้ major: major_id: data.MajorID
   } as const;
 
-  const res = await axios.post<CreateSCResponseV2 | SubjectCurriculumInterface>(
-    `${apiUrl}/subject-curriculums/`,
+  const res = await api.post<CreateSCResponseV2 | SubjectCurriculumInterface>(
+    `/subject-curriculums/`,
     payload
   );
   const body = res.data;
@@ -59,7 +58,7 @@ export const deleteSubjectCurriculumByPair = async (args: {
   curriculumId: string; // ⬅️ ถ้าใช้ major: majorId
   subjectId: string;
 }): Promise<void> => {
-  await axios.delete(`${apiUrl}/subject-curriculums`, {
+  await api.delete(`/subject-curriculums/`, {
     params: {
       curriculum_id: args.curriculumId, // ⬅️ ถ้าใช้ major: major_id: args.majorId
       subject_id: args.subjectId,

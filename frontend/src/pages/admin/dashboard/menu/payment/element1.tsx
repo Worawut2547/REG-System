@@ -3,7 +3,7 @@ import { Table, Cascader, Button, Input, message, Spin, Modal } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { getAllBills, approveBill } from '../../../../../services/https/bill/bill';
 import type { DataType } from '../../../../../services/https/bill/bill';
-import { apiUrl } from '../../../../../services/api';
+import { apiUrl } from '../../../../../services/https/api';
 
 const BillPage: React.FC = () => {
   const [data, setData] = useState<DataType[]>([]);

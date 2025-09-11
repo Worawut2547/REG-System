@@ -1,6 +1,4 @@
-import axios from "axios";
-
-import { apiUrl } from "../../api";
+import { api } from "../api";
 
 interface RegistrationStudentInterface {
     StudentID: string;
@@ -13,7 +11,7 @@ interface RegistrationStudentInterface {
 
 export const getStudentBySubjectID = async (subj_id: string): Promise<RegistrationStudentInterface[]>  => {
     try {
-        const response = await axios.get(`${apiUrl}/registrations/subjects/${subj_id}`);
+        const response = await api.get(`/registrations/subjects/${subj_id}`);
         console.log("api get student by subject id",response.data);
         return response.data
     }

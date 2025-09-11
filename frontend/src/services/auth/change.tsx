@@ -1,5 +1,5 @@
 import axios from "axios";
-import { apiUrl } from "../api";
+import { apiUrl } from "../https/api";
 
 export const resetPassword = async (data: { Username: string; NewPassword: string }) => {
     console.log("api change password", data);

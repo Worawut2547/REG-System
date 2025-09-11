@@ -2,7 +2,7 @@ import axios from "axios";
 import { type SignInInterface } from "../../interfaces/SignIn";
 
 
-import { apiUrl } from "../api";
+import { apiUrl } from "../https/api";
 
 const SignIn = async (data: SignInInterface) => {
     try {

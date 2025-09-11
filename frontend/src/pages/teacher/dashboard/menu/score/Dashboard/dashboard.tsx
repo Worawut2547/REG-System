@@ -1,7 +1,7 @@
 import React from "react";
-import { Row, Col } from "antd";
-import CourseCard from "../CourseCard.tsx/course";
-import YearTermFilter from "../Filter/YearTerm";
+import { Row, Col, Divider } from "antd";
+import CourseCard from "../CourseCard.tsx/course.tsx";
+import YearTermFilter from "../Filter/YearTerm.tsx";
 
 type Course = {
   code: string;
@@ -37,7 +37,7 @@ const TeacherDashboard: React.FC<Props> = ({
 
   return (
     <div style={{ maxWidth: 1500, margin: "auto" }}>
-      <YearTermFilter
+      <YearTermFilter 
         year={year}
         term={term}
         setYear={setYear}
@@ -46,9 +46,11 @@ const TeacherDashboard: React.FC<Props> = ({
         termOptions={termOptions}
       />
 
+      <Divider />
+
       <Row gutter={[24, 24]}>
         {filteredCourses.length > 0 ? filteredCourses.map(({ code, name, credit, color }) => (
-          <Col key={code} xs={24} sm={12} md={12} lg={12}>
+          <Col key={code} xs={24} sm={12} md={8} lg={8}>
             <CourseCard
               code={code}
               name={name}

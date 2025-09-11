@@ -43,6 +43,9 @@ type Students struct {
 	TeacherID string    `json:"TeacherID"`
 	Teacher   *Teachers `gorm:"foreignKey:TeacherID;references:TeacherID"`
 
+	// ... field เดิม
+    TotalCredits int `json:"TotalCredits"`
+
 	Address     string `json:"Address"`
 	Nationality string `json:"Nationality"`
 	Ethnicity   string `json:"Ethnicity"`

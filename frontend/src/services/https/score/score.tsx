@@ -1,11 +1,10 @@
-import axios from "axios";
 import { type ScoreInterface } from "../../../interfaces/Score";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 
 export const getScoreByStudentID = async () => {
     try {
         const username = localStorage.getItem("username");
-        const response = await axios.get(`${apiUrl}/students/${username}/scores`);
+        const response = await api.get(`/students/${username}/scores`);
         console.log("api score student data:", response.data);
         return response.data
     }
@@ -17,7 +16,7 @@ export const getScoreByStudentID = async () => {
 
 export const createScoreStudent = async (data: ScoreInterface[]) => {
     try {
-        const response = await axios.post(`${apiUrl}/teachers/scores`,data);
+        const response = await api.post(`/teachers/scores`,data);
         return response.status
     }
     catch (error) {

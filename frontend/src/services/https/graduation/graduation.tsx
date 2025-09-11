@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { CreateGraduationInput, GraduationInterface } from "../../../interfaces/Graduation";
 
-import { apiUrl } from "../../api";
+import { apiUrl } from "../api";
 
 // --------------------------
 // อัปเดตคำขอแจ้งจบ (Admin) รอแก้
