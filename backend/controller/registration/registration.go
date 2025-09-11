@@ -88,7 +88,6 @@ func GetRegistrationByStudentID(c *gin.Context) {
             SubjectID:      reg.SubjectID,
             SubjectName:    subjectName,
             Credit:         credit,
-            SectionID:      reg.SectionID,
             StartAt:        startAt,
             EndAt:          endAt,
         })

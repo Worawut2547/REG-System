@@ -49,8 +49,6 @@ func SetupDatabase() {
 		&entity.SubjectCurriculum{},
 
 		&entity.Registration{},
-		&entity.Section{},
-		
 		&entity.Payment{},
 		&entity.Bill{},
 		&entity.BillStatus{},

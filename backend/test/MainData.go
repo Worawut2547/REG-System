@@ -30,7 +30,6 @@ func ExampleData() {
 	GradeExample()
 	//ScoresExample()
 	ReportExampleData()
-	SectionExample()
 
 	GradeExample()
 

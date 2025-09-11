@@ -20,6 +20,5 @@ type Subject struct {
 
     StudyTimes []SubjectStudyTime `json:"study_times" gorm:"foreignKey:SubjectID;references:SubjectID;constraint:OnDelete:CASCADE"`
     Grade      []Grades           `gorm:"foreignKey:SubjectID;references:SubjectID" json:"Grade"`
-    Sections   []Section           `gorm:"foreignKey:SubjectID;references:SubjectID" json:"sections"`
 }
 
