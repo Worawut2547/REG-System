@@ -183,7 +183,6 @@ export const getBillByStudentID = async (): Promise<{
 export const getAllBills = async (): Promise<BillResponse[]> => {
   try {
     const response = await api.get(`/bills/admin/all`);
-    console.log("api bill data:", response.data);
 
     return response.data
 

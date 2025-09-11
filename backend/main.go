@@ -5,6 +5,7 @@ import (
 	"reg_system/config"
 	"reg_system/test"
 
+	// Controllers
 	"reg_system/controller/admins"
 	"reg_system/controller/bill"
 	"reg_system/controller/curriculum"
@@ -17,6 +18,8 @@ import (
 	"reg_system/controller/graduation"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
+	"reg_system/controller/reports"
+	"reg_system/controller/reporttypes"
 	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
@@ -82,6 +85,9 @@ func main() {
 
 		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID) //ทำเเล้ว
 		studentGroup.GET("/:id/scores", scores.GetScoreByStudentID) // ทำเเล้ว
+
+		// คำร้องของนักศึกษา
+		studentGroup.GET("/reports/:sid", reports.GetReportsByStu)
 	}
 
 	// -------------------- Teachers --------------------
@@ -136,13 +142,14 @@ func main() {
 	//---------------------------------------------------------
 	registrationGroup := r.Group("/registrations")
 	{
-		registrationGroup.GET("/", registration.GetRegistrationAll)
-		registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)
-		registrationGroup.POST("/", registration.CreateRegistration)
-		registrationGroup.PUT("/:id", registration.UpdateRegistration)
-		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
+        registrationGroup.GET("/", registration.GetRegistrationAll)                  
+        registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)       // student ทำเเล้ว
+        registrationGroup.POST("/", registration.CreateRegistration)                 // student ทำเเล้ว
+        registrationGroup.PUT("/:id", registration.UpdateRegistration)               
+        registrationGroup.DELETE("/:id", registration.DeleteRegistration)            // student ทำเเล้ว
 
 		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID) //ทำเเล้ว
+        //registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)   // teacher
 	}
 
 	// -------------------- Curriculums --------------------
@@ -180,11 +187,12 @@ func main() {
 	subjectGroup := r.Group("/subjects")
 	{
 		subjectGroup.GET("/", subjects.GetSubjectAll)  // admin, student, teacher  :Earth ทำเเล้ว any
-		subjectGroup.POST("/", subjects.CreateSubject) // admin  :Earth ทำเเล้ว
+		subjectGroup.POST("/", subjects.CreateSubject) // admin  :Earth ทำเเล้ว;
 
+		// กลุ่มเส้นทางของวิชาเฉพาะตัว (RESTful)
 		subjectItem := subjectGroup.Group("/:subjectId")
 		{
-			subjectItem.GET("", subjects.GetSubjectID)
+			subjectItem.GET("", subjects.GetSubjectID) // student
 			subjectItem.PUT("", subjects.UpdateSubject)    // admin  :Earth ทำเเล้ว
 			subjectItem.DELETE("", subjects.DeleteSubject) // admin  :Earth ทำเเล้ว
 
@@ -199,6 +207,40 @@ func main() {
 				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth ทำเเล้ว
 			}
 		}
+    }
+
+	// -------------------- Reports --------------------
+	reportGroup := r.Group("/reports")
+	{
+		reportGroup.GET("/", reports.GetReportAll)                                // admin, teacher ทำเเล้ว
+		reportGroup.GET("/:id", reports.GetReportByID)                            // admin, teacher ทำเเล้ว
+		reportGroup.POST("/", reports.CreateReport)                               // student ทำเเล้ว
+		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)         
+		reportGroup.PUT("/:id/status", reports.UpdateStatus)                      // admin, teacher ทำเเล้ว
+		reportGroup.GET("/:id/comments", reports.GetReportComments)               // admin, student, teacher ทำเเล้ว
+		reportGroup.POST("/:id/comments", reports.CreateReportComment)            // admin, teacher ทำเเล้ว
+		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment) 
+		reportGroup.DELETE("/:id", reports.DeleteReportAlias)                     // admin
+	}
+
+	// -------------------- Report Types --------------------
+    reportTypeGroup := r.Group("/report-types")
+    {
+        reportTypeGroup.GET("/", reporttypes.ListReportTypes)        // admin, student, teacher ทำเเล้ว
+        reportTypeGroup.GET("", reporttypes.ListReportTypes)         // admin, student, teacher
+        reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID)   // admin ทำเเล้ว
+        reportTypeGroup.POST("/", reporttypes.CreateReportType)      // admin
+        reportTypeGroup.POST("", reporttypes.CreateReportType)       // admin
+        reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)    // admin ทำเเล้ว
+        reportTypeGroup.DELETE("/:id", reporttypes.DeleteReportType) // admin ทำเเล้ว
+    }
+
+	// -------------------- Reviewers --------------------
+	reviewerGroup := r.Group("/reviewers")
+	{
+		reviewerGroup.GET("/", reports.ListReviewers)                         // student ทำเเล้ว
+		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername) // teacher ทำเเล้ว
+		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)      // teacher ทำเเล้ว
 	}
 
 	//---------------------------------------------------------
@@ -208,7 +250,6 @@ func main() {
 		billGroup.POST("/:id/create", bill.CreateBill)    // student ทำเเล้ว
 		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt) //student ทำเเล้ว
 		billGroup.GET("/preview/:id", bill.ShowFile)      // admin ทำเเล้ว
-		billGroup.GET("/download/:id", bill.DownloadBill)
 		billGroup.GET("/admin/all", bill.GetAllBills) // admin ทำเเล้ว
 		billGroup.PUT("/:id", bill.UpdateBillStatus)  // ใช้สำหรับอนุมัติใบเสร็จ ทำเเล้ว
 	}

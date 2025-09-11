@@ -1,7 +1,9 @@
-// src/pages/dashboard/menu/register.tsx
-import React from 'react';
-import { Layout } from 'antd';
-import './register.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
+// src/pages/student/dashboard/menu/register/register.tsx
+import React, { useState } from "react";
+import { Layout, Button, Space } from "antd";
+import AddCoursePage from "./addcourse/addcourse";
+import DropCoursePage from "./dropcourse/dropcourse";
+
 
 const { Header, Content, Footer } = Layout;
 
@@ -30,7 +32,7 @@ const headerStyle: React.CSSProperties = {
 const contentStyle: React.CSSProperties = {
   background: '#f5f5f5',            // เทาอ่อน
   padding: 24,
-  minHeight: 400,
+  minHeight: 500,
   color: '#333',
   overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
 };
@@ -42,16 +44,45 @@ const footerStyle: React.CSSProperties = {
   padding: 12,
 };
 
-const Register: React.FC = () => {
-  return (
-    <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>Header – หน้าลงทะเบียนเรียน</Header>
-      <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
-      </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
-    </Layout>
-  );
-};
 
-export default Register;
+const RegistrationPage: React.FC = () => {
+  const [mode, setMode] = useState<"home" | "add" | "drop">("home");
+  const studentId = (typeof window !== 'undefined' ? (localStorage.getItem('username') || localStorage.getItem('student_id') || '') : '').trim();
+
+  return (
+        <Layout style={wrapperStyle}>
+          <Header style={headerStyle}>ระบบลงทะเบียนเรียน</Header>
+          <Content style={contentStyle}>
+            {mode === "home" ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+            <Space size="large">
+              <Button
+                type="primary"
+                size="large"
+                style={{ background: '#1890ff', borderColor: '#1890ff', height: 56, padding: '0 28px', fontSize: 18, borderRadius: 8 }}
+                onClick={() => setMode("add")}
+              >
+                เพิ่มรายวิชา
+              </Button>
+              <Button
+                type="primary"
+                danger
+                size="large"
+                style={{ height: 56, padding: '0 28px', fontSize: 18, borderRadius: 8 }}
+                onClick={() => setMode("drop")}
+              >
+                ลดรายวิชา
+              </Button>
+            </Space>
+          </div>
+        ) : mode === "add" ? (
+          <AddCoursePage onBack={() => setMode("home")} studentId={studentId} />
+        ) : (
+          <DropCoursePage onBack={() => setMode("home")} studentId={studentId} />
+        )}
+          </Content>
+          <Footer style={footerStyle}>Arcanatech University © 2025</Footer>
+        </Layout>
+          );
+};
+export default RegistrationPage;

@@ -35,4 +35,7 @@ export interface StudentInterface {
     GPAX?: number;
 
     RejectReason?:string;
+
+    //เพิ่ม
+    TotalCredits?: number;
 }

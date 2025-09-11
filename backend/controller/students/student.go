@@ -88,6 +88,9 @@ func GetStudentID(c *gin.Context) {
 	// คำนวณ GPA
 	gpa := services.CalculateGPA(students.Grade)
 
+	// คำนวณหน่วยกิตรวม
+	totalCredits, _ := services.CalculateTotalCredits(students.StudentID)
+
 	// Step 3: สร้าง map สำหรับเก็บข้อมูลที่ต้องการส่งออก
 	//------------------------------------------------------------------
 	response := map[string]interface{}{
@@ -113,6 +116,7 @@ func GetStudentID(c *gin.Context) {
 		"CurriculumName": curriculumName,
 		"Teacher":        students.Teacher,
 		"GPAX":           gpa,
+		"TotalCredits":   totalCredits,
 
 		"Address":     students.Address,
 		"Religion":    students.Religion,

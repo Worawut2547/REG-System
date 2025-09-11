@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+
 	"reg_system/config"
 	"reg_system/entity"
 	"reg_system/services"
@@ -43,56 +44,6 @@ type SubjectResponse struct {
 // ======================================================
 
 // GET /bills/:id - ดึงบิลนักเรียน
-/*func GetBillByStudentID(c *gin.Context) {
-	id := c.Param("id")
-	var bill entity.Bill
-	db := config.DB()
-
-	if err := db.Preload("Student.Registration.Subject.Semester").
-		Preload("Status").
-		First(&bill, "student_id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "bill not found"})
-		return
-	}
-
-	subjects := []SubjectResponse{}
-	for _, reg := range bill.Student.Registration {
-		if reg.Subject != nil && reg.Subject.Semester != nil {
-			subjects = append(subjects, SubjectResponse{
-				SubjectID:    reg.SubjectID,
-				SubjectName:  reg.Subject.SubjectName,
-				Credit:       reg.Subject.Credit,
-				Term:         reg.Subject.Semester.Term,
-				AcademicYear: reg.Subject.Semester.AcademicYear,
-			})
-		}
-	}
-
-	status := "-"
-	if bill.Status != nil {
-		status = bill.Status.Status
-	}
-
-	year := 0
-	term := 0
-	if len(bill.Student.Registration) > 0 && bill.Student.Registration[0].Subject.Semester != nil {
-		year = bill.Student.Registration[0].Subject.Semester.AcademicYear
-		term = bill.Student.Registration[0].Subject.Semester.Term
-	}
-
-	resp := BillResponse{
-		ID:         bill.ID,
-		TotalPrice: bill.TotalPrice,
-		Subjects:   subjects,
-		Status:     status,
-		FilePath:   bill.FilePath,
-		Year:       year,
-		Term:       term,
-	}
-
-	c.JSON(http.StatusOK, resp)
-}*/
-
 func GetBillByStudentID(c *gin.Context) {
 	studentID := c.Param("id")
 	db := config.DB()
@@ -101,6 +52,7 @@ func GetBillByStudentID(c *gin.Context) {
 	// ดึงทุก bill ของ student พร้อม preload
 	if err := db.Preload("Student.Registration.Subject.Semester").
 		Preload("Status").
+		Preload("Registration.Subject").
 		Where("student_id = ?", studentID).
 		Find(&bills).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "bills not found"})
@@ -232,6 +184,8 @@ func UploadReceipt(c *gin.Context) {
 	termStr := c.Param("term")
 	db := config.DB()
 
+	now := time.Now() //แก้ให้ส่งเวลาจริงเข้าไปในฐานข้อมูล
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
@@ -275,8 +229,6 @@ func UploadReceipt(c *gin.Context) {
 			StudentID:    studentID,
 			AcademicYear: year,
 			Term:         term,
-			TotalPrice:   0, // คำนวณได้ถ้าต้องการ
-			StatusID:     2, // รอตรวจสอบ
 			Registration: selectedRegs,
 		}
 		if err := db.Create(&bill).Error; err != nil {
@@ -287,6 +239,12 @@ func UploadReceipt(c *gin.Context) {
 		// ถ้ามีแล้ว อัปเดต Registration (กรณีเราต้องการเชื่อม)
 		if err := db.Model(&bill).Association("Registration").Replace(selectedRegs); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill registrations"})
+			return
+		}
+		if err := db.Model(&bill).Updates(map[string]interface{}{
+			"Date": now, // ✅ เซ็ตวันอัปโหลดใหม่
+		}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill date"})
 			return
 		}
 	}
@@ -317,6 +275,7 @@ func UploadReceipt(c *gin.Context) {
 	if err := db.Model(&bill).Updates(map[string]interface{}{
 		"FilePath": fileName,
 		"StatusID": 2,
+		"Date":     now,
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill"})
 		return
@@ -326,78 +285,11 @@ func UploadReceipt(c *gin.Context) {
 		"message":   "upload success",
 		"file_path": fileName,
 		"status":    "รอตรวจสอบ",
+		"uploaded_at": now.Format("2006-01-02 15:04:05"), // ✅ ส่งเวลาให้ frontend
 	})
 }
 
 // GET /bills/admin/all - ดึงบิลทั้งหมด สำหรับแอดมิน
-/*func GetAllBills(c *gin.Context) {
-	db := config.DB()
-
-	var bills []entity.Bill
-	if err := db.Preload("Student.Registration.Subject.Semester").
-		Preload("Status").Find(&bills).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bills"})
-		return
-	}
-
-	type AdminBill struct {
-		ID         int    `json:"id"`
-		StudentID  string `json:"student_id"`
-		FullName   string `json:"full_name"`
-		TotalPrice int    `json:"total_price"`
-		Status     string `json:"status"`
-		FilePath   string `json:"file_path,omitempty"`
-		Date       string `json:"date"`
-		Year       int    `json:"year"`
-		Term       int    `json:"term"`
-	}
-
-	// สร้าง map สำหรับเก็บบิลล่าสุดต่อ student+year+term
-	latestBills := map[string]entity.Bill{}
-	for _, b := range bills {
-		year, term := 0, 0
-		if len(b.Student.Registration) > 0 && b.Student.Registration[0].Subject.Semester != nil {
-			year = b.Student.Registration[0].Subject.Semester.AcademicYear
-			term = b.Student.Registration[0].Subject.Semester.Term
-		}
-		key := fmt.Sprintf("%s-%d-%d", b.StudentID, year, term)
-		if existing, ok := latestBills[key]; !ok || b.ID > existing.ID {
-			latestBills[key] = b
-		}
-	}
-
-	var resp []AdminBill
-	for _, bill := range bills {
-		fullName := "-"
-		status := "-"
-		year := 0
-		term := 0
-		if bill.Student != nil {
-			fullName = bill.Student.FirstName + " " + bill.Student.LastName
-			if len(bill.Student.Registration) > 0 && bill.Student.Registration[0].Subject.Semester != nil {
-				year = bill.Student.Registration[0].Subject.Semester.AcademicYear
-				term = bill.Student.Registration[0].Subject.Semester.Term
-			}
-		}
-		if bill.Status != nil {
-			status = bill.Status.Status
-		}
-		resp = append(resp, AdminBill{
-			ID:         bill.ID,
-			StudentID:  bill.StudentID,
-			FullName:   fullName,
-			TotalPrice: bill.TotalPrice,
-			Status:     status,
-			FilePath:   bill.FilePath,
-			Date:       bill.Date.Format("2006-01-02"),
-			Year:       year,
-			Term:       term,
-		})
-	}
-
-	c.JSON(http.StatusOK, resp)
-}*/
-
 func GetAllBills(c *gin.Context) {
 	db := config.DB()
 
@@ -507,33 +399,6 @@ func ShowFile(c *gin.Context) {
 	}
 
 	c.File(filePath)
-}
-
-// GET /bills/download/:id - ดาวน์โหลด PDF
-func DownloadBill(c *gin.Context) {
-	id := c.Param("id")
-	db := config.DB()
-
-	var bill entity.Bill
-	if err := db.First(&bill, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "bill not found"})
-		return
-	}
-
-	if bill.FilePath == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "file not uploaded"})
-		return
-	}
-
-	path := filepath.Join("./uploads", bill.FilePath)
-	if _, err := os.Stat(path); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
-		return
-	}
-
-	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(path)))
-	c.File(path)
 }
 
 // PUT /bills/status/:id

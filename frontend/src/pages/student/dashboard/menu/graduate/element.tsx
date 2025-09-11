@@ -96,6 +96,7 @@ const GraduateStatus: React.FC = () => {
             gpax: student.GPAX ?? 0,
             status: statusMap[student.StatusStudentID ?? ''] ?? 'รอตรวจสอบ',
             rejectReason: student.RejectReason ?? '',
+            totalCredits: student.TotalCredits ?? 0,
           });
         }
       }
@@ -173,15 +174,19 @@ const GraduateStatus: React.FC = () => {
 
       <div style={gridRowStyle}>
         <div style={labelStyle}>สถานะ</div>
-        <div style={valueStyle}>
-          {data.status}
-          {data.status === "ไม่อนุมัติให้สำเร็จการศึกษา" && data.rejectReason && (
-            <div style={{ marginTop: 8, color: 'red', fontWeight: 'bold' }}>
-              เหตุผล: {data.rejectReason}
-            </div>
-          )}
-        </div>
+        <div style={valueStyle}>{data.status}</div>
       </div>
+
+      {/* แยกบรรทัดเหตุผล */}
+      {data.status === "ไม่อนุมัติให้สำเร็จการศึกษา" && data.rejectReason && (
+        <div style={gridRowStyle}>
+          <div style={labelStyle}>เหตุผลไม่อนุมัติ</div>
+          <div style={{ ...valueStyle, color: 'red', fontWeight: 'bold' }}>
+            {data.rejectReason}
+          </div>
+        </div>
+      )}
+
 
       {/* ปุ่มแจ้งจบ */}
       {(data.status === "กำลังศึกษาอยู่" || data.status === "ไม่อนุมัติให้สำเร็จการศึกษา") && (

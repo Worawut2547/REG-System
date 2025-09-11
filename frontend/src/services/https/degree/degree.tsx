@@ -4,8 +4,7 @@ import { api } from "../api";
 
 export const getDegreeAll = async (): Promise<DegreeInterface[]> => {
     try{
-        const response = await api.get(`/degrees/`)
-        console.log("api degree data:", response);
+        const response = await api.get(`/degrees/`);
 
         return response.data;
     }

@@ -8,19 +8,17 @@ type SubjectCreateDTO = {
   credit: number;
   major_id: string;
   faculty_id: string;
-  teacher_id?: string;   // ใส่เพิ่ม
-  semester_id?: number;  // ใส่เพิ่ม (ถ้า backend เป็น int)
+  teacher_id?: string;
+  semester_id?: number;
 };
 
-// ถ้ามีเคสเปลี่ยนรหัสวิชา และ backend รองรับคีย์พวกนี้
 type SubjectUpdateDTO = {
   subject_name?: string;
   credit?: number;
   major_id?: string;
   faculty_id?: string;
   teacher_id?: string;
-  semester_id?: number;      // <- backend ต้องการเป็น number
-  // ถ้ามีเคสเปลี่ยนรหัสวิชา และ backend รองรับคีย์พวกนี้
+  semester_id?: number;   // <- ต้องเป็น number
   subject_id?: string;
   new_subject_id?: string;
 };
@@ -31,18 +29,22 @@ type SubjectAPI = {
   subject_name?: string; SubjectName?: string; name?: string;
   credit?: number | string;
 
-  major_id?: string | number; MajorID?: string | number;
+  major_id?: string | number;  MajorID?: string | number;
   faculty_id?: string | number; FacultyID?: string | number;
 
-  // เพิ่มให้ครบ
   teacher_id?: string | number; TeacherID?: string | number; teacherId?: string | number;
   semester_id?: number | string; SemesterID?: number | string; semesterId?: number | string;
+
   term?: string;
   academic_year?: string;
 };
 
 const toStr = (v: string | number | undefined | null): string =>
   v == null ? "" : String(v);
+const toNum = (v: number | string | undefined | null): number | undefined => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+};
 
 // ---------- map -> SubjectInterface ----------
 const mapSubjectFromAPI = (s: SubjectAPI): SubjectInterface => ({
@@ -53,11 +55,10 @@ const mapSubjectFromAPI = (s: SubjectAPI): SubjectInterface => ({
   MajorID:      toStr(s.major_id   ?? s.MajorID),
   FacultyID:    toStr(s.faculty_id ?? s.FacultyID),
 
-  // สำคัญ: ให้ตารางรู้ว่าแต่ละวิชาผูกอาจารย์คนไหน
   TeacherID:    toStr(s.teacher_id ?? s.TeacherID ?? s.teacherId),
 
-  // สำหรับโชว์เทอม/ปี หรือใช้ fallback จากตาราง semester ได้
-  SemesterID:   Number(s.semester_id ?? s.SemesterID ?? s.semesterId),
+  // ✅ ให้เป็น number ตาม baseline ล่าสุด
+  SemesterID:   toNum(s.semester_id ?? s.SemesterID ?? s.semesterId),
   Term:         s.term,
   AcademicYear: s.academic_year,
 });
@@ -84,8 +85,8 @@ export const createSubject = async (
     credit:       creditNum,
     major_id:     String(MajorID),
     faculty_id:   String(FacultyID),
-    teacher_id:   data.TeacherID ? String(data.TeacherID) : undefined, // ส่งอาจารย์
-    semester_id:  data.SemesterID ? Number(data.SemesterID) : undefined, // ส่งภาคเรียน
+    teacher_id:   data.TeacherID ? String(data.TeacherID) : undefined,
+    semester_id:  data.SemesterID != null ? Number(data.SemesterID) : undefined,
   };
 
   const res = await api.post<SubjectAPI>(
@@ -103,6 +104,19 @@ export const getSubjectAll = async (): Promise<SubjectInterface[]> => {
   return arr.map(mapSubjectFromAPI);
 };
 
+// ✅ ดึงรายวิชา “อย่างเดียว” (ไม่เรียก /sections อีกต่อไป)
+export const getSubjectById = async (subjectId: string): Promise<SubjectInterface | null> => {
+  const sid = (subjectId || "").trim();
+  if (!sid) return null;
+  try {
+    const res = await api.get<SubjectAPI>(`/subjects/${encodeURIComponent(sid)}`);
+    return mapSubjectFromAPI(res.data || {});
+  } catch (err) {
+    console.error("getSubjectById error:", err);
+    return null;
+  }
+};
+
 export const updateSubject = async (
   subjectId: string,
   data: Partial<SubjectUpdateDTO & { semester_id?: string | number }>
@@ -115,7 +129,6 @@ export const updateSubject = async (
     major_id: data.major_id,
     faculty_id: data.faculty_id,
     teacher_id: data.teacher_id,
-    // แปลง semester_id ให้เป็น number เท่านั้น
     ...(data.semester_id !== undefined
       ? (() => {
           const n = Number(data.semester_id);

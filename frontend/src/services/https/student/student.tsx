@@ -4,13 +4,11 @@ import { api } from "../api";
 
 
 export const getNameStudent = async (username: string) => {
-    //console.log("Fetching student data for:", username);
     if (!username) {
         throw new Error("Username is required");
     }
     try {
         const response = await api.get(`/students/${username}`);
-        console.log("api student profile", response)
         return response.data;
     }
     catch (error) {
@@ -20,11 +18,8 @@ export const getNameStudent = async (username: string) => {
 };
 
 export const getStudentAll = async (): Promise<StudentInterface[]> => {
-    //console.log("Fetching student data for:", username);
     try {
         const response = await api.get(`/students/`)
-        console.log("api student data:", response);
-
         return response.data;
     }
     catch (error) {
@@ -46,7 +41,6 @@ export const createStudent = async (data: StudentInterface): Promise<StudentInte
 
 export const updateStudentProfile = async (data: StudentInterface): Promise<StudentInterface> => {
     const username = localStorage.getItem("username");
-    console.log("api edit profile student:", data);
     try {
         const response = await api.put(`/students/${username}`, data);
         return response.data
