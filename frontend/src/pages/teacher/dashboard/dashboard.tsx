@@ -8,7 +8,6 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 import MainPage from './menu/mainpage/mainpage';
 //import RegisterPage from './menu/register/register';
 import CoursePage from './menu/course/course';
-import TimeTablePage from './menu/timetable/timetable';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
@@ -32,7 +31,6 @@ import {
   MenuFoldOutlined,
   ReadOutlined,
   ContactsOutlined,
-  TableOutlined,
   SolutionOutlined,
   ApartmentOutlined,
   FormOutlined,
@@ -57,7 +55,6 @@ const TeacherDashboardpage: React.FC = () => {
     'หน้าหลัก': 'home',
     'ลงทะเบียนเรียน': 'register',
     'วิชาที่เปิดสอน': 'course',
-    'ตารางเรียน': 'timetable',
     'ผลการเรียน': 'grade',
     'คะแนน': 'score',
     'ใบแจ้งยอดชำระ': 'payment',
@@ -113,8 +110,6 @@ const TeacherDashboardpage: React.FC = () => {
         return //<RegisterPage />;
       case 'วิชาที่เปิดสอน':
         return <CoursePage />;
-      case 'ตารางเรียน':
-        return <TimeTablePage />;
       case 'ผลการเรียน':
         return <GradePage />;
       case 'คะแนน':
@@ -205,7 +200,6 @@ const TeacherDashboardpage: React.FC = () => {
             { key: 'หน้าหลัก', icon: <HomeOutlined />, label: 'หน้าหลัก' },
             { key: 'ลงทะเบียนเรียน', icon: <ScheduleOutlined />, label: 'ลงทะเบียนเรียน' },
             { key: 'วิชาที่เปิดสอน', icon: <BookOutlined />, label: 'วิชาที่เปิดสอน' },
-            { key: 'ตารางเรียน', icon: <TableOutlined />, label: 'ตารางเรียน' },
             { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
             { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
             { key: 'ใบแจ้งยอดชำระ', icon: <BankOutlined />, label: 'ใบแจ้งยอดชำระ' },
