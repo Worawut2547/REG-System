@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+
 	"reg_system/config"
 	"reg_system/entity"
 	"reg_system/services"
@@ -182,6 +183,8 @@ func UploadReceipt(c *gin.Context) {
 	termStr := c.Param("term")
 	db := config.DB()
 
+	now := time.Now() //แก้ให้ส่งเวลาจริงเข้าไปในฐานข้อมูล
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
@@ -225,8 +228,6 @@ func UploadReceipt(c *gin.Context) {
 			StudentID:    studentID,
 			AcademicYear: year,
 			Term:         term,
-			TotalPrice:   0, // คำนวณได้ถ้าต้องการ
-			StatusID:     2, // รอตรวจสอบ
 			Registration: selectedRegs,
 		}
 		if err := db.Create(&bill).Error; err != nil {
@@ -237,6 +238,12 @@ func UploadReceipt(c *gin.Context) {
 		// ถ้ามีแล้ว อัปเดต Registration (กรณีเราต้องการเชื่อม)
 		if err := db.Model(&bill).Association("Registration").Replace(selectedRegs); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill registrations"})
+			return
+		}
+		if err := db.Model(&bill).Updates(map[string]interface{}{
+			"Date": now, // ✅ เซ็ตวันอัปโหลดใหม่
+		}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill date"})
 			return
 		}
 	}
@@ -267,6 +274,7 @@ func UploadReceipt(c *gin.Context) {
 	if err := db.Model(&bill).Updates(map[string]interface{}{
 		"FilePath": fileName,
 		"StatusID": 2,
+		"Date":     now,
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill"})
 		return
@@ -276,6 +284,7 @@ func UploadReceipt(c *gin.Context) {
 		"message":   "upload success",
 		"file_path": fileName,
 		"status":    "รอตรวจสอบ",
+		"uploaded_at": now.Format("2006-01-02 15:04:05"), // ✅ ส่งเวลาให้ frontend
 	})
 }
 
@@ -389,33 +398,6 @@ func ShowFile(c *gin.Context) {
 	}
 
 	c.File(filePath)
-}
-
-// GET /bills/download/:id - ดาวน์โหลด PDF
-func DownloadBill(c *gin.Context) {
-	id := c.Param("id")
-	db := config.DB()
-
-	var bill entity.Bill
-	if err := db.First(&bill, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "bill not found"})
-		return
-	}
-
-	if bill.FilePath == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "file not uploaded"})
-		return
-	}
-
-	path := filepath.Join("./uploads", bill.FilePath)
-	if _, err := os.Stat(path); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
-		return
-	}
-
-	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(path)))
-	c.File(path)
 }
 
 // PUT /bills/status/:id

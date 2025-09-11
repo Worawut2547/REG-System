@@ -44,97 +44,6 @@ export interface BillResponse {
 // ======================================================
 // ดึงบิลของนักศึกษาคนเดียว
 // ======================================================
-/*export const getBillByStudentID = async (): Promise<BillResponse> => {
-  try {
-    const sid = localStorage.getItem('username');
-    if (!sid) throw new Error("ไม่พบ Student ID ใน localStorage");
-
-    const response = await axios.get(`${apiUrl}/bills/${sid}`);
-    const data = response.data;
-    
-
-    return {
-      id: data.id,
-      subjects: data.subjects || [],
-      status: data.status || "ค้างชำระ",
-      filePath: data.filePath ? `/uploads/${data.filePath}` : null,
-    };
-  } catch (error) {
-    console.error("Error fetching bill student data:", error);
-    throw error;
-  }
-};*/
-
-/*export const getBillByStudentID = async (): Promise<{
-  id: number;
-  subjects: APISubject[];
-  status: string;
-  filePath?: string | null;
-  year: number;
-  term: number;
-}> => {
-  try {
-    const sid = localStorage.getItem('username');
-    if (!sid) throw new Error("ไม่พบ Student ID ใน localStorage");
-
-    const response = await axios.get(`${apiUrl}/bills/${sid}`);
-    const data = response.data;
-
-    return {
-      id: data.id,
-      subjects: data.subjects.map((s: any) => ({
-        subject_id: s.subject_id,
-        subject_name: s.subject_name,
-        credit: s.credit,
-        term: s.term,
-        academicYear: s.academic_year, // แปลงตรงนี้
-      })),
-      status: data.status || "ค้างชำระ",
-      filePath: data.file_path ? `/uploads/${data.file_path}` : null,
-      year: data.year,
-      term: data.term,
-    };
-  } catch (error) {
-    console.error("Error fetching bill student data:", error);
-    throw error;
-  }
-};*/
-
-/*export const getBillByStudentID = async (): Promise<{
-  id: number;
-  subjects: APISubject[];
-  status: string;
-  filePath?: string | null;
-  year: number;
-  term: number;
-}> => {
-  try {
-    const sid = localStorage.getItem('username');
-    if (!sid) throw new Error("ไม่พบ Student ID ใน localStorage");
-
-    const response = await axios.get(`${apiUrl}/bills/${sid}`);
-    const data = response.data;
-
-    return {
-      id: data.id,
-      subjects: data.subjects.map((s: any) => ({
-        subject_id: s.subject_id,
-        subject_name: s.subject_name,
-        credit: s.credit,
-        term: s.term,
-        academicYear: s.academic_year, // แปลงตรงนี้
-      })),
-      status: data.status || "ค้างชำระ",
-      filePath: data.file_path ? `/uploads/${data.file_path}` : null,
-      year: data.year,
-      term: data.term,
-    };
-  } catch (error) {
-    console.error("Error fetching bill student data:", error);
-    throw error;
-  }
-};*/
-
 export const getBillByStudentID = async (): Promise<{
   id: number;
   subjects: APISubject[];
@@ -173,9 +82,6 @@ export const getBillByStudentID = async (): Promise<{
     throw error;
   }
 };
-
-
-
 
 // ======================================================
 // ดึงบิลทั้งหมด (สำหรับแอดมิน)

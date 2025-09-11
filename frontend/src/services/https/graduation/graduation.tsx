@@ -17,7 +17,16 @@ export const statusStudentMap: Record<string, string> = {
 // ดึงข้อมูลผู้แจ้งจบทั้งหมด
 export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
     try {
-        const res = await axios.get(`${apiUrl}/graduations/`);
+
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("User not authenticated");
+
+        const res = await axios.get(`${apiUrl}/graduations/`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
         console.log("api graduations", res.data)
         const items = res.data?.data ?? [];
 
@@ -46,7 +55,15 @@ export const createGraduation = async (
     data: CreateGraduationInput
 ): Promise<GraduationInterface> => {
     try {
-        const res = await axios.post(`${apiUrl}/graduations/`, data);
+        const token = localStorage.getItem("token"); 
+        if (!token) throw new Error("User not authenticated");
+
+        const res = await axios.post(`${apiUrl}/graduations/`, data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
         console.log("api create graduation:", res.data);
         const item = res.data?.data;
 
@@ -75,19 +92,21 @@ export const createGraduation = async (
 // --------------------------
 export const getMyGraduation = async (): Promise<GraduationInterface | null> => {
     try {
-
-        const studentID = localStorage.getItem("username"); // หรือ StudentID จริง
-        if (!studentID) return null;
+        const studentID = localStorage.getItem("username");
+        const token = localStorage.getItem("token"); // ✅ ดึง token
+        if (!studentID || !token) return null;
 
         console.log("Fetching graduation for studentID:", studentID);
         console.log("URL:", `${apiUrl}/graduations/${studentID}`);
 
-        const res = await axios.get(`${apiUrl}/graduations/${studentID}`);
+        const res = await axios.get(`${apiUrl}/graduations/${studentID}`, {
+            headers: {
+                Authorization: `Bearer ${token}`, // ✅ ใส่ header
+            },
+        });
+
         const data = res.data?.data;
-
         if (!data) return null;
-
-        console.log("Graduation reason:", data.RejectReason);
 
         return {
             id: data.GraduationID?.toString() || "",
@@ -98,8 +117,7 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
             GPAX: data.GPA ?? 0,
             reason: data.RejectReason ?? "",
             Date: data.Date ? new Date(data.Date) : null,
-
-            totalCredits: data.TotalCredits?? 0, // ✅ ดึงมาจาก backend
+            totalCredits: data.TotalCredits ?? 0,
         };
     } catch (err) {
         console.error("Error fetching my graduation:", err);
@@ -108,20 +126,29 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
 };
 
 
+
+
 export const updateGraduation = async (
     graduationID: string,
     statusStudentID: string,
     rejectReason?: string
 ): Promise<void> => {
     try {
+        const token = localStorage.getItem("token"); // ดึง token จาก localStorage
         const payload = {
             StatusStudentID: statusStudentID,
-            RejectReason: rejectReason ?? null, // ถ้าไม่มี rejectReason ให้เป็น null
+            RejectReason: rejectReason ?? null,
         };
 
-        const res = await axios.put(`${apiUrl}/graduations/${graduationID}`, payload, {
-            withCredentials: true,
-        });
+        const res = await axios.put(
+            `${apiUrl}/graduations/${graduationID}`,
+            payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`, // ✅ เพิ่ม header
+                },
+            }
+        );
 
         console.log("Graduation updated:", res.data);
     } catch (err: any) {
@@ -129,4 +156,42 @@ export const updateGraduation = async (
         throw err;
     }
 };
-/*มันเข้าให้มั้ยเนี่ย*/
+
+/*
+-----------------------------------------
+Authorization / Authentication ในระบบนี้
+-----------------------------------------
+
+1. **ทำไมต้องใส่ Authorization header**
+   - Backend ของเราใช้การตรวจสอบสิทธิ์ (Authorization) เพื่อป้องกันการเข้าถึงข้อมูลโดยไม่ได้รับอนุญาต
+   - หากไม่มี header นี้หรือไม่มี token/credentials ที่ถูกต้อง ระบบจะตอบกลับ HTTP 401 Unauthorized
+   - 401 หมายถึง "คุณไม่ได้เข้าสู่ระบบ หรือไม่มีสิทธิ์เข้าถึง resource นี้"
+
+2. **วิธีการส่งข้อมูล Authorization**
+   - ใช้ JWT Token: ส่งผ่าน header
+        Authorization: Bearer <access_token>
+   - หรือใช้ session cookie (ถ้า backend ตั้งค่า cookie ไว้) ต้องตั้ง `withCredentials: true` ใน axios/fetch
+   - ตัวอย่าง axios:
+        axios.put(url, payload, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+3. **เหตุผลที่ทุก request บางอย่างต้องมี**
+   - การสร้าง หรืออัปเดตข้อมูลสำคัญ เช่น การแจ้งจบการศึกษา ต้องรู้ว่า request มาจากใคร
+   - ป้องกันคนอื่นส่ง request ปลอม (ไม่ใช่เจ้าของบัญชี)
+   - รักษาความปลอดภัยข้อมูลของนักศึกษาและระบบ
+
+4. **Flow การทำงาน**
+   - ผู้ใช้ login → backend ส่ง access token หรือ session cookie
+   - Frontend เก็บ token (localStorage/sessionStorage) หรือ cookie
+   - ทุก request ที่ต้องการสิทธิ์ → แนบ token/cookie
+   - Backend ตรวจสอบ token/cookie → อนุญาตหรือปฏิเสธ
+
+5. **สัญญาณข้อผิดพลาด**
+   - HTTP 401 → Unauthorized → token/credentials หายหรือไม่ถูกต้อง
+   - HTTP 403 → Forbidden → รู้จักผู้ใช้แล้ว แต่ไม่มีสิทธิ์ทำ action นั้น
+
+สรุป: การใส่ Authorization header หรือ `withCredentials: true` เป็นวิธีบอก server ว่า “นี่คือผู้ใช้ที่ถูกต้อง มีสิทธิ์ทำ action นี้”
+*/

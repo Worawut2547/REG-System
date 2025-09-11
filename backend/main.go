@@ -208,7 +208,6 @@ func main() {
 		billGroup.POST("/:id/create", bill.CreateBill)                // student
 		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt) //student
 		billGroup.GET("/preview/:id", bill.ShowFile)                  // admin
-		billGroup.GET("/download/:id", bill.DownloadBill)             //admin
 		billGroup.GET("/admin/all", bill.GetAllBills)                 // admin
 		billGroup.PUT("/:id", bill.UpdateBillStatus)                  // ใช้สำหรับอนุมัติใบเสร็จ
 	}

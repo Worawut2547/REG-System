@@ -19,5 +19,7 @@ type Bill struct {
     Status       *BillStatus `gorm:"foreignKey:StatusID"`
 
     Registration []Registration `gorm:"many2many:bill_registrations;"`
+
+    
 }
 

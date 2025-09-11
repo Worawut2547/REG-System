@@ -65,46 +65,71 @@ func CreateGraduation(c *gin.Context) {
 // ----------------------
 // 2. ดึงคำขอแจ้งจบของนักศึกษาปัจจุบัน
 // ----------------------
+// แก้อันนี้นะ
 func GetMyGraduation(c *gin.Context) {
 	studentID := c.Param("id")
-
 	db := config.DB()
+
 	var graduation entity.Graduation
 
-	if err := db.Preload("Student").
+	// พยายามดึงข้อมูล graduation ของ student
+	err := db.Preload("Student").
 		Preload("Student.StatusStudent").
 		Preload("Student.Curriculum").
 		Preload("Student.Grade.Subject").
-		First(&graduation, "student_id = ?", studentID).Error; err != nil {
+		Where("student_id = ?", studentID).
 
-		// 🔹 ถ้าไม่พบ graduation ให้ดึง student แทน
-		var student entity.Students
-		if err := db.Preload("StatusStudent").
-			Preload("Curriculum").
-			Preload("Grade.Subject").
-			First(&student, "student_id = ?", studentID).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
-			return
-		}
+		//แก้ไขให้ดึงเหตุผลล่าสุดเสมอ - เรียงจากวันที่แจ้งจบ
+		Order("created_at DESC"). // หรือ updated_at ถ้าอัปเดต reason // ✅ ดึง request ล่าสุดก่อน
+		First(&graduation).Error
 
+	if err == nil {
+		// ✅ เจอ graduation
 		totalCredits, _ := services.CalculateTotalCredits(studentID)
-		gpa := services.CalculateGPA(student.Grade)
+		gpa := services.CalculateGPA(graduation.Student.Grade)
 
 		c.JSON(http.StatusOK, gin.H{"data": gin.H{
-			"GraduationID":  0,
-			"StudentID":     student.StudentID,
-			"FirstName":     student.FirstName,
-			"LastName":      student.LastName,
-			"CurriculumID":  student.Curriculum.CurriculumID,
-			"Curriculum":    student.Curriculum.CurriculumName,
-			"StatusStudent": student.StatusStudent.Status,
-			"RejectReason":  "",
-			"Date":          nil,
+			"GraduationID":  graduation.ID,
+			"StudentID":     graduation.StudentID,
+			"FirstName":     graduation.Student.FirstName,
+			"LastName":      graduation.Student.LastName,
+			"CurriculumID":  graduation.Student.Curriculum.CurriculumID,
+			"Curriculum":    graduation.Student.Curriculum.CurriculumName,
+			"StatusStudent": graduation.Student.StatusStudent.Status,
+			"RejectReason":  graduation.RejectReason,
+			"Date":          graduation.Date,
 			"TotalCredits":  totalCredits,
 			"GPA":           gpa,
 		}})
 		return
 	}
+
+	// ถ้าไม่เจอ graduation → ดึงข้อมูล student แทน
+	var student entity.Students
+	if err := db.Preload("StatusStudent").
+		Preload("Curriculum").
+		Preload("Grade.Subject").
+		First(&student, "student_id = ?", studentID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
+		return
+	}
+
+	totalCredits, _ := services.CalculateTotalCredits(studentID)
+	gpa := services.CalculateGPA(student.Grade)
+
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{
+		"GraduationID":  0,
+		"StudentID":     student.StudentID,
+		"FirstName":     student.FirstName,
+		"LastName":      student.LastName,
+		"CurriculumID":  student.Curriculum.CurriculumID,
+		"Curriculum":    student.Curriculum.CurriculumName,
+		"StatusStudent": student.StatusStudent.Status,
+		"RejectReason":  "", // ยังไม่มี graduation → เหตุผลเป็นค่าว่าง
+		"Date":          nil,
+		"TotalCredits":  totalCredits,
+		"GPA":           gpa,
+	}})
 }
 
 // ----------------------
@@ -232,4 +257,3 @@ func UpdateGraduation(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Graduation status updated successfully"})
 }
-//NEW - 
