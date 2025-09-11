@@ -32,7 +32,7 @@ const SubmitReport: React.FC<Props> = ({ studentId: propStudentId }) => {
     setLoadingForms(true);
     setPickerError(null);
     try {
-      const res = await fetch(`/forms/index.json`, { cache: "no-cache" });
+      const res = await fetch(`/reportforms/index.json`, { cache: "no-cache" });
       if (!res.ok) throw new Error(`โหลดรายการไฟล์ไม่สำเร็จ (${res.status})`);
       const data = await res.json();
       const arr = Array.isArray(data) ? data : [];
