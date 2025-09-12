@@ -94,9 +94,14 @@ const Grade: React.FC = () => {
 
   useEffect(() => {
     getGradeStudent()
-      .then((gradeStudent) => {
-        console.log("API grade student response:", gradeStudent);
-        setGradeStudent(gradeStudent);
+      .then((data: GradeStudentInterface[]) => {
+
+        // กรองวิชาที่มีชื่อ , หน่วยกิต > 0 , เทอม > 0
+        const validData = data.filter(
+          (item) => item.SubjectName && item.Credit !== 0 && item.Term !== 0
+      );
+      console.log("Filtered grade student:", validData);
+        setGradeStudent(validData);
       })
       .catch((err) => console.error(err));
   }, []);
@@ -105,6 +110,7 @@ const Grade: React.FC = () => {
   const groupRecord = useMemo(() => {
     const group: Record<string, GradeStudentInterface[]> = {};
     gradeStudent.forEach((item) => {
+      if (!item.SubjectName || item.Credit == 0 || item.Term == 0) return;
       const key = `${item.AcademicYear}-${item.Term}`;
       if (!group[key]) group[key] = [];
       group[key].push(item);

@@ -10,7 +10,7 @@ func ExampleData() {
 
 	FacultyExample()
 	MajorExample()
-	SubjectExample()
+	//SubjectExample()
 	PositionExample()
 	DegreeExample()
 	SemesterExample()
@@ -24,7 +24,7 @@ func ExampleData() {
 	BillExample()
 	BillStatus()
 	//GradeExample()
-	ScoresExample()
+	//ScoresExample()
 	ReportExampleData()
 	GraduationExample()
 
