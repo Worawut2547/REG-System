@@ -27,8 +27,8 @@ func ExampleData() {
 	//CurriculumBookExample()
 	//CurriculumExample()
 	//SubjectExample()
-	//GradeExample()
-	//ScoresExample()
+	GradeExample()
+	ScoresExample()
 	ReportExampleData()
 
 	//GradeExample()
