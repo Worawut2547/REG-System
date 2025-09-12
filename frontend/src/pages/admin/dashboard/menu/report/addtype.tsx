@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card, Input, Button, Space, message, Typography } from "antd";
-import axios from "axios";
-import { apiUrl } from "../../../../../services/api";
+//import axios from "axios";
+import { api } from "../../../../../services/https/api";
 
 type Props = { onBack?: () => void };
 
@@ -17,7 +17,7 @@ const AddType: React.FC<Props> = ({ onBack }) => {
       // ไม่ส่ง ReportType_id เพื่อให้หลังบ้าน gen ให้อัตโนมัติ
       const payload = { ReportType_Name: name.trim(), ReportTypeDescription: desc.trim() } as any;
       // Use trailing slash to avoid dev proxy losing /api due to redirect
-      await axios.post(`${apiUrl}/report-types/`, payload, { headers: { 'Content-Type': 'application/json' } });
+      await api.post(`/report-types/`, payload, { headers: { 'Content-Type': 'application/json' } });
       message.success("เพิ่มประเภทคำร้องเรียบร้อย");
       setName(""); setDesc("");
       onBack?.();

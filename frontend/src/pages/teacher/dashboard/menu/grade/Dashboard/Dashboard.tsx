@@ -1,5 +1,5 @@
 import React from "react";
-import { Row, Col } from "antd";
+import { Row, Col, Divider } from "antd";
 import CourseCard from "../CoursCard/CourseCard";
 import YearTermFilter from "../Filter/YearTermFilter";
 
@@ -46,9 +46,11 @@ const TeacherDashboard: React.FC<Props> = ({
         termOptions={termOptions}
       />
 
+      <Divider />
+
       <Row gutter={[24, 24]}>
         {filteredCourses.length > 0 ? filteredCourses.map(({ code, name, credit, color }) => (
-          <Col key={code} xs={24} sm={12} md={12} lg={12}>
+          <Col key={code} xs={24} sm={12} md={8} lg={8}>
             <CourseCard
               code={code}
               name={name}

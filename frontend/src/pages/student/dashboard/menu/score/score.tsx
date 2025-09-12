@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Layout, Divider } from "antd";
 import FilterPanel from "./filterPanel";
 import CourseTable from "./table.tsx";
-import { type CourseData } from "./table.tsx";
+import { type CourseData, type Score } from "./table.tsx";
 import { getScoreByStudentID } from "../../../../../services/https/score/score";
 import "./score.css";
 
@@ -25,7 +25,7 @@ const StudentScore: React.FC = () => {
       const terms: string[] = Array.from(new Set(res.map((r: any) => String(r.Term))));
       setTermOptions(terms);
 
-      // map เป็นโครงที่ CourseTable ใช้
+      // จัดกลุ่มตามวิชา
       const grouped: { [key: string]: any[] } = {};
       res.forEach((r: any) => {
         const key = r.SubjectName;
@@ -33,18 +33,25 @@ const StudentScore: React.FC = () => {
         grouped[key].push(r);
       });
 
+      // แปลงเป็น CourseData
       const transformed: CourseData[] = Object.keys(grouped).map((subject) => {
         const records = grouped[subject];
-        const scores = records.map((r) => ({
-          evaluation: r.List,
-          point: r.Score,
-          total: r.FullScore,
+
+        // สร้างแถวคะแนนแต่ละประเภท
+        const scores: Score[] = records.map((r: any) => ({
+          evaluation: r.List ?? "คะแนน", // ถ้าไม่มี List ใช้ชื่อ default
+          point: Number(r.Score ?? 0),
+          total: Number(r.Score_Total ?? 0), // แก้จาก FullScore → Score_Total
         }));
-        const total = records.reduce((sum, r) => sum + r.Score, 0);
+
+        // รวมคะแนนจริงและ FullScore ของทุกประเภท
+        const totalPoint = scores.reduce((sum, s) => sum + Number(s.point ?? 0), 0);
+        const totalFull = scores.reduce((sum, s) => sum + Number(s.total ?? 0), 0);
+
         return {
           course: subject,
           scores,
-          summary: { total, net: total },
+          summary: { total: totalPoint, net: totalFull },
         };
       });
 
@@ -52,10 +59,8 @@ const StudentScore: React.FC = () => {
     });
   }, []);
 
-  // filter ตามปี/เทอม
-  const filteredCourses = courses.filter((course) => {
-    return true; // ตอนนี้ courses ไม่มี field year/term → ต้อง filter จาก raw data
-  });
+  // filter ตามปี/เทอม (ตอนนี้ยังไม่ filter)
+  const filteredCourses = courses.filter((course) => true);
 
   return (
     <Layout
@@ -85,7 +90,7 @@ const StudentScore: React.FC = () => {
       <Content
         style={{
           background: "#f5f5f5",
-          padding: 24,
+          padding: 40,
           minHeight: 400,
           color: "#333",
           overflowY: "auto",

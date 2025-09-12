@@ -6,7 +6,6 @@ const apiUrl = "http://localhost:8000";
 export const getCurriculumAll = async (): Promise<CurriculumInterface[]> => {
     try{
         const response = await axios.get(`${apiUrl}/curriculums/`)
-        console.log("api curriculum data:", response);
         
         return response.data
     }

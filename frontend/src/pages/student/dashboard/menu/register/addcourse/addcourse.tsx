@@ -21,6 +21,7 @@ type BasketRow = {
   SubjectID: string;
   SubjectName?: string;
   Credit?: number;
+  SemesterID?: number; // เพิ่ม SemesterID มาด้วย
 };
 
 type Props = { onBack?: () => void, studentId?: string };
@@ -83,6 +84,7 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
         SubjectID: sid,
         SubjectName: sub.SubjectName,
         Credit: sub.Credit,
+        SemesterID: sub.SemesterID,
       },
     ]);
   };
@@ -127,6 +129,8 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
           Date: new Date().toISOString(),
           StudentID: studentId,
           SubjectID: it.SubjectID,
+          SemesterID: it.SemesterID, // ค่าตายตัวก่อน (ต้องมีค่า)
+          
           // SectionID: undefined // ตัดออก
         } as any;
         await createRegistration(payload);

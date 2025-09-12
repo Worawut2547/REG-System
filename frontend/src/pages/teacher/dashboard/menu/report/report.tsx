@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Layout, Card, Table, Tag, Button, Modal, Typography, message, Spin, Input, List } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { apiUrl } from "../../../../../services/api";
+import { apiUrl } from "../../../../../services/https/api";
 import "./report.css";
 import { getNameTeacher } from "../../../../../services/https/teacher/teacher";
 import { getNameAdmin } from "../../../../../services/https/admin/admin";
@@ -64,15 +64,21 @@ const attName = (a: AnyObj) => a.File_Name || a.file_name || a.Attachment_File_N
 const attPath = (a: AnyObj) => a.File_Path || a.file_path || a.Attachment_File_Path || "";
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${apiUrl}${path}`, init);
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${apiUrl}${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json",
+      ...(init?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
   const isJSON = res.headers.get("content-type")?.includes("application/json");
   if (!res.ok) {
     const body = isJSON ? await res.json().catch(() => ({})) : await res.text();
     throw new Error((isJSON ? (body as any)?.error : (body as string)) || `HTTP ${res.status}`);
   }
   return (isJSON ? await res.json() : ((await res.text()) as T)) as T;
-}
-
+};
 const TeacherReport: React.FC = () => {
   // ตัวช่วยหา reviewer ของผู้ใช้ปัจจุบัน
   const candidates = useMemo(() => {

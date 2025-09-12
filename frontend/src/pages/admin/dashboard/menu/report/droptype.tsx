@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Table, Button, message, Popconfirm } from "antd";
-import axios from "axios";
-import { apiUrl } from "../../../../../services/api";
+//import axios from "axios";
+import { api } from "../../../../../services/https/api";
 
 type ReportType = { ReportType_id: string; ReportType_Name?: string; ReportTypeDescription?: string };
 
@@ -13,7 +13,7 @@ const DropType: React.FC = () => {
     setLoading(true);
     try {
       // Trailing slash prevents 301 redirect that can drop the /api prefix
-      const res = await axios.get(`${apiUrl}/report-types/`);
+      const res = await api.get(`/report-types/`);
       setRows(Array.isArray(res.data) ? res.data : []);
     } catch (e: any) {
       message.error(e?.message || "โหลดประเภทคำร้องไม่สำเร็จ");
@@ -24,7 +24,7 @@ const DropType: React.FC = () => {
 
   const remove = async (id: string) => {
     try {
-      await axios.delete(`${apiUrl}/report-types/${encodeURIComponent(id)}`);
+      await api.delete(`/report-types/${encodeURIComponent(id)}`);
       message.success("ลบประเภทคำร้องแล้ว");
       await load();
     } catch (e: any) {

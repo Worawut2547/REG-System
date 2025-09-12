@@ -24,14 +24,15 @@ func ExampleData() {
 	BillExample()
 	BillStatus()
 
-	CurriculumBookExample()
-	CurriculumExample()
-	SubjectExample()
-	GradeExample()
+	//CurriculumBookExample()
+	//CurriculumExample()
+	//SubjectExample()
+	//GradeExample()
 	//ScoresExample()
 	ReportExampleData()
 
-	GradeExample()
+	//GradeExample()
+	GraduationExample()
 
 	teacher := entity.Teachers{
 		TeacherID:  "T2900364",

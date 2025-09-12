@@ -22,7 +22,7 @@ type Course = {
   term: number;
 };
 
-const subjectColors = ["#1a1440ff", "#332771ff", "#4c5ba8ff", "#2d3685ff", "#1890ff"];
+const subjectColors = ["#dad9ddff", "#c1c7d7ff" , "#b3bdd8ff"];
 
 const GradePage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -61,10 +61,11 @@ const GradePage: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Header style={{ background: "#2e236c", color: "white", fontSize: 24, textAlign: "center" }}>
-        Dashboard รายวิชา
+      <Header style={{ background: "#2e236c", color: "white", fontSize: 24, textAlign: "center", borderTopRightRadius: "8px" , borderTopLeftRadius: "8px" }}>
+        รายงานผลการเรียน
       </Header>
-      <Content style={{ padding: 24 }}>
+
+      <Content style={{ padding: 50 }}>
         {view === "dashboard" && (
           <TeacherDashboard
             courses={courses}
@@ -89,7 +90,7 @@ const GradePage: React.FC = () => {
           />
         )}
       </Content>
-      <Footer style={{ textAlign: "center", background: "#1890ff", color: "white" }}>Footer © 2025</Footer>
+      <Footer style={{ padding: 12,textAlign: "center", background: "#1890ff", color: "white", borderBottomRightRadius: "8px" , borderBottomLeftRadius: "8px"}}>Footer © 2025</Footer>
     </Layout>
   );
 };

@@ -4,6 +4,6 @@ export interface RegistrationInterface {
 
   Date?: string;           // ISO string (time of registration)
   SubjectID?: string;      // FK to Subject
-  SectionID?: number;      // FK to Section
+  SemesterID?: number;      // FK to Semester
   StudentID?: string;      // FK to Student
 }

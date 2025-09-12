@@ -15,6 +15,7 @@ type APISubject = {
   subject_id: string;
   subject_name: string;
   credit: number;
+  status?: string; // status ของแต่ละเทอมจาก backend
 };
 
 type DataType = {
@@ -40,63 +41,71 @@ const toArabicNumber = (num: number | string) => {
 
 const PaymentPage: React.FC = () => {
   const [subjects, setSubjects] = useState<APISubject[]>([]);
-  const [selectedYear, setSelectedYear] = useState<string>("");
-  const [selectedTerm, setSelectedTerm] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>('');
+  const [selectedTerm, setSelectedTerm] = useState<string>('');
   const [statusMap, setStatusMap] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [billID, setBillID] = useState<number | null>(null);
+  const setBillID = useState<number | null>(null)[1];
+
 
   useEffect(() => {
     const fetchSubjects = async () => {
+      setLoading(true);
       try {
-        // ดึงข้อมูลจาก backend
-        const data: { id: number; subjects: APISubject[]; status: string } = await getBillByStudentID();
+        const data: {
+          id: number;
+          subjects: APISubject[];
+          statusMap?: { [key: string]: string };
+        } = await getBillByStudentID();
+
         setSubjects(data.subjects || []);
         setBillID(data.id || null);
 
-        // กำหนดสถานะจาก backend แทนการตั้ง 'ค้างชำระ' เอง
-        const newStatusMap: { [key: string]: string } = {};
-        data.subjects.forEach(s => {
-          const key = `${s.academicYear}-${s.term}`;
-          // ใช้ค่า status จาก backend
-          newStatusMap[key] = data.status || 'ค้างชำระ';
-        });
-        setStatusMap(newStatusMap);
+        // ✅ ใช้ statusMap จาก backend โดยตรง
+        setStatusMap(data.statusMap || {});
 
-        // แยกปี/เทอม
+        // เลือกปีล่าสุด และเทอมแรกของปีนั้น
         const years = Array.from(new Set(data.subjects.map(s => String(s.academicYear)))).sort().reverse();
         if (years.length > 0) setSelectedYear(years[0]);
+
         const terms = Array.from(
           new Set(data.subjects.filter(s => String(s.academicYear) === years[0]).map(s => String(s.term)))
-        ).sort();
+        ).sort((a, b) => Number(b) - Number(a)); // เทอมใหม่สุดก่อน
         if (terms.length > 0) setSelectedTerm(terms[0]);
+
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching bill data:', err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchSubjects();
   }, []);
 
-
-  const handleCascaderChange: CascaderProps['onChange'] = (value) => {
+  // Handle Cascader change
+  const handleCascaderChange: CascaderProps['onChange'] = value => {
     if (value && value.length === 2) {
       setSelectedYear(String(value[0]));
       setSelectedTerm(String(value[1]));
     }
   };
 
-  const yearOptions = Array.from(new Set(subjects.map(s => String(s.academicYear)))).sort().reverse();
-  const options = yearOptions.map(year => {
-    const terms = Array.from(new Set(subjects.filter(s => String(s.academicYear) === year).map(s => String(s.term)))).sort();
+  const yearOptions = Array.from(new Set(subjects.map(s => String(s.academicYear))))
+    .sort((a, b) => Number(b) - Number(a)); // ปีใหม่สุดก่อน
+
+  const cascaderOptions = yearOptions.map(year => {
+    const terms = Array.from(
+      new Set(subjects.filter(s => String(s.academicYear) === year).map(s => String(s.term)))
+    ).sort((a, b) => Number(b) - Number(a)); // เทอมใหม่สุดก่อน
     return {
       value: year,
       label: year,
-      children: terms.map(term => ({ value: term, label: term }))
+      children: terms.map(term => ({ value: term, label: term })),
     };
   });
+
 
   const termSubjects = subjects
     .filter(s => String(s.academicYear) === selectedYear && String(s.term) === selectedTerm)
@@ -108,13 +117,13 @@ const PaymentPage: React.FC = () => {
       amount: s.credit * pricePerCredit,
     }));
 
-
   const totalCredit = termSubjects.reduce((sum, s) => sum + s.credit, 0);
   const totalAmount = termSubjects.reduce((sum, s) => sum + s.amount, 0);
 
+  // Upload
   const uploadProps: UploadProps = {
-    beforeUpload: (file) => {
-      setSelectedFile(file);
+    beforeUpload: file => {
+      setSelectedFile(file as File);
       return false;
     },
     onRemove: () => setSelectedFile(null),
@@ -122,24 +131,30 @@ const PaymentPage: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !billID) {
-      message.warning('กรุณาเลือกไฟล์ก่อนอัปโหลด');
+    if (!selectedFile || !selectedYear || !selectedTerm) {
+      message.warning('กรุณาเลือกไฟล์และปี/เทอมก่อนอัปโหลด');
       return;
     }
 
     try {
-      const res = await uploadReceipt(billID, selectedFile);
-      setStatusMap(res.status); // <-- อัปเดตสถานะจาก backend
+      const studentID = localStorage.getItem('username');
+      if (!studentID) throw new Error('ไม่พบ Student ID');
+
+      await uploadReceipt(studentID, selectedFile, Number(selectedYear), Number(selectedTerm));
+
+      // อัปเดต status ของเทอมที่อัปโหลด
+      const key = `${selectedYear}-${selectedTerm}`;
+      setStatusMap(prev => ({
+        ...prev,
+        [key]: 'รอตรวจสอบ',
+      }));
+
+      setSelectedFile(null);
       message.success({
         content: 'อัปโหลดใบเสร็จเรียบร้อยแล้ว',
         duration: 2,
         style: { marginTop: '20vh', fontSize: '16px' },
       });
-      setSelectedFile(null);
-
-      // อัปเดต statusMap สำหรับปี/เทอมที่เลือก
-      const key = `${selectedYear}-${selectedTerm}`;
-      setStatusMap(prev => ({ ...prev, [key]: 'รอตรวจสอบ' }));
     } catch (err) {
       console.error(err);
       message.error({
@@ -150,6 +165,7 @@ const PaymentPage: React.FC = () => {
     }
   };
 
+  // Load font for PDF
   const loadFont = async () => {
     const response = await fetch('/fonts/Sarabun-Regular.ttf');
     if (!response.ok) throw new Error('โหลดฟอนต์ไม่สำเร็จ');
@@ -158,6 +174,7 @@ const PaymentPage: React.FC = () => {
     return btoa(binary);
   };
 
+  // Generate PDF
   const handleOpenPDF = async () => {
     if (termSubjects.length === 0) {
       message.warning('ไม่มีข้อมูลรายวิชาให้สร้าง PDF');
@@ -233,7 +250,7 @@ const PaymentPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ fontWeight: 600, fontSize: 18, color: '#000', paddingBottom: 4 }}>ปีการศึกษา</div>
           <Cascader
-            options={options}
+            options={cascaderOptions}
             value={selectedYear && selectedTerm ? [selectedYear, selectedTerm] : undefined}
             onChange={handleCascaderChange}
             placeholder="เลือกปีการศึกษา / เทอม"
@@ -244,9 +261,10 @@ const PaymentPage: React.FC = () => {
             <div style={{
               fontWeight: 'bold',
               fontSize: 18,
-              color: statusMap[`${selectedYear}-${selectedTerm}`] === 'รอตรวจสอบ' ? '#fa8c16' :
-                statusMap[`${selectedYear}-${selectedTerm}`] === 'ชำระแล้ว' ? '#52c41a' :
-                  '#cf1322',
+              color:
+                statusMap[`${selectedYear}-${selectedTerm}`] === 'รอตรวจสอบ' ? '#fa8c16' :
+                  statusMap[`${selectedYear}-${selectedTerm}`] === 'ชำระแล้ว' ? '#52c41a' :
+                    '#cf1322',
               marginLeft: 8,
             }}>
               {statusMap[`${selectedYear}-${selectedTerm}`] || 'ค้างชำระ'}
@@ -281,7 +299,7 @@ const PaymentPage: React.FC = () => {
           <Upload {...uploadProps}>
             <Button icon={<UploadOutlined />}>เลือกไฟล์ใบเสร็จ</Button>
           </Upload>
-          <Button type="primary" style={{ marginLeft: 8 }} onClick={handleUpload}>
+          <Button type="primary" style={{ marginLeft: 8 }} onClick={handleUpload} disabled={!selectedFile}>
             อัปโหลดใบเสร็จ
           </Button>
         </div>

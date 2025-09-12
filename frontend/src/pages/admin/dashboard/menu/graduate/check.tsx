@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Radio, Input, Form, message } from 'antd';
+import { Modal, Radio, Input, Form, message, Descriptions } from 'antd';
 import type { GraduationInterface } from '../../../../../interfaces/Graduation';
 
 type Props = {
@@ -39,6 +39,23 @@ const CheckGraduate: React.FC<Props> = ({ visible, record, onOk, onCancel }) => 
       okText="บันทึก"
       cancelText="ยกเลิก"
     >
+      {record && (
+        <Descriptions
+          bordered
+          size="small"
+          column={1}
+          style={{ marginBottom: 16 }}
+        >
+          <Descriptions.Item label="รหัสนักศึกษา">{record.StudentID}</Descriptions.Item>
+          <Descriptions.Item label="ชื่อ-สกุล">{record.fullName}</Descriptions.Item>
+          <Descriptions.Item label="หลักสูตร">{record.curriculum}</Descriptions.Item>
+          <Descriptions.Item label="GPA">{record.GPAX}</Descriptions.Item>
+          <Descriptions.Item label="หน่วยกิตรวม">{record.totalCredits}</Descriptions.Item>
+          {record.reason && <Descriptions.Item label="เหตุผลเก่า">{record.reason}</Descriptions.Item>}
+          <Descriptions.Item label="สถานะปัจจุบัน">{record.statusStudent}</Descriptions.Item>
+        </Descriptions>
+      )}
+
       <Form form={form} layout="vertical">
         <Form.Item label="สถานะ">
           <Radio.Group onChange={(e) => setStatus(e.target.value)} value={status}>

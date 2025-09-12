@@ -103,7 +103,7 @@ const AddCourseReview: React.FC<Props> = ({ rows, loading, onBack, onSubmit, reg
   const totalCredit = rows.reduce((sum, b) => sum + (b.Credit || 0), 0);
   const hasAnyConflict = conflictKeys.size > 0 || conflictWithRegisteredKeys.size > 0;
   const columns = [
-    { title: "กลุ่ม", dataIndex: "Group", key: "Group", width: 80 },
+    //{ title: "กลุ่ม", dataIndex: "Group", key: "Group", width: 80 },
     { title: "รหัสวิชา", dataIndex: "SubjectID", key: "SubjectID", width: 120 },
     { title: "ชื่อวิชา", dataIndex: "SubjectName", key: "SubjectName" , width: 240 },
     { title: "หน่วยกิต", dataIndex: "Credit", key: "Credit", width: 80  },

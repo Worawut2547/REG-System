@@ -15,6 +15,7 @@ import (
 
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
+	"reg_system/controller/graduation"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
 	"reg_system/controller/reports"
@@ -27,9 +28,10 @@ import (
 	"reg_system/controller/subjectstudytime"
 	"reg_system/controller/teachers"
 	"reg_system/controller/users"
-	"reg_system/controller/graduation"
 
 	"github.com/gin-gonic/gin"
+
+	"reg_system/middlewares"
 )
 
 const port = "8000"
@@ -45,8 +47,10 @@ func main() {
 	// -------------------- Gin Setup --------------------
 	r := gin.Default()
 	r.RedirectTrailingSlash = true
-	r.Use(CORSMiddleware())
+
 	r.Static("/uploads", "./uploads")
+
+	r.Use(CORSMiddleware())
 
 	// -------------------- Auth --------------------
 	r.POST("/signin", users.SignIn)
@@ -57,6 +61,12 @@ func main() {
 		userGroup.PUT("/reset/", users.ResetPassword)
 		userGroup.PUT("/:id", users.ChangePassword)
 	}
+
+	// AuthMiddleware ตรวจ token ก่อน
+	r.Use(middlewares.AuthMiddleware())
+
+	// จากนั้นทุก route สามารถใช้ PermissionMiddleware เเบบ global
+	r.Use(middlewares.PermissionMiddleware())
 
 	// -------------------- Admin --------------------
 	adminGroup := r.Group("/admin")
@@ -75,6 +85,7 @@ func main() {
 
 		studentGroup.GET("/:id/grades", grade.GetGradeByStudentID)
 		studentGroup.GET("/:id/scores", scores.GetScoreByStudentID)
+
 		// คำร้องของนักศึกษา
 		studentGroup.GET("/reports/:sid", reports.GetReportsByStu)
 	}
@@ -84,7 +95,7 @@ func main() {
 	{
 		teacherGroup.GET("/:id", teachers.GetTeacherID)
 		teacherGroup.POST("/", teachers.CreateTeacher)
-		teacherGroup.GET("/", teachers.GetTeacherAll) // admin :Earth
+		teacherGroup.GET("/", teachers.GetTeacherAll)
 		teacherGroup.PUT("/:id", teachers.UpdateTeacher)
 		teacherGroup.DELETE("/:id", teachers.DeleteTeacher)
 
@@ -98,14 +109,14 @@ func main() {
 	// -------------------- Majors --------------------
 	majorGroup := r.Group("/majors")
 	{
-		majorGroup.GET("/", major.GetMajorAll)  // admin  :Earth
+		majorGroup.GET("/", major.GetMajorAll)
 		majorGroup.POST("/", major.CreateMajor)
 	}
 
 	// -------------------- Faculties --------------------
 	facultyGroup := r.Group("/faculties")
 	{
-		facultyGroup.GET("/", faculty.GetFacultyAll) // admin, student, teacher  :Earth
+		facultyGroup.GET("/", faculty.GetFacultyAll)
 		facultyGroup.POST("/", faculty.CreateFaculty)
 	}
 
@@ -117,7 +128,7 @@ func main() {
 	}
 
 	// -------------------- Positions --------------------
-	positionGroup := r.Group("/positions")
+	positionGroup := r.Group("/positions/")
 	{
 		positionGroup.GET("/", position.GetPositionAll)
 		positionGroup.POST("/", position.CreatePosition)
@@ -132,23 +143,23 @@ func main() {
 	registrationGroup := r.Group("/registrations")
 	{
         registrationGroup.GET("/", registration.GetRegistrationAll)                  
-        registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)       // student
-        registrationGroup.POST("/", registration.CreateRegistration)                 // student
+        registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)
+        registrationGroup.POST("/", registration.CreateRegistration)
         registrationGroup.PUT("/:id", registration.UpdateRegistration)               
-        registrationGroup.DELETE("/:id", registration.DeleteRegistration)            // student
+        registrationGroup.DELETE("/:id", registration.DeleteRegistration)
 
-        registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)   // teacher
+		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)
 	}
 
 	// -------------------- Curriculums --------------------
 	curriculumGroup := r.Group("/curriculums")
 	{
-		curriculumGroup.GET("/", curriculum.GetCurriculumAll)                 // admin, student, teacher  :Earth
+		curriculumGroup.GET("/", curriculum.GetCurriculumAll)
 		curriculumGroup.GET("/:curriculumId", curriculum.GetCurriculumByID)
-		curriculumGroup.POST("/", curriculum.CreateCurriculum)                // admin  :Earth  
-		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)    // admin  :Earth
-		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)  // admin  :Earth
-		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum) // admin  :Earth
+		curriculumGroup.POST("/", curriculum.CreateCurriculum)
+		curriculumGroup.PUT("/:curriculumId", curriculum.UpdateCurriculum)
+		curriculumGroup.PATCH("/:curriculumId", curriculum.UpdateCurriculum)
+		curriculumGroup.DELETE("/:curriculumId", curriculum.DeleteCurriculum)
 	}
 
 	// -------------------- Curriculum Books (files) --------------------
@@ -156,8 +167,8 @@ func main() {
 	{
 		cb.GET("/", curriculum.GetCurriculumBooks)
 		cb.GET("/:id", curriculum.GetCurriculumBookByID)
-		cb.POST("/register", curriculum.RegisterCurriculumBookByPath) // admin :Earth
-		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)      // admin, student, teacher  :Earth
+		cb.POST("/register", curriculum.RegisterCurriculumBookByPath)
+		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook) 
 		cb.GET("/download/:id", curriculum.DownloadCurriculumBook)
 		cb.DELETE("/:id", curriculum.DeleteCurriculumBook)
 	}
@@ -165,39 +176,34 @@ func main() {
 	// -------------------- Subject-Curriculums (link) --------------------
 	subjectCurriculumGroup := r.Group("/subject-curriculums")
 	{
-		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)       // admin, student, teacher  :Earth
+		subjectCurriculumGroup.GET("/", subjectcurriculum.GetSubjectCurriculumAll)
 		subjectCurriculumGroup.GET("/:id", subjectcurriculum.GetSubjectCurriculumByID)
-		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)      // admin  :Earth
-		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum) // admin  :Earth
+		subjectCurriculumGroup.POST("/", subjectcurriculum.CreateSubjectCurriculum)
+		subjectCurriculumGroup.DELETE("/:id", subjectcurriculum.DeleteSubjectCurriculum)
 	}
 
 	// -------------------- Subjects & Study Times --------------------
 	subjectGroup := r.Group("/subjects")
 	{
-		// รายการวิชาทั้งหมด
 		subjectGroup.GET("/", subjects.GetSubjectAll)
-		subjectGroup.GET("", subjects.GetSubjectAll)
-
-		// สร้างวิชาใหม่
 		subjectGroup.POST("/", subjects.CreateSubject)
-		subjectGroup.POST("", subjects.CreateSubject)
 
 		// กลุ่มเส้นทางของวิชาเฉพาะตัว (RESTful)
 		subjectItem := subjectGroup.Group("/:subjectId")
 		{
 			subjectItem.GET("", subjects.GetSubjectID)
-			subjectItem.PUT("", subjects.UpdateSubject)    // admin  :Earth
-			subjectItem.DELETE("", subjects.DeleteSubject) // admin  :Earth
+			subjectItem.PUT("", subjects.UpdateSubject)
+			subjectItem.DELETE("", subjects.DeleteSubject)
 
 			// -------------------- Subject Study Times --------------------
 
 			times := subjectItem.Group("/times")
 			{
-				times.GET("", subjectstudytime.GetBySubject)      // admin  :Earth
+				times.GET("", subjectstudytime.GetBySubject)
 				times.GET("/:timeId", subjectstudytime.GetOne)
-				times.POST("", subjectstudytime.Create)           // admin  :Earth
-				times.PUT("/:timeId", subjectstudytime.Update)    // admin  :Earth
-				times.DELETE("/:timeId", subjectstudytime.Delete) // admin  :Earth
+				times.POST("", subjectstudytime.Create)
+				times.PUT("/:timeId", subjectstudytime.Update)
+				times.DELETE("/:timeId", subjectstudytime.Delete)
 			}
 		}
     }
@@ -205,49 +211,47 @@ func main() {
 	// -------------------- Reports --------------------
 	reportGroup := r.Group("/reports")
 	{
-		reportGroup.GET("/", reports.GetReportAll)                                // admin, teacher
-		reportGroup.GET("/:id", reports.GetReportByID)                            // admin, teacher
-		reportGroup.POST("/", reports.CreateReport)                               // student
+		reportGroup.GET("/", reports.GetReportAll) 
+		reportGroup.GET("/:id", reports.GetReportByID)                  
+		reportGroup.POST("/", reports.CreateReport)                           
 		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)         
-		reportGroup.PUT("/:id/status", reports.UpdateStatus)                      // admin, teacher
-		reportGroup.GET("/:id/comments", reports.GetReportComments)               // admin, student, teacher
-		reportGroup.POST("/:id/comments", reports.CreateReportComment)            // admin, teacher
+		reportGroup.PUT("/:id/status", reports.UpdateStatus)                      
+		reportGroup.GET("/:id/comments", reports.GetReportComments)           
+		reportGroup.POST("/:id/comments", reports.CreateReportComment)            
 		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment) 
-		reportGroup.DELETE("/:id", reports.DeleteReportAlias)                     // admin
+		reportGroup.DELETE("/:id", reports.DeleteReportAlias)                  
 	}
 
 	// -------------------- Report Types --------------------
     reportTypeGroup := r.Group("/report-types")
     {
-        reportTypeGroup.GET("/", reporttypes.ListReportTypes)        // admin, student, teacher
-        reportTypeGroup.GET("", reporttypes.ListReportTypes)         // admin, student, teacher
-        reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID)   // admin
-        reportTypeGroup.POST("/", reporttypes.CreateReportType)      // admin
-        reportTypeGroup.POST("", reporttypes.CreateReportType)       // admin
-        reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)    // admin
-        reportTypeGroup.DELETE("/:id", reporttypes.DeleteReportType) // admin
+        reportTypeGroup.GET("/", reporttypes.ListReportTypes)        
+        reportTypeGroup.GET("", reporttypes.ListReportTypes)         
+        reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID) 
+        reportTypeGroup.POST("/", reporttypes.CreateReportType)    
+        reportTypeGroup.POST("", reporttypes.CreateReportType)    
+        reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)   
+        reportTypeGroup.DELETE("/:id", reporttypes.DeleteReportType)
     }
 
 	// -------------------- Reviewers --------------------
 	reviewerGroup := r.Group("/reviewers")
 	{
-		reviewerGroup.GET("/", reports.ListReviewers)                         // student
-		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername) // teacher
-		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)      // teacher
+		reviewerGroup.GET("/", reports.ListReviewers)                  
+		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername)
+		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)   
 	}
 
 	//---------------------------------------------------------
 	billGroup := r.Group("/bills")
 	{
-		billGroup.GET("/:id", bill.GetBillByStudentID) //student
-		billGroup.POST("/:id/create", bill.CreateBill) // student
-		billGroup.POST("/upload/:id", bill.UploadReceipt) //student
-		billGroup.GET("/preview/:id", bill.ShowFile) // admin
-		billGroup.GET("/download/:id", bill.DownloadBill)
-		billGroup.GET("/admin/all", bill.GetAllBills) // admin
-		billGroup.PUT("/:id", bill.UpdateBillStatus) // ใช้สำหรับอนุมัติใบเสร็จ
+		billGroup.GET("/:id", bill.GetBillByStudentID)    
+		billGroup.POST("/:id/create", bill.CreateBill)   
+		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt)
+		billGroup.GET("/preview/:id", bill.ShowFile)    
+		billGroup.GET("/admin/all", bill.GetAllBills) 
+		billGroup.PUT("/:id", bill.UpdateBillStatus) 
 	}
-	
 
 	//---------------------------------------------------------
 	// Grades
@@ -258,17 +262,17 @@ func main() {
 	}
 
 	//---------------------------------------------------------
-	// Grades
+	// Score
 	scoreGroup := r.Group("/scores")
 	{
-		scoreGroup.GET("/:id",scores.GetScoreByStudentID)
-		scoreGroup.POST("/",scores.CreateScores)
+		scoreGroup.GET("/:id", scores.GetScoreByStudentID)
+		scoreGroup.POST("/", scores.CreateScores)
 	}
 
 	//---------------------------------------------------------
 
 	// -------------------- Genders --------------------
-	r.GET("/genders", gender.GetGenderAll)
+	r.GET("/genders/", gender.GetGenderAll)
 
 	graduationGroup := r.Group("/graduations")
 	{
@@ -280,7 +284,6 @@ func main() {
 
 	// -------------------- Run Server --------------------
 	// เปิดให้บริการที่ localhost:8000
-
 	r.Run("localhost:" + port)
 }
 

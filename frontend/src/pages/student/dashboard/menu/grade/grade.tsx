@@ -1,6 +1,6 @@
 // src/pages/dashboard/menu/register.tsx
 import { useState, useEffect, useMemo } from 'react';
-import { Layout, Typography, Select, Space } from "antd";
+import { Layout, Typography, Select, Space, Divider } from "antd";
 import './grade.css';
 
 import { type GradeStudentInterface } from '../../../../../interfaces/Grade';
@@ -131,15 +131,15 @@ const Grade: React.FC = () => {
 
   return (
     <Layout style={{ width: "100%", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header style={{ background: "#2e236c", color: "white", textAlign: "center", padding: 16, fontSize: 20 }}>
-        หน้าเกรด
+      <Header style={{ background: "#2e236c", color: "white", textAlign: "center", fontSize: 24, borderTopLeftRadius: 8, borderTopRightRadius: 8 }}>
+        รายงานผลการเรียน
       </Header>
 
-      <Content style={{ background: "#f5f5f5", padding: 24, overflowY: "auto" }}>
+      <Content style={{ background: "#f5f5f5", padding: 40, overflowY: "auto" }}>
         {/* Filter */}
-        <Space style={{ marginBottom: 20, fontSize: 18, fontWeight: "bold" }}>
+        <Space style={{ marginBottom: 10, fontSize: 18, fontWeight: "bold" }}>
           <Space size={8} align="center">
-            <span>ปีการศึกษา</span>
+            <span>ปีการศึกษา :</span>
             <Select
               defaultValue="all"
               style={{ width: 150 }}
@@ -153,7 +153,7 @@ const Grade: React.FC = () => {
           </Space>
 
           <Space size={8} align="center" style={{ marginLeft: 30 }}>
-            <span>ภาคการศึกษา</span>
+            <span>ภาคการศึกษา :</span>
             <Select
               defaultValue="all"
               style={{ width: 150 }}
@@ -167,12 +167,14 @@ const Grade: React.FC = () => {
           </Space>
         </Space>
 
+        <Divider/>
+
         {/* ตารางแสดงผล */}
         {filteredRecords.length > 0 ? (
           filteredRecords.map(([key, records], idx) => {
             const [year, term] = key.split("-");
             return (
-              <div key={key} style={{ marginBottom: 30 }}>
+              <div key={key} style={{ marginTop: 30, marginBottom: 40 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, border: "1px solid #ccc", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)" }}>
                   <thead>
                     <tr style={{ background: "#2e236c", color: "white", textAlign: "center" }}>
@@ -209,7 +211,7 @@ const Grade: React.FC = () => {
         )}
       </Content>
 
-      <Footer style={{ background: "#1890ff", color: "white", textAlign: "center", padding: 12 }}>
+      <Footer style={{ background: "#1890ff", color: "white", textAlign: "center", padding: 12, borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>
         Footer © 2025
       </Footer>
     </Layout>

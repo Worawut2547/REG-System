@@ -1,13 +1,13 @@
+
 // src/services/https/registration/registration.tsx
-import axios from "axios";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 import type { RegistrationInterface } from "../../../interfaces/Registration";
 
 // ดึงรายการลงทะเบียนของนักศึกษาแต่ละคน
 export const getMyRegistrations = async (studentId: string) => {
   if (!studentId) throw new Error("studentId is required");
   try {
-    const res = await axios.get(`${apiUrl}/registrations/${encodeURIComponent(studentId)}`);
+    const res = await api.get(`/registrations/${encodeURIComponent(studentId)}`);
     return res.data;
   } catch (error) {
     console.error("Error fetching registrations:", error);
@@ -15,10 +15,21 @@ export const getMyRegistrations = async (studentId: string) => {
   }
 };
 
+/*export const getStudentBySubjectID = async (subj_id: string): Promise<RegistrationStudentInterface[]>  => {
+    try {
+        const response = await api.get(`/registrations/subjects/${subj_id}`);
+        return response.data
+    }
+    catch (error) {
+        console.error("Error fetching get student by subject id:", error);
+        throw error;
+    }
+}*/
+
 // สร้างข้อมูลลงทะเบียนแบบรายการเดียว
 export const createRegistration = async (data: RegistrationInterface) => {
   try {
-    const res = await axios.post(`${apiUrl}/registrations/`, data);
+    const res = await api.post(`/registrations/`, data);
     return res.data;
   } catch (error) {
     console.error("Error creating registration:", error);
@@ -36,7 +47,7 @@ export const createRegistrationBulk = async (
   if (!items || items.length === 0) throw new Error("items is required");
   try {
     const payload = { student_id: studentId, items };
-    const res = await axios.post(`${apiUrl}/registrations/bulk`, payload);
+    const res = await api.post(`/registrations/bulk`, payload);
     return res.data;
   } catch (error) {
     // ให้ throw ต่อเพื่อให้หน้า UI ทำ fallback เอง
@@ -49,7 +60,7 @@ export const createRegistrationBulk = async (
 export const deleteRegistration = async (id: number | string) => {
   if (id === undefined || id === null || id === "") throw new Error("id is required");
   try {
-    const res = await axios.delete(`${apiUrl}/registrations/${encodeURIComponent(String(id))}`);
+    const res = await api.delete(`/registrations/${encodeURIComponent(String(id))}`);
     return res.data;
   } catch (error) {
     console.error("Error deleting registration:", error);
@@ -62,10 +73,11 @@ export const deleteRegistration = async (id: number | string) => {
 export const getStudentBySubjectID = async <T = any>(subjectId: string): Promise<T[]> => {
   if (!subjectId) throw new Error("subjectId is required");
   try {
-    const res = await axios.get(`${apiUrl}/registrations/subjects/${encodeURIComponent(subjectId)}`);
+    const res = await api.get(`/registrations/subjects/${encodeURIComponent(subjectId)}`);
     return res.data;
   } catch (error) {
     console.error("Error fetching students by subject:", error);
     throw error;
   }
 };
+

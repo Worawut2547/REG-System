@@ -1,6 +1,5 @@
 // src/services/https/report/report.tsx
-import axios from "axios";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 import type { ReportInterface } from "../../../interfaces/Report";
 import type { ReportTypeInterface } from "../../../interfaces/ReportType";
 
@@ -8,7 +7,7 @@ import type { ReportTypeInterface } from "../../../interfaces/ReportType";
 export const getReportTypes = async (): Promise<ReportTypeInterface[]> => {
   try {
     // Use trailing slash to avoid backend redirect that may drop the /api prefix via proxy
-    const res = await axios.get(`${apiUrl}/report-types/`);
+    const res = await api.get(`/report-types/`);
     return Array.isArray(res.data) ? res.data : [];
   } catch (error) {
     console.error("Error fetching report types:", error);
@@ -19,7 +18,7 @@ export const getReportTypes = async (): Promise<ReportTypeInterface[]> => {
 // -------- Reports (lists) --------
 export const getReportsAll = async (): Promise<ReportInterface[]> => {
   try {
-    const res = await axios.get(`${apiUrl}/reports/`);
+    const res = await api.get(`/reports/`);
     return Array.isArray(res.data) ? res.data : [];
   } catch (error) {
     console.error("Error fetching reports:", error);
@@ -30,7 +29,7 @@ export const getReportsAll = async (): Promise<ReportInterface[]> => {
 export const getReportsByStudent = async (studentId: string): Promise<ReportInterface[]> => {
   if (!studentId) throw new Error("studentId is required");
   try {
-    const res = await axios.get(`${apiUrl}/students/reports/${encodeURIComponent(studentId)}`);
+    const res = await api.get(`/students/reports/${encodeURIComponent(studentId)}`);
     return Array.isArray(res.data) ? res.data : [];
   } catch (error) {
     console.error("Error fetching student reports:", error);
@@ -41,7 +40,7 @@ export const getReportsByStudent = async (studentId: string): Promise<ReportInte
 export const getReportsByReviewer = async (reviewerId: string): Promise<ReportInterface[]> => {
   if (!reviewerId) throw new Error("reviewerId is required");
   try {
-    const res = await axios.get(`${apiUrl}/reviewers/${encodeURIComponent(reviewerId)}/reports`);
+    const res = await api.get(`/reviewers/${encodeURIComponent(reviewerId)}/reports`);
     return Array.isArray(res.data) ? res.data : [];
   } catch (error) {
     console.error("Error fetching reviewer reports:", error);
@@ -52,7 +51,7 @@ export const getReportsByReviewer = async (reviewerId: string): Promise<ReportIn
 export const getReportById = async (reportId: string): Promise<ReportInterface | null> => {
   if (!reportId) return null;
   try {
-    const res = await axios.get(`${apiUrl}/reports/${encodeURIComponent(reportId)}`);
+    const res = await api.get(`/reports/${encodeURIComponent(reportId)}`);
     return res.data as ReportInterface;
   } catch (error) {
     console.error("Error fetching report by id:", error);
@@ -81,7 +80,7 @@ export const createReport = async (payload: CreateReportPayload): Promise<Report
     form.append("details", payload.Report_details);
     if (payload.ReportSubmission_date) form.append("submittion_date", payload.ReportSubmission_date);
     if (payload.file) form.append("file", payload.file);
-    const res = await axios.post(`${apiUrl}/reports/`, form, { headers: { "Content-Type": "multipart/form-data" } });
+    const res = await api.post(`/reports/`, form, { headers: { "Content-Type": "multipart/form-data" } });
     return res.data as ReportInterface;
   } catch (error) {
     console.error("Error creating report:", error);
@@ -92,7 +91,7 @@ export const createReport = async (payload: CreateReportPayload): Promise<Report
 export const updateReportStatus = async (reportId: string, status: string): Promise<void> => {
   if (!reportId) throw new Error("reportId is required");
   try {
-    await axios.put(`${apiUrl}/reports/${encodeURIComponent(reportId)}/status`, { status });
+    await api.put(`/reports/${encodeURIComponent(reportId)}/status`, { status });
   } catch (error) {
     console.error("Error updating report status:", error);
     throw error;
@@ -103,7 +102,7 @@ export const updateReportStatus = async (reportId: string, status: string): Prom
 export const findReviewerIdByUsername = async (username: string): Promise<string | null> => {
   if (!username) return null;
   try {
-    const res = await axios.get(`${apiUrl}/reviewers/by-username/${encodeURIComponent(username)}`);
+    const res = await api.get(`/reviewers/by-username/${encodeURIComponent(username)}`);
     const id = res?.data?.reviewer_id ?? res?.data?.Reviewer_id ?? res?.data?.id;
     return id ?? null;
   } catch (error) {
@@ -116,7 +115,7 @@ export type ReviewerOption = { value: string; label: string };
 export const listReviewerOptions = async (): Promise<ReviewerOption[]> => {
   try {
     // Use trailing slash to avoid backend redirect that drops the /api prefix
-    const res = await axios.get(`${apiUrl}/reviewers/`);
+    const res = await api.get(`/reviewers/`);
     const arr = Array.isArray(res.data) ? res.data : [];
     return arr.map((x: any) => ({ value: x.value ?? x.Value ?? x.reviewer_id ?? x.Reviewer_id, label: x.label ?? x.Label ?? x.username ?? "" }));
   } catch (error) {

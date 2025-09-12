@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Table, Typography, Button, Input, message, Row, Col } from "antd";
+import { Table, Typography, Button, Input, message, Row, Col, Divider, Select } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { getStudentBySubjectID } from "../../../../../../services/https/registration/registration";
 import { createGradeStudent } from "../../../../../../services/https/grade/grade"
+import type { ColumnsType } from "antd/es/table";
 
 const { Title, Text } = Typography;
 
@@ -86,50 +87,60 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
     }
   };
 
-  const columns = [
+  const columns: ColumnsType<Student> = [
     {
       title: "ลำดับ",
       key: "no",
-      render: (_: any, __: Student, index: number) => index + 1, // ใช้ index + 1
-      width: 60,
+      render: (_: any, __: Student, index: number) => index + 1,
+      width: 100,
       align: "center" as const,
     },
-    { title: "รหัสนักศึกษา", dataIndex: "StudentID", key: "id" },
-    { title: "ชื่อ", dataIndex: "FirstName", key: "firstname" },
-    { title: "นามสกุล", dataIndex: "LastName", key: "lastname" },
+    { title: "รหัสนักศึกษา", dataIndex: "StudentID", key: "id", width: 250 },
+    {
+      title: "ชื่อนักศึกษา",
+      key: "fullname",
+      width: 300,
+      render: (_: any, record: Student) => `${record.FirstName} ${record.LastName}`,
+    },
     {
       title: "เกรด",
       dataIndex: "Grade",
       key: "grade",
+      align: "center",
       render: (_: any, record: Student) => (
-        <Input
-          value={record.Grade}
-          onChange={(e) => handleGradeChange(record.StudentID, e.target.value)}
-          placeholder="กรอกเกรด"
-          style={{
-            width: 80,
-            textAlign: "center",
-            borderRadius: 6,
-            padding: "4px 8px",
-            border: "1px solid #d9d9d9",
-          }}
-          maxLength={2}
-        />
-      ),
+      <Select
+        value={record.Grade || undefined}
+        onChange={(value) => handleGradeChange(record.StudentID, value)}
+        style={{
+          width: 120,
+          textAlign: "center",
+        }}
+        placeholder="เลือกเกรด"
+      >
+        {["A", "B+", "B", "C+", "C", "D+", "D", "F"].map((g) => (
+          <Select.Option key={g} value={g}>
+            {g}
+          </Select.Option>
+        ))}
+      </Select>
+    ),
     },
   ];
 
   return (
-    <div>
-      <Button onClick={onBack} style={{ marginBottom: 16 }}>
-        ย้อนกลับ
+    <div >
+      <Button onClick={onBack} style={{ marginBottom: 18 }}>
+        BACK
       </Button>
-      <Title level={3}>{subjectCode} - {subjectName}</Title>
+      <Title style={{ fontSize: 30 }} level={3}>{subjectCode} - {subjectName}</Title>
+
+      <Divider />
+
       {/* --- Search --- */}
-      <Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
+      <Row gutter={16} align="middle" style={{ marginBottom: 24 }}>
         <Col>
-          <div style={{ backgroundColor: "#2e236c", padding: "4px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 8 }}>
-            <Text style={{ color: "white", fontSize: 12 }}>ค้นหาด้วยรหัสนักศึกษา</Text>
+          <div style={{ backgroundColor: "#2e236c", padding: "10px 8px", borderRadius: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <Text style={{ color: "white", fontSize: 14, fontWeight: "lighter" }}>ค้นหาด้วยรหัสนักศึกษา</Text>
             <Input
               placeholder="Search..."
               prefix={<SearchOutlined />}
@@ -140,12 +151,39 @@ const StudentGrade: React.FC<Props> = ({ subjectCode, subjectName, onBack }) => 
           </div>
         </Col>
       </Row>
-      <Table
+
+      <Table bordered
+        style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.15)", borderRadius: 18, overflow: "hidden" }}
         columns={columns}
         dataSource={filteredStudents}
         rowKey="StudentID"
         loading={loading}
         pagination={false}
+        components={{
+          header: {
+            cell: (props: any) => (
+              <th
+                {...props}
+                style={{
+                  ...props.style,
+                  textAlign: "center",  // จัดหัวคอลัมน์ตรงกลาง
+                }}
+              />
+            ),
+          },
+          body: {
+            cell: (props: any) => (
+              <td
+                {...props}
+                style={{
+                  ...props.style,
+                  paddingTop: 15,   // ปรับความสูงด้านบน
+                  paddingBottom: 15, // ปรับความสูงด้านล่าง
+                }}
+              />
+            ),
+          },
+        }}
       />
       <div style={{ marginTop: 16, textAlign: "right" }}>
         <Button

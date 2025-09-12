@@ -1,5 +1,4 @@
-import axios from "axios";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 import { type SubjectInterface } from "../../../interfaces/Subjects";
 
 // ---------- DTO ตอนส่งขึ้น backend ----------
@@ -60,7 +59,6 @@ const mapSubjectFromAPI = (s: SubjectAPI): SubjectInterface => ({
 
   // ✅ ให้เป็น number ตาม baseline ล่าสุด
   SemesterID:   toNum(s.semester_id ?? s.SemesterID ?? s.semesterId),
-
   Term:         s.term,
   AcademicYear: s.academic_year,
 });
@@ -91,8 +89,8 @@ export const createSubject = async (
     semester_id:  data.SemesterID != null ? Number(data.SemesterID) : undefined,
   };
 
-  const res = await axios.post<SubjectAPI>(
-    `${apiUrl}/subjects/`,
+  const res = await api.post<SubjectAPI>(
+    `/subjects/`,
     payload,
     { headers: { "Content-Type": "application/json" } }
   );
@@ -101,7 +99,7 @@ export const createSubject = async (
 
 // ---------- ดึงรายวิชาทั้งหมด ----------
 export const getSubjectAll = async (): Promise<SubjectInterface[]> => {
-  const res = await axios.get<SubjectAPI[]>(`${apiUrl}/subjects/`);
+  const res = await api.get<SubjectAPI[]>(`/subjects/`);
   const arr = Array.isArray(res.data) ? res.data : [];
   return arr.map(mapSubjectFromAPI);
 };
@@ -111,7 +109,7 @@ export const getSubjectById = async (subjectId: string): Promise<SubjectInterfac
   const sid = (subjectId || "").trim();
   if (!sid) return null;
   try {
-    const res = await axios.get<SubjectAPI>(`${apiUrl}/subjects/${encodeURIComponent(sid)}`);
+    const res = await api.get<SubjectAPI>(`/subjects/${encodeURIComponent(sid)}`);
     return mapSubjectFromAPI(res.data || {});
   } catch (err) {
     console.error("getSubjectById error:", err);
@@ -141,12 +139,12 @@ export const updateSubject = async (
     new_subject_id: data.new_subject_id,
   };
 
-  await axios.put(`${apiUrl}/subjects/${subjectId}`, payload, {
+  await api.put(`/subjects/${subjectId}`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 };
 
 export const deleteSubject = async (subjectId: string): Promise<void> => {
   if (!subjectId) throw new Error("subjectId is required");
-  await axios.delete(`${apiUrl}/subjects/${subjectId}`);
+  await api.delete(`/subjects/${subjectId}`);
 };

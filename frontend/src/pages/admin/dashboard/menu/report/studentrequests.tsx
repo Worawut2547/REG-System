@@ -31,7 +31,16 @@ type Report = {
 };
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${apiUrl}${path}`, init);
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${apiUrl}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
   const isJSON = res.headers.get("content-type")?.includes("application/json");
   if (!res.ok) {
     const body = isJSON ? await res.json().catch(() => ({})) : await res.text();
@@ -41,11 +50,11 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 }
 const toPublicHref = (p: string) => (!p ? "" : p.startsWith("http") ? p : p.startsWith("/") ? `${apiUrl}${p}` : `${apiUrl}/${p}`);
 const pickDate = (r: Report) => r.Submittion_date || (r as any).submittion_date || r.Created_at || (r as any).created_at;
-const fmtDate = (s?: string) => (!s ? "—" : (d => isNaN(+d) ? "—" : d.toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"}))(new Date(s)));
+const fmtDate = (s?: string) => (!s ? "—" : (d => isNaN(+d) ? "—" : d.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }))(new Date(s)));
 const normalizeAttachments = (a: any): Attachment[] => !a ? [] : Array.isArray(a) ? a : Array.isArray(a.attachments) ? a.attachments : [a];
 const attName = (a: any) => a.File_Name || a.file_name || a.Attachment_File_Name || a.attachment_file_name || a.Attachment_id || a.attachment_id || "ไฟล์แนบ";
 const attPath = (a: any) => a.File_Path || a.file_path || a.Attachment_File_Path || a.attachment_file_path || "";
-const statusTag = (s?: string) => (s||"").trim()==="อนุมัติ" ? <Tag color="green">อนุมัติ</Tag> : (s||"").trim()==="ไม่อนุมัติ" ? <Tag color="red">ไม่อนุมัติ</Tag> : <Tag color="gold">รอดำเนินการ</Tag>;
+const statusTag = (s?: string) => (s || "").trim() === "อนุมัติ" ? <Tag color="green">อนุมัติ</Tag> : (s || "").trim() === "ไม่อนุมัติ" ? <Tag color="red">ไม่อนุมัติ</Tag> : <Tag color="gold">รอดำเนินการ</Tag>;
 const pickStatus = (r: any): string => r?.Status ?? r?.ReportStatus ?? r?.status ?? "รอดำเนินการ";
 
 type Props = { deleteMode?: boolean };
@@ -108,7 +117,7 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
                 const full = [a?.FirstName, a?.LastName].filter(Boolean).join(" ");
                 updates[username] = full || "เจ้าหน้าที่";
               }
-            } catch {}
+            } catch { }
           })
         );
         if (Object.keys(updates).length) setNameMap((m) => ({ ...m, ...updates }));
@@ -137,34 +146,38 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
     } finally { setCommenting(false); }
   };
 
-  
+
   const tableColumns: ColumnsType<any> = [
     { title: 'เรื่อง', key: 'type', render: (_: any, r: any) => r?.ReportType?.ReportType_Name ?? r?.ReportType_id ?? '—' },
     { title: 'จาก', key: 'from', width: 140, render: (_: any, r: any) => r?.StudentID || r?.student_id || '—' },
-    { title: 'วันที่ยื่น', key: 'date', width: 200, sorter: (a: any, b: any) => {
-      const ta = Date.parse(pickDate(a) || '');
-      const tb = Date.parse(pickDate(b) || '');
-      return (isNaN(ta) ? 0 : ta) - (isNaN(tb) ? 0 : tb);
-    }, defaultSortOrder: 'descend', render: (_: any, r: any) => fmtDate(pickDate(r)) },
+    {
+      title: 'วันที่ยื่น', key: 'date', width: 200, sorter: (a: any, b: any) => {
+        const ta = Date.parse(pickDate(a) || '');
+        const tb = Date.parse(pickDate(b) || '');
+        return (isNaN(ta) ? 0 : ta) - (isNaN(tb) ? 0 : tb);
+      }, defaultSortOrder: 'descend', render: (_: any, r: any) => fmtDate(pickDate(r))
+    },
     { title: 'สถานะ', key: 'status', width: 140, render: (_: any, r: any) => statusTag(pickStatus(r)) },
-    { title: 'รายละเอียดทั้งหมด', key: 'action', width: 160, render: (_: any, r: any) => (
-      deleteMode ? (
-        <Popconfirm title="ยืนยันลบคำร้องนี้?" onConfirm={async () => {
-          try {
-            const id = r.Report_id || (r as any).report_id;
-            await fetch(`${apiUrl}/reports/${encodeURIComponent(String(id))}`, { method: 'DELETE' });
-            message.success('ลบคำร้องแล้ว');
-            setRows((prev) => prev.filter((x) => (x.Report_id || (x as any).report_id) !== id));
-          } catch (e: any) {
-            message.error(e?.message || 'ลบไม่สำเร็จ');
-          }
-        }}>
-          <Button danger size="small">ลบคำร้อง</Button>
-        </Popconfirm>
-      ) : (
-        <Button type="link" onClick={() => handleOpenModal(r)}>ดูรายละเอียด</Button>
+    {
+      title: 'รายละเอียดทั้งหมด', key: 'action', width: 160, render: (_: any, r: any) => (
+        deleteMode ? (
+          <Popconfirm title="ยืนยันลบคำร้องนี้?" onConfirm={async () => {
+            try {
+              const id = r.Report_id || (r as any).report_id;
+              await fetch(`${apiUrl}/reports/${encodeURIComponent(String(id))}`, { method: 'DELETE' });
+              message.success('ลบคำร้องแล้ว');
+              setRows((prev) => prev.filter((x) => (x.Report_id || (x as any).report_id) !== id));
+            } catch (e: any) {
+              message.error(e?.message || 'ลบไม่สำเร็จ');
+            }
+          }}>
+            <Button danger size="small">ลบคำร้อง</Button>
+          </Popconfirm>
+        ) : (
+          <Button type="link" onClick={() => handleOpenModal(r)}>ดูรายละเอียด</Button>
+        )
       )
-    ) },
+    },
   ];
 
   const handleOpenModal = (r: Report) => {
@@ -192,7 +205,14 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
         setNewComment('');
         await loadComments(String(id));
       }
-      await fetch(`${apiUrl}/reports/${encodeURIComponent(String(id))}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+      await fetch(`${apiUrl}/reports/${encodeURIComponent(String(id))}/status`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          'Content-Type': 'application/json'
+        }, 
+        body: JSON.stringify({ status })
+      });
       // อัปเดตสถานะในรายการทันที (optimistic)
       setRows((prev) => prev.map((r) => {
         const rid = (r as any).Report_id || (r as any).report_id;
@@ -220,86 +240,86 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
 
   return (
     <Card title="รายการคำร้องที่ส่งให้ฉัน" style={{ borderRadius: 8 }}>
-    <div className="rq-inner">
-      {loading ? (
-        <div style={{padding:32,textAlign:'center'}}><Spin/></div>
-      ) : rows.length === 0 ? (
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่มีคำร้อง"/>
-      ) : (
-        <Table
-          rowKey={(r: any) => r.Report_id || r.report_id}
-          columns={tableColumns as any}
-          dataSource={rows}
-          pagination={{ pageSize: 6 }}
-        />
-      )}
+      <div className="rq-inner">
+        {loading ? (
+          <div style={{ padding: 32, textAlign: 'center' }}><Spin /></div>
+        ) : rows.length === 0 ? (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่มีคำร้อง" />
+        ) : (
+          <Table
+            rowKey={(r: any) => r.Report_id || r.report_id}
+            columns={tableColumns as any}
+            dataSource={rows}
+            pagination={{ pageSize: 6 }}
+          />
+        )}
 
-      <Modal open={open} onCancel={()=>setOpen(false)} footer={null} centered title="รายละเอียดคำร้อง">
-        {sel && (
-          <div>
-            <Title level={5} style={{marginBottom:4}}>{sel.ReportType?.ReportType_Name ?? sel.ReportType_id ?? "—"}</Title>
-            <div style={{marginBottom:6}}><Text type="secondary">จาก: </Text><Text>{sel.StudentID || sel.student_id || "—"}</Text></div>
-            <div style={{marginBottom:6}}><Text type="secondary">วันที่ยื่น: </Text><Text>{fmtDate(pickDate(sel))}</Text></div>
-            <div style={{marginBottom:10}}><Text type="secondary">รายละเอียด: </Text><div>{sel.Report_details || sel.report_details || "—"}</div></div>
-            <div style={{marginBottom:10}}><Text type="secondary">สถานะ: </Text>{statusTag(pickStatus(sel))}</div>
-            <div style={{marginBottom:12}}>
-              <Text type="secondary">ไฟล์แนบ: </Text>
-              {atts.length===0 ? <Text>—</Text> : (
-                <ul style={{marginTop:8}}>
-                  {atts.map((a,i)=>(
-                    <li key={a.attachment_id||a.Attachment_id||String(i)}>
-                      {toPublicHref(attPath(a)) ? <a href={toPublicHref(attPath(a))} target="_blank" rel="noreferrer">{attName(a)}</a> : <span>{attName(a)}</span>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {atts.length > 1 && (
-                <div style={{ marginTop: 8 }}>
-                  <Button size="small" onClick={openAllAttachments}>เปิดไฟล์ทั้งหมด</Button>
-                </div>
-              )}
-            </div>
-            {/* Comments */}
-            <div style={{ marginTop: 16 }}>
-              <Title level={5} style={{ marginBottom: 8 }}>Comment</Title>
-              <List
-                size="small"
-                locale={{ emptyText: 'ยังไม่มีคอมเมนต์' }}
-                dataSource={comments}
-                renderItem={(item: any) => (
-                  <List.Item>
-                    <div style={{ width: '100%' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        {(() => {
-                          const u = item?.Reviewer?.User;
-                          const role = String(u?.Role || u?.role || '').toLowerCase();
-                          const uname = u?.Username || u?.username || '';
-                          const display = nameMap[uname] || (role === 'admin' ? 'เจ้าหน้าที่' : (uname || 'ผู้ตรวจสอบ'));
-                          return <Text strong>{display}</Text>;
-                        })()}
-                        <Text type="secondary">{item?.CommentDate ? new Date(item.CommentDate).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : ''}</Text>
-                      </div>
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{item?.CommentText || item?.comment || ''}</div>
-                    </div>
-                  </List.Item>
+        <Modal open={open} onCancel={() => setOpen(false)} footer={null} centered title="รายละเอียดคำร้อง">
+          {sel && (
+            <div>
+              <Title level={5} style={{ marginBottom: 4 }}>{sel.ReportType?.ReportType_Name ?? sel.ReportType_id ?? "—"}</Title>
+              <div style={{ marginBottom: 6 }}><Text type="secondary">จาก: </Text><Text>{sel.StudentID || sel.student_id || "—"}</Text></div>
+              <div style={{ marginBottom: 6 }}><Text type="secondary">วันที่ยื่น: </Text><Text>{fmtDate(pickDate(sel))}</Text></div>
+              <div style={{ marginBottom: 10 }}><Text type="secondary">รายละเอียด: </Text><div>{sel.Report_details || sel.report_details || "—"}</div></div>
+              <div style={{ marginBottom: 10 }}><Text type="secondary">สถานะ: </Text>{statusTag(pickStatus(sel))}</div>
+              <div style={{ marginBottom: 12 }}>
+                <Text type="secondary">ไฟล์แนบ: </Text>
+                {atts.length === 0 ? <Text>—</Text> : (
+                  <ul style={{ marginTop: 8 }}>
+                    {atts.map((a, i) => (
+                      <li key={a.attachment_id || a.Attachment_id || String(i)}>
+                        {toPublicHref(attPath(a)) ? <a href={toPublicHref(attPath(a))} target="_blank" rel="noreferrer">{attName(a)}</a> : <span>{attName(a)}</span>}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              />
-              <div style={{ marginTop: 8 }}>
-                <Input.TextArea rows={2} placeholder="พิมพ์คอมเมนต์..." value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+                {atts.length > 1 && (
+                  <div style={{ marginTop: 8 }}>
+                    <Button size="small" onClick={openAllAttachments}>เปิดไฟล์ทั้งหมด</Button>
+                  </div>
+                )}
+              </div>
+              {/* Comments */}
+              <div style={{ marginTop: 16 }}>
+                <Title level={5} style={{ marginBottom: 8 }}>Comment</Title>
+                <List
+                  size="small"
+                  locale={{ emptyText: 'ยังไม่มีคอมเมนต์' }}
+                  dataSource={comments}
+                  renderItem={(item: any) => (
+                    <List.Item>
+                      <div style={{ width: '100%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          {(() => {
+                            const u = item?.Reviewer?.User;
+                            const role = String(u?.Role || u?.role || '').toLowerCase();
+                            const uname = u?.Username || u?.username || '';
+                            const display = nameMap[uname] || (role === 'admin' ? 'เจ้าหน้าที่' : (uname || 'ผู้ตรวจสอบ'));
+                            return <Text strong>{display}</Text>;
+                          })()}
+                          <Text type="secondary">{item?.CommentDate ? new Date(item.CommentDate).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : ''}</Text>
+                        </div>
+                        <div style={{ whiteSpace: 'pre-wrap' }}>{item?.CommentText || item?.comment || ''}</div>
+                      </div>
+                    </List.Item>
+                  )}
+                />
+                <div style={{ marginTop: 8 }}>
+                  <Input.TextArea rows={2} placeholder="พิมพ์คอมเมนต์..." value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 16, display: "flex", gap: 8, justifyContent: "flex-end", alignItems: 'center', flexWrap: 'wrap' }}>
+                <Button onClick={submitComment} loading={commenting} disabled={!newComment.trim()}>
+                  เพิ่มComment
+                </Button>
+                <Button onClick={() => updateStatus("ไม่อนุมัติ")} loading={saving}>ไม่อนุมัติ</Button>
+                <Button type="primary" onClick={() => updateStatus("อนุมัติ")} loading={saving}>อนุมัติ</Button>
               </div>
             </div>
-
-            <div style={{marginTop:16,display:"flex",gap:8,justifyContent:"flex-end",alignItems:'center',flexWrap:'wrap'}}>
-              <Button onClick={submitComment} loading={commenting} disabled={!newComment.trim()}>
-                เพิ่มComment
-              </Button>
-              <Button onClick={()=>updateStatus("ไม่อนุมัติ")} loading={saving}>ไม่อนุมัติ</Button>
-              <Button type="primary" onClick={()=>updateStatus("อนุมัติ")} loading={saving}>อนุมัติ</Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
+          )}
+        </Modal>
+      </div>
     </Card>
   );
 };

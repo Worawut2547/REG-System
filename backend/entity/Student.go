@@ -36,7 +36,7 @@ type Students struct {
 
 	Registration []Registration `gorm:"foreignKey:StudentID;references:StudentID" json:"Registration"` // ระบุความสัมพันธ์ 1--1 [Registration]
 
-	CurriculumID string      `json:"CurriculumID"`                                    // Foreign Key
+	CurriculumID string      // Foreign Key
 	Curriculum   *Curriculum `gorm:"foreignKey:CurriculumID;references:CurriculumID"` // ระบุความสัมพันธ์ 1--1[Curriculum]
 
 	Grade []Grades `gorm:"foreignKey:StudentID;references:StudentID" json:"Grade"` // ระบุความสัมพันธ์เเบบ 1--many[Grade]

@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, Table, Modal, Typography, Tag, List, message, Button, Space } from "antd";
 import { FilePdfOutlined, FileOutlined } from "@ant-design/icons";
-import axios from "axios";
+//import axios from "axios";
 import { getReportsByStudent } from "../../../../../services/https/report/report";
 import { getNameStudent as fetchStudentProfile } from "../../../../../services/https/student/student";
 import { getNameTeacher } from "../../../../../services/https/teacher/teacher";
 import { getNameAdmin } from "../../../../../services/https/admin/admin";
-import { apiUrl } from "../../../../../services/api";
+import { api , apiUrl } from "../../../../../services/https/api";
 
 type AnyObj = Record<string, any>;
 const { Text, Title } = Typography;
@@ -128,7 +128,7 @@ const CheckStatus: React.FC<Props> = ({ studentId: propStudentId }) => {
 
   const loadComments = async (reportId: string) => {
     try {
-      const res = await axios.get(`${apiUrl}/reports/${encodeURIComponent(reportId)}/comments`);
+      const res = await api.get(`/reports/${encodeURIComponent(reportId)}/comments`);
       const arr = Array.isArray(res.data) ? res.data : [];
       setComments(arr);
       // hydrate commenters' names

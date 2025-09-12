@@ -1,5 +1,4 @@
-import axios from "axios";
-import { apiUrl } from "../../api";
+import { api } from "../api";
 import { type CurriculumInterface } from "../../../interfaces/Curriculum";
 
 // ---------- API DTOs ----------
@@ -117,7 +116,7 @@ export const createCurriculum = async (
     description: (data.Description ?? "").trim() || undefined,
   };
 
-  const res = await axios.post<CreateRespShape>(`${apiUrl}/curriculums/`, payload, {
+  const res = await api.post<CreateRespShape>(`/curriculums/`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 
@@ -126,7 +125,7 @@ export const createCurriculum = async (
 };
 
 export const getCurriculumAll = async (): Promise<CurriculumInterface[]> => {
-  const res = await axios.get<CurriculumAPI[] | { data?: CurriculumAPI[] }>(`${apiUrl}/curriculums/`);
+  const res = await api.get<CurriculumAPI[] | { data?: CurriculumAPI[] }>(`/curriculums/`);
   const arr: CurriculumAPI[] = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
   return arr.map(mapCurriculumFromAPI);
 };
@@ -142,12 +141,12 @@ export const updateCurriculum = async (
     // ถ้าวันหน้าจะเปิดให้แก้หนังสือผ่านตัวนี้ ค่อยใส่ book_id
   };
 
-  await axios.put(`${apiUrl}/curriculums/${curriculumId}`, payload, {
+  await api.put(`/curriculums/${curriculumId}`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 };
 
 export const deleteCurriculum = async (curriculumId: string): Promise<void> => {
   if (!curriculumId) throw new Error("curriculumId is required");
-  await axios.delete(`${apiUrl}/curriculums/${curriculumId}`);
+  await api.delete(`/curriculums/${curriculumId}`);
 };

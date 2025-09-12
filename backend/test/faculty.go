@@ -12,6 +12,7 @@ func FacultyExample() {
 		{FacultyID: "F01" , FacultyName: "สำนักวิชาวิศวกรรมศาสตร์" },
 		{FacultyID: "F02" , FacultyName: "สำนักวิชาวิทยาศาสตร์" },
 		{FacultyID: "F03" , FacultyName: "สำนักวิชาเทคโนโลยีสังคม" },
+		{FacultyID: "F04" , FacultyName: "สำนักวิชาเทคโนโลยีการเกษตร" },
 	}
 
 	for _,fac := range faculties{

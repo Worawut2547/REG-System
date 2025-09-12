@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, Select, Input, Upload, Button, Modal, Space, message, Typography, List } from "antd";
 import { FilePdfOutlined, FileOutlined } from "@ant-design/icons";
 import type { UploadFile, UploadProps } from "antd/es/upload/interface";
-import axios from "axios";
+//import axios from "axios";
 import { getReportTypes, listReviewerOptions, createReport, findReviewerIdByUsername } from "../../../../../services/https/report/report";
-import { apiUrl } from "../../../../../services/api";
+import { api } from "../../../../../services/https/api";
 import { getNameTeacher, getTeacherAll } from "../../../../../services/https/teacher/teacher";
 import { getNameAdmin } from "../../../../../services/https/admin/admin";
 import { getNameStudent as fetchStudentProfile } from "../../../../../services/https/student/student";
@@ -104,6 +104,7 @@ const SubmitReport: React.FC<Props> = ({ studentId: propStudentId }) => {
       } catch {}
       try {
         const reviewers = await listReviewerOptions();
+        console.log("reviewers from /reviewers:", reviewers);
         // Enrich labels: teacher => FirstName LastName, admin => เจ้าหน้าที่ (generic)
         const enriched = await Promise.all(
           (reviewers || []).map(async (o: any) => {
@@ -200,7 +201,7 @@ const SubmitReport: React.FC<Props> = ({ studentId: propStudentId }) => {
         form.append("reviewer_id", assignee!);
         form.append("details", details);
         form.append("file", file);
-        await axios.post(`${apiUrl}/reports/`, form, { headers: { "Content-Type": "multipart/form-data" } });
+        await api.post(`/reports/`, form, { headers: { "Content-Type": "multipart/form-data" } });
       } else {
         await createReport({
           StudentID: resolvedSid,
