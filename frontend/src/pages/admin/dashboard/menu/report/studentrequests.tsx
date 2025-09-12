@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Empty, message, Spin, Button, Tag, Modal, Popconfirm, Card, Table, Input, List } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { apiUrl } from "../../../../../services/api";
+import { apiUrl } from "../../../../../services/https/api.ts";
 import { getNameTeacher } from "../../../../../services/https/teacher/teacher";
 import { getNameAdmin } from "../../../../../services/https/admin/admin";
 import "./report.css";

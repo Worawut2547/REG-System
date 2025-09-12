@@ -1,4 +1,3 @@
-// services/https/book/books.ts
 import axios from "axios";
 import { type BookPathInterface } from "../../../interfaces/BookPath";
 import { api , apiUrl } from "../api";
@@ -12,34 +11,29 @@ type RawBook = {
   curriculum_id: string;
 };
 
-// รายการทั้งหมด
-type ListResponse = RawBook[];
-
-// อ่านทีละตัว: อาจมาแบบตรง ๆ หรือห่อใน { book: {...} }
-type GetByIdResponse = RawBook | { book: RawBook };
-
-// สมัคร (register) เอกสารด้วย path: อาจมี message หรือห่อใน { book: ... }
+type ListResponse = RawBook[];                         // list ตรง ๆ
+type GetByIdResponse = RawBook | { book: RawBook };    // บางรุ่นห่อ { book }
 type RegisterResponse =
   | RawBook
   | { book: RawBook }
-  | ({ message: string } & RawBook);
+  | ({ message: string } & RawBook);                   // บางทีแนบ message มาด้วย
 
 // -------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------
-const baseUrl = `/curriculum-books`;
+const baseUrl = `/curriculum-books`;                   // เส้นหลักฝั่งไฟล์ (relative path ให้ FE ยิงตรง)
 
 const mapBookFromAPI = (b: RawBook): BookPathInterface => ({
-  ID: b.id,
-  BookPath: b.book_path,
-  CurriculumID: b.curriculum_id,
+  ID: b.id,                                            // เอาไว้โยง preview/download
+  BookPath: b.book_path,                               // path จริงบนเครื่อง server (ไม่ใช่ URL)
+  CurriculumID: b.curriculum_id,                       // ผูกกับหลักสูตรไหน
 });
 
 const unwrapGetById = (data: GetByIdResponse): RawBook =>
-  "book" in data ? data.book : data;
+  "book" in data ? data.book : data;                   // บางรุ่นห่อ → แกะก่อน map
 
 const unwrapRegister = (data: RegisterResponse): RawBook =>
-  "book" in data ? data.book : data;
+  "book" in data ? data.book : data;                   // register ก็เจอเคสห่อเหมือนกัน
 
 // -------------------------------------------------------------
 // APIs
@@ -55,11 +49,11 @@ export const getBookAll = async (
 ): Promise<BookPathInterface[]> => {
   const url =
     curriculumId && curriculumId.trim().length > 0
-      ? `${baseUrl}/?curriculum_id=${encodeURIComponent(curriculumId.trim())}`
-      : `${baseUrl}/`;
+      ? `${baseUrl}/?curriculum_id=${encodeURIComponent(curriculumId.trim())}` // มี filter ก็ยิงแบบนี้
+      : `${baseUrl}/`;                                                          // ไม่มีก็เอาทั้งหมด
 
-  const { data } = await axios.get<ListResponse>(url);
-  return (Array.isArray(data) ? data : []).map(mapBookFromAPI);
+  const { data } = await axios.get<ListResponse>(url);  // เรียกตรง (ไม่ผ่าน apiUrl) → อาศัย same origin
+  return (Array.isArray(data) ? data : []).map(mapBookFromAPI); // กัน null แล้วค่อย map
 };
 
 /**
@@ -67,8 +61,8 @@ export const getBookAll = async (
  * GET /curriculum-books/:id
  */
 export const getBookByID = async (id: number): Promise<BookPathInterface> => {
-  const { data } = await axios.get<GetByIdResponse>(`${baseUrl}/${id}`);
-  return mapBookFromAPI(unwrapGetById(data));
+  const { data } = await axios.get<GetByIdResponse>(`${baseUrl}/${id}`); // ขอชิ้นเดียว
+  return mapBookFromAPI(unwrapGetById(data));                            // เผื่อมี {book:...}
 };
 
 /**
@@ -80,12 +74,12 @@ export const registerBookByPath = async (
   bookPath: string,
   curriculumId: string
 ): Promise<BookPathInterface> => {
-  const payload = { book_path: bookPath, curriculum_id: curriculumId };
+  const payload = { book_path: bookPath, curriculum_id: curriculumId }; // ส่ง path ฝั่ง server เข้ามาเลย
   const { data } = await api.post<RegisterResponse>(
     `${baseUrl}/register`,
     payload
   );
-  return mapBookFromAPI(unwrapRegister(data));
+  return mapBookFromAPI(unwrapRegister(data));                           // รองรับทั้งตอบตรง/ห่อ
 };
 
 /**
@@ -93,19 +87,19 @@ export const registerBookByPath = async (
  * DELETE /curriculum-books/:id
  */
 export const deleteBook = async (id: number): Promise<void> => {
-  await axios.delete(`${apiUrl}/curriculum-books/${id}`);
+  await axios.delete(`${apiUrl}/curriculum-books/${id}`);                // อันนี้ใช้ apiUrl ชัด ๆ
 };
 
 /**
  * Helper URLs สำหรับแสดง/ดาวน์โหลดไฟล์
  */
 export const getBookPreviewUrl = (id: number): string =>
-  `${baseUrl}/preview/${id}`;
+  `${baseUrl}/preview/${id}`;                                           // เปิดดู inline (Content-Disposition:inline)
 
 export const getBookDownloadUrl = (id: number): string =>
-  `${baseUrl}/download/${id}`;
+  `${baseUrl}/download/${id}`;                                          // ดาวน์โหลดเป็นไฟล์ (attachment)
 
 // ลบหนังสือ (และเคลียร์ book_id ในตารางหลักสูตรฝั่ง BE)
 export async function deleteBookById(id: number): Promise<void> {
-  await axios.delete(`${apiUrl}/curriculum-books/${id}`);
+  await axios.delete(`${apiUrl}/curriculum-books/${id}`);                // same endpoint กับ deleteBook ข้างบน
 }

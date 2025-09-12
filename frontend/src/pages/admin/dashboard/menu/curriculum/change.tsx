@@ -1,7 +1,4 @@
-// ====================================================================
-// CHANGE.tsx — จัดการหลักสูตร + วิชา + ไฟล์เอกสาร (Book)
-// ====================================================================
-
+// === Imports ===
 import React, { useEffect, useMemo, useState, useContext } from "react";
 import {
   Layout,
@@ -18,31 +15,6 @@ import {
 } from "antd";
 import type { ColumnsType, ColumnType } from "antd/es/table";
 import { SearchOutlined } from "@ant-design/icons";
-
-const { Content } = Layout;
-
-// ====================== 1) แบบข้อมูลที่ใช้บนตาราง (Frontend) ======================
-interface DataType {
-  key: string;
-  id: string; // curriculum_id
-  name: string; // curriculum_name
-  credit: number; // total_credit
-  startYear: number; // start_year
-  facultyId: string; // faculty_id
-  subjectIds: string[]; // วิชาของหลักสูตร
-
-  // ฟิลด์สำหรับไฟล์หลักสูตร
-  bookId?: number; // curriculum_books.id (ถ้ามี)
-  bookPath?: string; // path ที่เก็บไว้ (เผื่อแสดงชื่อไฟล์)
-}
-
-// ====== ใช้กำหนดชนิดคอลัมน์ editable ของ AntD Table ======
-interface EditableColumnType extends ColumnType<DataType> {
-  editable?: boolean;
-  inputType?: "number" | "text" | "select" | "multiselect";
-}
-
-// ====================== 2) Services (เรียก API) ======================
 import {
   getSubjectCurriculumAll,
   createSubjectCurriculum,
@@ -57,46 +29,40 @@ import {
   updateCurriculum,
   deleteCurriculum,
 } from "../../../../../services/https/curriculum/curriculum";
-
-// ✅ หนังสือ (ใช้ชุดเดียวกับหน้า Add)
 import {
   registerBookByPath,
   getBookPreviewUrl,
 } from "../../../../../services/https/book/books";
 
-// ====================== 3) Helpers / normalizers ======================
+// === Constants/Env ===
+const { Content } = Layout;
+
+// === Types/Interfaces ===
+interface DataType {
+  key: string;
+  id: string;
+  name: string;
+  credit: number;
+  startYear: number;
+  facultyId: string;
+  subjectIds: string[];
+  bookId?: number;
+  bookPath?: string;
+}
+interface EditableColumnType extends ColumnType<DataType> {
+  editable?: boolean;
+  inputType?: "number" | "text" | "select" | "multiselect";
+}
 type FacultyOpt = { id: string; name: string };
 type SubjectOpt = { id: string; name: string };
 
-const toFacultyOpt = (raw: unknown): FacultyOpt => {
-  const r = raw as Record<string, unknown>;
-  return {
-    id: String(r.id ?? r.FacultyID ?? r.facultyId ?? r.faculty_id ?? ""),
-    name: String(
-      r.name ?? r.FacultyName ?? r.facultyName ?? r.faculty_name ?? ""
-    ),
-  };
-};
-
-const toSubjectOpt = (raw: unknown): SubjectOpt => {
-  const r = raw as Record<string, unknown>;
-  const id = String(
-    r.subject_id ?? r.SubjectID ?? r.subject_code ?? r.SubjectCode ?? r.id ?? ""
-  );
-  const name = String(
-    r.subject_name ?? r.SubjectName ?? r.name ?? r.title ?? r.Title ?? ""
-  );
-  return { id, name };
-};
-
+// === Utils/Helpers ===
+// อันนี้แปลงค่าอะไรก็ได้ → string[] (กัน null/undefined)
 const asStringArray = (v: unknown): string[] =>
   Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : [];
 
-const pickString = (
-  o: Record<string, unknown>,
-  keys: string[],
-  def = ""
-): string => {
+// ดึง string ตัวแรกที่เจอจากชุดคีย์ (รองรับ API หลายรูปแบบ)
+const pickString = (o: Record<string, unknown>, keys: string[], def = ""): string => {
   for (const k of keys) {
     const v = o[k];
     if (typeof v === "string" || typeof v === "number") return String(v);
@@ -104,11 +70,8 @@ const pickString = (
   return def;
 };
 
-const pickNumber = (
-  o: Record<string, unknown>,
-  keys: string[],
-  def = 0
-): number => {
+// ดึง number ตัวแรกที่เจอจากชุดคีย์ (แถมแปลงจาก string ถ้าเป็นตัวเลข)
+const pickNumber = (o: Record<string, unknown>, keys: string[], def = 0): number => {
   for (const k of keys) {
     const v = o[k];
     if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -120,6 +83,7 @@ const pickNumber = (
   return def;
 };
 
+// ดึง array จากหลายคีย์ (เผื่อ API ตั้งชื่อไม่เหมือนกัน)
 const pickArray = (o: Record<string, unknown>, keys: string[]): unknown[] => {
   for (const k of keys) {
     const v = o[k];
@@ -128,40 +92,44 @@ const pickArray = (o: Record<string, unknown>, keys: string[]): unknown[] => {
   return [];
 };
 
+// บังคับให้ได้ id เป็น string (รองรับรูปแบบ field หลายแบบ)
 const toStringId = (x: unknown): string => {
   if (typeof x === "string" || typeof x === "number") return String(x);
   if (typeof x === "object" && x !== null) {
     const rec = x as Record<string, unknown>;
-    if (typeof rec.id === "string" || typeof rec.id === "number")
-      return String(rec.id);
-    if (typeof rec.SubjectID === "string" || typeof rec.SubjectID === "number")
-      return String(rec.SubjectID);
-    if (
-      typeof rec.subject_id === "string" ||
-      typeof rec.subject_id === "number"
-    )
-      return String(rec.subject_id);
+    if (typeof rec.id === "string" || typeof rec.id === "number") return String(rec.id);
+    if (typeof rec.SubjectID === "string" || typeof rec.SubjectID === "number") return String(rec.SubjectID);
+    if (typeof rec.subject_id === "string" || typeof rec.subject_id === "number") return String(rec.subject_id);
   }
   return "";
 };
 
-// แปลง curriculum จาก BE → row ของตาราง (รองรับ book_id/book_path)
+// map faculty จาก raw → ตัวเลือกใน Select
+const toFacultyOpt = (raw: unknown): FacultyOpt => {
+  const r = raw as Record<string, unknown>;
+  return {
+    id: String(r.id ?? r.FacultyID ?? r.facultyId ?? r.faculty_id ?? ""),
+    name: String(r.name ?? r.FacultyName ?? r.facultyName ?? r.faculty_name ?? ""),
+  };
+};
+
+// map subject จาก raw → ตัวเลือกใน Select
+const toSubjectOpt = (raw: unknown): SubjectOpt => {
+  const r = raw as Record<string, unknown>;
+  const id = String(r.subject_id ?? r.SubjectID ?? r.subject_code ?? r.SubjectCode ?? r.id ?? "");
+  const name = String(r.subject_name ?? r.SubjectName ?? r.name ?? r.title ?? r.Title ?? "");
+  return { id, name };
+};
+
+// map curriculum จาก raw → แถวในตาราง
 const toCurriculumRow = (raw: unknown): DataType => {
   const r = (raw ?? {}) as Record<string, unknown>;
-  const subjectList = pickArray(r, ["subjectIds", "subjects"])
-    .map(toStringId)
-    .filter(Boolean);
-
+  const subjectList = pickArray(r, ["subjectIds", "subjects"]).map(toStringId).filter(Boolean);
   const bookIdNum = pickNumber(r, ["book_id", "BookID"], 0);
   const bPath = pickString(r, ["book_path", "BookPath"], "");
-
   return {
-    key: pickString(
-      r,
-      ["curriculum_id", "CurriculumID", "id"],
-      String(Date.now())
-    ),
-    id: pickString(r, ["curriculum_id", "CurriculumID", "id"], ""),
+    key: pickString(r, ["curriculum_id", "CurriculumID", "id"], String(Date.now())), // key แถว
+    id: pickString(r, ["curriculum_id", "CurriculumID", "id"], ""),                 // pk จริง
     name: pickString(r, ["curriculum_name", "CurriculumName", "name"], ""),
     credit: pickNumber(r, ["total_credit", "TotalCredit", "credit"], 0),
     startYear: pickNumber(r, ["start_year", "StartYear", "startYear"], 0),
@@ -172,9 +140,11 @@ const toCurriculumRow = (raw: unknown): DataType => {
   };
 };
 
-// ===== path helpers (เหมือนหน้า Add) =====
+// เช็ค path แบบต่าง ๆ (เตรียมรับจาก client)
 const isFileUri = (s: string): boolean => /^file:\/\/\//i.test(s);
 const isWindowsAbs = (s: string): boolean => /^[A-Za-z]:\\/.test(s);
+
+// แปลง file:///C:/... → C:\...
 const fileUriToWindowsPath = (uri: string): string | null => {
   try {
     const u = new URL(uri);
@@ -188,6 +158,8 @@ const fileUriToWindowsPath = (uri: string): string | null => {
     return null;
   }
 };
+
+// บังคับให้เหลือ path ฝั่ง server เท่านั้น
 const coerceToServerPath = (input: string): string | null => {
   const s = input.trim();
   if (!s) return null;
@@ -195,19 +167,18 @@ const coerceToServerPath = (input: string): string | null => {
   if (isWindowsAbs(s)) return s;
   return null;
 };
-const baseName = (p?: string): string =>
-  (p || "").replace(/\\/g, "/").split("/").pop() || "";
 
-// ====================== 4) Context สำหรับ options ของ Select ======================
-const OptionsCtx = React.createContext<{
-  faculties: FacultyOpt[];
-  subjects: SubjectOpt[];
-}>({
+// ตัด basename มาโชว์
+const baseName = (p?: string): string => (p || "").replace(/\\/g, "/").split("/").pop() || "";
+
+// === Context ===
+// เก็บ options ไว้ให้ EditableCell หยิบใช้ (ไม่ต้อง drill props)
+const OptionsCtx = React.createContext<{ faculties: FacultyOpt[]; subjects: SubjectOpt[] }>({
   faculties: [],
   subjects: [],
 });
 
-// ====================== 5) Editable Cell ======================
+// === Editable Cell ===
 type EditableCellProps = {
   record: DataType;
   editing: boolean;
@@ -217,20 +188,12 @@ type EditableCellProps = {
   children?: React.ReactNode;
 };
 
-const EditableCell: React.FC<EditableCellProps> = ({
-  editing,
-  dataIndex,
-  title,
-  inputType,
-  children,
-  ...restProps
-}) => {
+// เซลล์แก้ไข: เปลี่ยน input ตามชนิดคอลัมน์
+const EditableCell: React.FC<EditableCellProps> = ({ editing, dataIndex, title, inputType, children, ...restProps }) => {
   const { faculties, subjects } = useContext(OptionsCtx);
-
   let inputNode: React.ReactNode;
-  if (inputType === "number")
-    inputNode = <InputNumber style={{ width: "100%" }} />;
-  else if (inputType === "text") inputNode = <Input />;
+  if (inputType === "number") inputNode = <InputNumber style={{ width: "100%" }} />; // ช่องตัวเลข
+  else if (inputType === "text") inputNode = <Input />; // ช่องข้อความ
   else if (inputType === "select")
     inputNode = (
       <Select
@@ -239,7 +202,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
         optionFilterProp="label"
         allowClear
       />
-    );
+    ); // เลือกคณะ
   else if (inputType === "multiselect")
     inputNode = (
       <Select
@@ -249,17 +212,14 @@ const EditableCell: React.FC<EditableCellProps> = ({
         optionFilterProp="label"
         allowClear
       />
-    );
+    ); // เลือกหลายวิชา
   else inputNode = <Input />;
 
   return (
     <td {...(restProps as React.HTMLAttributes<HTMLTableCellElement>)}>
       {editing ? (
-        <Form.Item
-          name={dataIndex}
-          style={{ margin: 0 }}
-          rules={[{ required: true, message: `Please Input ${title}!` }]}
-        >
+        // rules required แบบรวบรัดพอเตือนตัวเอง
+        <Form.Item name={dataIndex} style={{ margin: 0 }} rules={[{ required: true, message: `Please Input ${title}!` }]}>
           {inputNode}
         </Form.Item>
       ) : (
@@ -269,135 +229,83 @@ const EditableCell: React.FC<EditableCellProps> = ({
   );
 };
 
-// ====================== 6) Component หลัก ======================
+// === Component ===
 const CHANGE: React.FC = () => {
+  // === State ===
   const [form] = Form.useForm();
+  const [data, setData] = useState<DataType[]>([]); // แถวในตาราง
+  const [faculties, setFaculties] = useState<FacultyOpt[]>([]); // ตัวเลือกคณะ
+  const [subjects, setSubjects] = useState<SubjectOpt[]>([]); // ตัวเลือกวิชา
+  const [loading, setLoading] = useState(false); // โหลดรวม
+  const [editingKey, setEditingKey] = useState<React.Key>(""); // pk แถวที่กำลังแก้
+  const [searchText, setSearchText] = useState<string>(""); // ข้อความค้นหา
+  const [bookModal, setBookModal] = useState<{ open: boolean; target?: DataType; value: string; submitting?: boolean }>({
+    open: false,
+    value: "",
+  }); // modal เปลี่ยนไฟล์ pdf
 
-  // ------- data & options state -------
-  const [data, setData] = useState<DataType[]>([]);
-  const [faculties, setFaculties] = useState<FacultyOpt[]>([]);
-  const [subjects, setSubjects] = useState<SubjectOpt[]>([]);
-
-  // ------- ui state -------
-  const [loading, setLoading] = useState(false);
-  const [editingKey, setEditingKey] = useState<React.Key>("");
-  const [searchText, setSearchText] = useState<string>("");
-
-  // modal เปลี่ยนไฟล์
-  const [bookModal, setBookModal] = useState<{
-    open: boolean;
-    target?: DataType;
-    value: string;
-    submitting?: boolean;
-  }>({ open: false, value: "" });
-
-  // map สำหรับแปลง id → ชื่อเวลา render
+  // === Derived Maps ===
   const facultyMap = useMemo(
-    () =>
-      faculties.reduce(
-        (acc, cur) => ({ ...acc, [cur.id]: cur.name }),
-        {} as Record<string, string>
-      ),
+    () => faculties.reduce((acc, cur) => ({ ...acc, [cur.id]: cur.name }), {} as Record<string, string>),
     [faculties]
-  );
+  ); // id → ชื่อคณะ
   const subjectMap = useMemo(
-    () =>
-      subjects.reduce(
-        (acc, cur) => ({ ...acc, [cur.id]: cur.name }),
-        {} as Record<string, string>
-      ),
+    () => subjects.reduce((acc, cur) => ({ ...acc, [cur.id]: cur.name }), {} as Record<string, string>),
     [subjects]
-  );
+  ); // id → ชื่อวิชา
+  const isEditing = (record: DataType) => record.key === editingKey; // เช็คแถวกำลังแก้
 
-  const isEditing = (record: DataType) => record.key === editingKey;
-
-  // ------- โหลดข้อมูลจริงทั้งหมด -------
+  // === Data Loaders ===
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [facRes, subRes, curRes, scRes] = await Promise.all([
-        getFacultyAll(),
-        getSubjectAll(),
-        getCurriculumAll(),
-        getSubjectCurriculumAll(),
-      ]);
+      // ยิงทุกอย่างคู่ขนานทีเดียว
+      const [facRes, subRes, curRes, scRes] = await Promise.all([getFacultyAll(), getSubjectAll(), getCurriculumAll(), getSubjectCurriculumAll()]);
+      setFaculties((Array.isArray(facRes) ? facRes : []).map(toFacultyOpt)); // เก็บ options คณะ
+      setSubjects((Array.isArray(subRes) ? subRes : []).map(toSubjectOpt)); // เก็บ options วิชา
 
-      setFaculties((Array.isArray(facRes) ? facRes : []).map(toFacultyOpt));
-      setSubjects((Array.isArray(subRes) ? subRes : []).map(toSubjectOpt));
-
-      // index: curriculumId -> Set(subjectId)
+      // รวมลิงก์ หลักสูตร↔วิชา เป็น index: curriculumId → Set(subjectId)
       const idx: Record<string, Set<string>> = {};
-      for (const link of (Array.isArray(scRes)
-        ? scRes
-        : []) as SubjectCurriculumInterface[]) {
+      for (const link of (Array.isArray(scRes) ? scRes : []) as SubjectCurriculumInterface[]) {
         const rec = link as unknown as Record<string, unknown>;
-        const cId = pickString(
-          rec,
-          ["curriculum_id", "CurriculumID", "major_id", "MajorID"],
-          ""
-        );
-        const sId = pickString(
-          rec,
-          ["subject_id", "SubjectID", "subject_code", "SubjectCode"],
-          ""
-        );
+        const cId = pickString(rec, ["curriculum_id", "CurriculumID", "major_id", "MajorID"], "");
+        const sId = pickString(rec, ["subject_id", "SubjectID", "subject_code", "SubjectCode"], "");
         if (!cId || !sId) continue;
         if (!idx[cId]) idx[cId] = new Set<string>();
         idx[cId].add(sId);
       }
 
-      const baseRows = (Array.isArray(curRes) ? curRes : []).map(
-        toCurriculumRow
-      );
-      const rowsWithSubjects = baseRows.map((it) => ({
-        ...it,
-        subjectIds: Array.from(idx[it.id] ?? new Set<string>()),
-      }));
-
+      // map หลักสูตร → แถวตาราง + ผูกรายวิชาที่เจอ
+      const baseRows = (Array.isArray(curRes) ? curRes : []).map(toCurriculumRow);
+      const rowsWithSubjects = baseRows.map((it) => ({ ...it, subjectIds: Array.from(idx[it.id] ?? new Set<string>()) }));
       setData(rowsWithSubjects);
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error("โหลดข้อมูลล้มเหลว");
     } finally {
       setLoading(false);
     }
   };
 
+  // === Effects ===
   useEffect(() => {
-    loadAll();
+    loadAll(); // เปิดหน้าแล้วดึงข้อมูลชุดใหญ่
   }, []);
 
-  // ------- วางฟังก์ชันรีเฟรช subjects เฉพาะหลักสูตร -------
+  // === Helpers (Component) ===
   const refreshSubjectsFor = async (curriculumId: string): Promise<void> => {
+    // ดึงลิงก์ใหม่เฉพาะหลักสูตรนี้ (หลัง add/del)
     const allLinks = await getSubjectCurriculumAll();
     const ids = (Array.isArray(allLinks) ? allLinks : [])
       .map((x) => x as unknown as Record<string, unknown>)
-      .filter(
-        (rec) =>
-          pickString(
-            rec,
-            ["curriculum_id", "CurriculumID", "major_id", "MajorID"],
-            ""
-          ) === curriculumId
-      )
-      .map((rec) =>
-        pickString(
-          rec,
-          ["subject_id", "SubjectID", "subject_code", "SubjectCode"],
-          ""
-        )
-      )
+      .filter((rec) => pickString(rec, ["curriculum_id", "CurriculumID", "major_id", "MajorID"], "") === curriculumId)
+      .map((rec) => pickString(rec, ["subject_id", "SubjectID", "subject_code", "SubjectCode"], ""))
       .filter(Boolean);
-
-    setData((prev) =>
-      prev.map((it) =>
-        it.id === curriculumId ? { ...it, subjectIds: ids } : it
-      )
-    );
+    setData((prev) => prev.map((it) => (it.id === curriculumId ? { ...it, subjectIds: ids } : it)));
   };
 
-  // ------- ฟังก์ชันแก้ไขแถว -------
+  // === Handlers ===
   const edit = (record: DataType) => {
+    // กดแก้ไข → อัดค่าเดิมเข้า form
     form.setFieldsValue({
       name: record.name,
       credit: record.credit,
@@ -408,14 +316,16 @@ const CHANGE: React.FC = () => {
     setEditingKey(record.key);
   };
 
-  const cancel = () => setEditingKey("");
+  const cancel = () => setEditingKey(""); // ยกเลิกแก้ไข
 
   const save = async (key: React.Key) => {
     try {
+      // validate ก่อนยิง
       const row = (await form.validateFields()) as Partial<DataType>;
       const current = data.find((d) => d.key === key);
       if (!current) return;
 
+      // เตรียม patch เฉพาะฟิลด์ที่เปลี่ยน (อย่าส่ง null มั่ว ๆ)
       const patch: CurriculumUpdateDTO = {
         curriculum_name: (row.name ?? current.name) || undefined,
         total_credit: row.credit ?? current.credit ?? undefined,
@@ -425,38 +335,30 @@ const CHANGE: React.FC = () => {
       (Object.keys(patch) as (keyof CurriculumUpdateDTO)[]).forEach((k) => {
         if (patch[k] === undefined) delete patch[k];
       });
-      if (Object.keys(patch).length > 0)
-        await updateCurriculum(current.id, patch);
+      if (Object.keys(patch).length > 0) await updateCurriculum(current.id, patch); // ส่งไปหลังบ้าน
 
+      // diff รายวิชา → คิดเพิ่ม/ลบเป็นรายการ
       const nextSubjects = asStringArray(row.subjectIds ?? current.subjectIds);
       const prevSubjects = current.subjectIds ?? [];
-
       const toAdd = nextSubjects.filter((id) => !prevSubjects.includes(id));
       const toDel = prevSubjects.filter((id) => !nextSubjects.includes(id));
 
+      // เพิ่มลิงก์ที่ยังไม่มี
       if (toAdd.length > 0) {
         await Promise.all(
-          toAdd.map((sid) =>
-            createSubjectCurriculum({
-              SubjectID: String(sid),
-              CurriculumID: String(current.id),
-            })
-          )
+          toAdd.map((sid) => createSubjectCurriculum({ SubjectID: String(sid), CurriculumID: String(current.id) }))
         );
       }
+      // ลบลิงก์ที่ไม่ต้องการแล้ว
       if (toDel.length > 0) {
         await Promise.all(
-          toDel.map((sid) =>
-            deleteSubjectCurriculumByPair({
-              subjectId: String(sid),
-              curriculumId: String(current.id),
-            })
-          )
+          toDel.map((sid) => deleteSubjectCurriculumByPair({ subjectId: String(sid), curriculumId: String(current.id) }))
         );
       }
 
-      await refreshSubjectsFor(current.id);
+      await refreshSubjectsFor(current.id); // รีดึงเฉพาะวิชาของหลักสูตรนี้
 
+      // อัปเดต state ฝั่งหน้าให้ตรงกับ patch
       setData((prev) =>
         prev.map((it) =>
           it.key === key
@@ -464,47 +366,40 @@ const CHANGE: React.FC = () => {
                 ...it,
                 name: patch.curriculum_name ?? it.name,
                 credit: (patch.total_credit as number | undefined) ?? it.credit,
-                startYear:
-                  (patch.start_year as number | undefined) ?? it.startYear,
+                startYear: (patch.start_year as number | undefined) ?? it.startYear,
                 facultyId: patch.faculty_id ?? it.facultyId,
               }
             : it
         )
       );
-
       setEditingKey("");
       message.success("บันทึกสำเร็จ");
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error("บันทึกไม่สำเร็จ");
     }
   };
 
-  // ลบหลักสูตร (ทั้งแถว)
   const handleDelete = async (key: React.Key) => {
+    // ลบหลักสูตร (ทั้งแถว)
     const target = data.find((d) => d.key === key);
     if (!target) return;
     try {
       await deleteCurriculum(target.id);
       setData((prev) => prev.filter((item) => item.key !== key));
       message.success("ลบสำเร็จ");
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error("ลบไม่สำเร็จ");
     }
   };
 
-  // ==================== ฟังก์ชันเฉพาะคอลัมน์ Book ====================
-  const openChangeBookModal = (record: DataType) => {
-    setBookModal({ open: true, target: record, value: "" });
-  };
+  const openChangeBookModal = (record: DataType) => setBookModal({ open: true, target: record, value: "" }); // เปิด modal เปลี่ยนไฟล์
 
   const handleRegisterBook = async () => {
+    // กดบันทึกไฟล์ PDF สำหรับหลักสูตรนี้
     const target = bookModal.target;
     if (!target) return;
     const raw = (bookModal.value || "").trim();
-
-    const serverPath = coerceToServerPath(raw);
+    const serverPath = coerceToServerPath(raw); // ต้องเป็น path ฝั่ง server เท่านั้น
     if (!serverPath) {
       message.warning("ต้องเป็น file:///C:/... หรือ C:\\... และลงท้าย .pdf");
       return;
@@ -513,15 +408,13 @@ const CHANGE: React.FC = () => {
       message.warning("รองรับเฉพาะไฟล์ .pdf");
       return;
     }
-
     try {
       setBookModal((s) => ({ ...s, submitting: true }));
-      await registerBookByPath(serverPath, target.id);
+      await registerBookByPath(serverPath, target.id); // ส่งไปหลังบ้านลงทะเบียนไฟล์
       message.success("บันทึกเอกสารสำเร็จ");
       setBookModal({ open: false, value: "" });
-      await loadAll();
-    } catch (e) {
-      console.error(e);
+      await loadAll(); // รีโหลดข้อมูลเพื่อให้ bookPath/bookId อัปเดต
+    } catch {
       message.error("บันทึกเอกสารไม่สำเร็จ");
     } finally {
       setBookModal((s) => ({ ...s, submitting: false }));
@@ -530,77 +423,62 @@ const CHANGE: React.FC = () => {
 
   const filteredData = useMemo(
     () =>
+      // ค้นหาจากชื่อหลักสูตร + ชื่อคณะ
       data.filter(
         (item) =>
           item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          (facultyMap[item.facultyId] || "")
-            .toLowerCase()
-            .includes(searchText.toLowerCase())
+          (facultyMap[item.facultyId] || "").toLowerCase().includes(searchText.toLowerCase())
       ),
     [data, facultyMap, searchText]
   );
 
-  // ------- คอลัมน์ตาราง -------
+  // === Table Columns ===
   const columns: EditableColumnType[] = [
-    { title: "ชื่อหลักสูตร", dataIndex: "name", width: 260, editable: true },
-    { title: "หน่วยกิจรวม", dataIndex: "credit", width: 140, editable: true },
-    { title: "ปีที่เริ่มหลักสูตร", dataIndex: "startYear", width: 160, editable: true },
+    { title: "ชื่อหลักสูตร", dataIndex: "name", width: 260, editable: true }, // แก้ชื่อ
+    { title: "หน่วยกิจรวม", dataIndex: "credit", width: 140, editable: true }, // แก้หน่วยกิต
+    { title: "ปีที่เริ่มหลักสูตร", dataIndex: "startYear", width: 160, editable: true }, // แก้ปีเริ่ม
     {
       title: "คณะ",
       dataIndex: "facultyId",
       width: 220,
-      editable: true,
+      editable: true, // เลือกคณะจาก dropdown
       render: (facultyId: string) => facultyMap[facultyId] || "-",
     },
     {
       title: "รายวิชา",
       dataIndex: "subjectIds",
       width: 320,
-      editable: true,
-      render: (ids: string[]) =>
-        (ids || []).map((id) => subjectMap[id] || id).join(", "),
+      editable: true, // multi-select รายวิชา
+      render: (ids: string[]) => (ids || []).map((id) => subjectMap[id] || id).join(", "),
     },
-
-    // ------------- Book Column -------------
     {
       title: "เล่มหลักสูตร",
       dataIndex: "bookPath",
       width: 360,
       render: (_: string | undefined, record: DataType) => {
         const previewUrl =
-          typeof record.bookId === "number" && record.bookId > 0
-            ? getBookPreviewUrl(record.bookId)
-            : undefined;
-
+          typeof record.bookId === "number" && record.bookId > 0 ? getBookPreviewUrl(record.bookId) : undefined; // ลิงก์ดู pdf
         const editing = isEditing(record);
-
         return (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* ยังไม่แก้ไข → ปุ่ม 'ดูหลักสูตร' / กำลังแก้ไข → ปุ่ม 'เปลี่ยน' */}
             {editing ? (
-              <Button size="small" onClick={() => openChangeBookModal(record)}>
-                เปลี่ยน
-              </Button>
+              // โหมดแก้ไข → ให้กดเปลี่ยนไฟล์
+              <Button size="small" onClick={() => openChangeBookModal(record)}>เปลี่ยน</Button>
             ) : (
+              // โหมดดู → เปิด pdf ในแท็บใหม่
               <Button
                 size="small"
                 disabled={!previewUrl}
-                onClick={() =>
-                  previewUrl &&
-                  window.open(previewUrl, "_blank", "noopener,noreferrer")
-                }
+                onClick={() => previewUrl && window.open(previewUrl, "_blank", "noopener,noreferrer")}
               >
                 ดูหลักสูตร
               </Button>
             )}
-
-            {/* ชื่อไฟล์ (ถ้ามี) */}
-            <span style={{ color: "#888" }}>{baseName(record.bookPath)}</span>
+            <span style={{ color: "#888" }}>{baseName(record.bookPath)}</span> {/* โชว์ชื่อไฟล์ท้าย ๆ */}
           </div>
         );
       },
     },
-
     {
       title: "แก้ไข",
       dataIndex: "edit",
@@ -609,21 +487,18 @@ const CHANGE: React.FC = () => {
         const editable = isEditing(record);
         return editable ? (
           <span>
-            <Typography.Link
-              onClick={() => save(record.key)}
-              style={{ marginInlineEnd: 8, fontSize: 12 }}
-            >
+            {/* เซฟแถวนี้ */}
+            <Typography.Link onClick={() => save(record.key)} style={{ marginInlineEnd: 8, fontSize: 12 }}>
               Save
             </Typography.Link>
+            {/* ยกเลิกแก้ไข */}
             <Popconfirm title="Sure to cancel?" onConfirm={cancel}>
               <a style={{ fontSize: 12 }}>Cancel</a>
             </Popconfirm>
           </span>
         ) : (
-          <Typography.Link
-            disabled={editingKey !== ""}
-            onClick={() => edit(record)}
-          >
+          // เข้าสู่โหมดแก้ไข
+          <Typography.Link disabled={editingKey !== ""} onClick={() => edit(record)}>
             Edit
           </Typography.Link>
         );
@@ -634,41 +509,29 @@ const CHANGE: React.FC = () => {
       dataIndex: "delete",
       width: 120,
       render: (_: unknown, record: DataType) => (
-        <Popconfirm
-          title="Sure to delete?"
-          onConfirm={() => handleDelete(record.key)}
-        >
+        // ลบทั้งแถว (ยืนยันก่อน)
+        <Popconfirm title="Sure to delete?" onConfirm={() => handleDelete(record.key)}>
           <a>Delete</a>
         </Popconfirm>
       ),
     },
   ];
 
-  // ----- แยกชนิดคอลัมน์ที่เป็น data column -----
-  type DataColumn = Extract<
-    ColumnsType<DataType>[number],
-    ColumnType<DataType>
-  > & {
-    editable?: boolean;
-  };
+  // === Editable Column Wiring ===
+  type DataColumn = Extract<ColumnsType<DataType>[number], ColumnType<DataType>> & { editable?: boolean };
+  const isDataColumn = (col: ColumnsType<DataType>[number]): col is DataColumn =>
+    (col as ColumnType<DataType>).dataIndex !== undefined;
 
-  const isDataColumn = (
-    col: ColumnsType<DataType>[number]
-  ): col is DataColumn => (col as ColumnType<DataType>).dataIndex !== undefined;
-
-  // ----- ผูก onCell สำหรับ editable -----
   const mergedColumns: ColumnsType<DataType> = columns.map((col) => {
     if (!isDataColumn(col) || !col.editable) return col;
-
     const getInputType = (dataIndex: keyof DataType) =>
       dataIndex === "credit" || dataIndex === "startYear"
-        ? "number"
+        ? "number"        // ตัวเลข
         : dataIndex === "facultyId"
-        ? "select"
+        ? "select"        // เลือกคณะ
         : dataIndex === "subjectIds"
-        ? "multiselect"
-        : "text";
-
+        ? "multiselect"   // เลือกหลายวิชา
+        : "text";         // อื่น ๆ เป็นข้อความ
     return {
       ...col,
       onCell: (record: DataType) =>
@@ -677,17 +540,18 @@ const CHANGE: React.FC = () => {
           inputType: getInputType(col.dataIndex as keyof DataType),
           dataIndex: col.dataIndex as keyof DataType,
           title: col.title as React.ReactNode,
-          editing: record.key === editingKey,
+          editing: record.key === editingKey, // ให้ cell รู้ว่าตัวเอง editable ไหม
         } as unknown as React.HTMLAttributes<HTMLTableCellElement>),
     } as ColumnType<DataType>;
   });
 
-  // ====================== 7) Render ======================
+  // === Render ===
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Content style={{ padding: 24 }}>
         <OptionsCtx.Provider value={{ faculties, subjects }}>
           <Form form={form} component={false}>
+            {/* ช่องค้นหา (ชื่อหลักสูตร/คณะ) */}
             <Input
               placeholder="ค้นหาด้วยชื่อหลักสูตร หรือ คณะ"
               value={searchText}
@@ -697,57 +561,41 @@ const CHANGE: React.FC = () => {
               allowClear
             />
             <Table<DataType>
-              components={{ body: { cell: EditableCell } }}
+              components={{ body: { cell: EditableCell } }} // ใช้เซลล์แก้ไขเอง
               bordered
               className="custom-table-header"
               dataSource={filteredData}
               columns={mergedColumns}
               rowKey="key"
               loading={loading}
-              pagination={{ onChange: () => setEditingKey("") }}
-              rowClassName={(_rec, i) =>
-                i % 2 === 0 ? "table-row-light" : "table-row-dark"
-              }
-              // sticky
-              // scroll={{ x: "max-content" }}
-              // tableLayout="auto"
+              pagination={{ onChange: () => setEditingKey("") }} // เปลี่ยนหน้าแล้วออกจากโหมดแก้
+              rowClassName={(_rec, i) => (i % 2 === 0 ? "table-row-light" : "table-row-dark")}
             />
           </Form>
         </OptionsCtx.Provider>
 
-        {/* Modal เปลี่ยนไฟล์ (วาง path) */}
+        {/* modal เปลี่ยนไฟล์ PDF ของหลักสูตร */}
         <Modal
           open={bookModal.open}
-          title={
-            bookModal.target
-              ? `เปลี่ยนเอกสาร: ${bookModal.target.name}`
-              : "เปลี่ยนเอกสาร"
-          }
+          title={bookModal.target ? `เปลี่ยนเอกสาร: ${bookModal.target.name}` : "เปลี่ยนเอกสาร"}
           okText="บันทึก"
           cancelText="ยกเลิก"
           confirmLoading={bookModal.submitting}
-          onOk={handleRegisterBook}
+          onOk={handleRegisterBook} // กดแล้วส่ง path ไปลงทะเบียน
           onCancel={() => setBookModal({ open: false, value: "" })}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <Input
               placeholder="file:///C:/.../xxx.pdf หรือ C:\...\xxx.pdf"
               value={bookModal.value}
-              onChange={(e) =>
-                setBookModal((s) => ({ ...s, value: e.target.value }))
-              }
+              onChange={(e) => setBookModal((s) => ({ ...s, value: e.target.value }))} // เก็บ path ชั่วคราว
             />
-            <Typography.Text type="secondary">
-              วาง path ของไฟล์ .pdf ที่อยู่บนเครื่อง Server
-            </Typography.Text>
+            <Typography.Text type="secondary">วาง path ของไฟล์ .pdf ที่อยู่บนเครื่อง Server</Typography.Text>
           </div>
         </Modal>
 
-        {/* C — Table styles */}
         <style>{`
-          /* ใช้สีเส้นหลักให้ตรงกัน */
           :root { --grid-color: #f0e9e9ff; }
-
           .custom-table-header .ant-table-thead > tr > th {
             border-right: 1px solid var(--grid-color) !important;
             border-bottom: 1px solid var(--grid-color) !important;
@@ -756,30 +604,21 @@ const CHANGE: React.FC = () => {
             border-right: 1px solid var(--grid-color) !important;
             border-bottom: 1px solid var(--grid-color) !important;
           }
-
-          /* ⛔️ ปิดเส้นขาว (split line) ของหัวตาราง */
           .custom-table-header .ant-table-thead > tr > th::before {
             background: transparent !important;
             width: 0 !important;
           }
-          /* กันกรณี sticky header */
           .custom-table-header .ant-table-sticky-holder .ant-table-thead > tr > th::before {
             background: transparent !important;
             width: 0 !important;
           }
-          /* เผื่อบางธีมมี ::after ด้วย */
-          .custom-table-header .ant-table-thead > tr > th::after {
-            display: none !important;
-          }
-
-          /* วิธีทางเลือก: เปลี่ยนตัวแปรสี split line ให้โปร่งใส (AntD v5) */
-          .custom-table-header .ant-table {
-            --ant-table-header-column-split-color: transparent;
-          }
+          .custom-table-header .ant-table-thead > tr > th::after { display: none !important; }
+          .custom-table-header .ant-table { --ant-table-header-column-split-color: transparent; }
         `}</style>
       </Content>
     </Layout>
   );
 };
 
+// === Export ===
 export default CHANGE;
