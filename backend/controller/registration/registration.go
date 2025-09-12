@@ -143,7 +143,6 @@ type RegistrationResponse struct {
     SubjectID      string    `json:"SubjectID"`
     SubjectName    string    `json:"SubjectName"`
     Credit         int       `json:"Credit"`
-    SectionID      int       `json:"SectionID"`
     StartAt        time.Time `json:"StartAt"`
     EndAt          time.Time `json:"EndAt"`
 }

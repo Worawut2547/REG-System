@@ -16,12 +16,9 @@ export const statusStudentMap: Record<string, string> = {
 // ดึงข้อมูลผู้แจ้งจบทั้งหมด
 export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
     try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("User not authenticated");
 
-        const res = await api.get(`/graduations/`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get(`/graduations/`);
+
         const items = res.data?.data ?? [];
 
         return items.map((item: any): GraduationInterface => ({
@@ -50,14 +47,7 @@ export const createGraduation = async (
     data: CreateGraduationInput
 ): Promise<GraduationInterface> => {
     try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("User not authenticated");
-
-        const res = await api.post(`/graduations/`, data, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const res = await api.post(`/graduations/`, data);
         const item = res.data?.data;
 
         if (!item) throw new Error("No data returned from backend");
@@ -86,12 +76,9 @@ export const createGraduation = async (
 export const getMyGraduation = async (): Promise<GraduationInterface | null> => {
     try {
         const studentID = localStorage.getItem("username");
-        const token = localStorage.getItem("token");
-        if (!studentID || !token) return null;
 
-        const res = await api.get(`/graduations/${studentID}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get(`/graduations/${studentID}`);
+
 
         const data = res.data?.data;
         if (!data) return null;
@@ -120,23 +107,13 @@ export const updateGraduation = async (
     rejectReason?: string
 ): Promise<void> => {
     try {
-        const token = localStorage.getItem("token"); // ดึง JWT จาก storage
-        if (!token) throw new Error("User not authenticated");
-
         const payload = {
             StatusStudentID: statusStudentID,
             RejectReason: rejectReason ?? null,
         };
 
-        const res = await api.put(
-            `/graduations/${graduationID}`,
-            payload,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`, // ✅ ส่ง token
-                },
-            }
-        );
+        const res = await api.put(`/graduations/${graduationID}`, payload);
+
 
         console.log("Graduation updated:", res.data);
         return res.data;

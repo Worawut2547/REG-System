@@ -29,7 +29,7 @@ type Teachers struct {
 
 	Subject []Subject `gorm:"foreignKey:TeacherID;references:TeacherID" json:"Subject"`  // ระบุความสัมพันธ์เเบบ 1--many[Subject]
 
-	Student []Students `gorm:"foreignKey:TeacherID;references:TeacherID" json:"Student"`  // ระบุความสัมพันธ์เเบบ 1--many[Student]
+	//Student []Students `gorm:"foreignKey:TeacherID;references:TeacherID" json:"Student"`  // ระบุความสัมพันธ์เเบบ 1--many[Student]
 
 	Address     string `json:"Address"`
 	Nationality string `json:"Nationality"`

@@ -30,7 +30,7 @@ func GetStudentID(c *gin.Context) {
 		Preload("Curriculum").
 		Preload("Grade").
 		Preload("Grade.Subject").
-		Preload("Teacher").
+		//Preload("Teacher").
 		First(&students, "student_id = ?", sid).Error
 
 	if err != nil {
@@ -114,7 +114,7 @@ func GetStudentID(c *gin.Context) {
 
 		"CurriculumID":   students.CurriculumID,
 		"CurriculumName": curriculumName,
-		"Teacher":        students.Teacher,
+		//"Teacher":        students.Teacher,
 		"GPAX":           gpa,
 		"TotalCredits":   totalCredits,
 
