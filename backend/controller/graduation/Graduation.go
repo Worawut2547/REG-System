@@ -22,8 +22,9 @@ import (
 
 func CreateGraduation(c *gin.Context) {
 	db := config.DB()
-	db.AutoMigrate(&entity.Graduation{})
 
+	/*สร้าง entity อัตโนมัติเมื่อส่งคำร้อง*/
+	db.AutoMigrate(&entity.Graduation{})
 	input := &entity.Graduation{}
 
 	if err := c.ShouldBindJSON(&input); err != nil {

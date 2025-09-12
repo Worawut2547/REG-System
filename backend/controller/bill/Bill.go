@@ -236,7 +236,11 @@ func UploadReceipt(c *gin.Context) {
 			reg.Subject.Semester.Term == term {
 			selectedRegs = append(selectedRegs, reg)
 		}
-	}
+	}/*reg.Subject != nil && reg.Subject.Semester != nil ตรวจสอบว่า Registration มี Subject และ Semester (ป้องกัน null)
+	reg.Subject.Semester.AcademicYear == year เลือกเฉพาะปีที่ต้องการ
+	reg.Subject.Semester.Term == term เลือกเฉพาะเทอมที่ต้องการ
+	selectedRegs = append(selectedRegs, reg) เพิ่ม Registration ที่ตรงปี-เทอม เข้า slice selectedRegs*/
+
 
 	if len(selectedRegs) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no registrations found for this year and term"})
@@ -244,9 +248,9 @@ func UploadReceipt(c *gin.Context) {
 	}
 
 	// หา Bill ของ student ปี/เทอมนี้ ถ้าไม่มีให้สร้างใหม่
-	var bill entity.Bill
+	var bill entity.Bill //ตรวจสอบว่ามีบิลอยู่แล้วหรือไม่
 	if err := db.Where("student_id = ? AND academic_year = ? AND term = ?", studentID, year, term).First(&bill).Error; err != nil {
-		// สร้าง bill ใหม่
+		// สร้าง bill ใหม่ - struct Bill ไว้สำหรับเก็บข้อมูลที่ดึงมาจากฐานข้อมูล
 		bill = entity.Bill{
 			StudentID:    studentID,
 			AcademicYear: year,
@@ -278,7 +282,7 @@ func UploadReceipt(c *gin.Context) {
 		return
 	}
 
-	uploadDir := "./uploads"
+	uploadDir := "./uploads" //สร้าง folder
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create upload folder"})
 		return
@@ -359,15 +363,17 @@ func GetAllBills(c *gin.Context) {
 
 		fullName := bill.Student.FirstName + " " + bill.Student.LastName
 
-		// ✅ ใช้ bill.Registration ไม่ใช่ Student.Registration
+		/*วนทุก Registration ของ Bill - ตรวจสอบว่า Subject และ Semester ไม่เป็น nil*/
 		for _, reg := range bill.Registration {
 			if reg.Subject != nil && reg.Subject.Semester != nil {
 				key := BillKey{
 					StudentID: bill.StudentID,
 					Year:      reg.Subject.Semester.AcademicYear,
 					Term:      reg.Subject.Semester.Term,
-				}
+				}//BillKey คือ โครงสร้างสำหรับใช้ map
+
 				// เก็บ subject
+				//map grouped เก็บ รายวิชา ของนักเรียนแต่ละปี/เทอม
 				grouped[key] = append(grouped[key], services.Subject{
 					SubjectID:   reg.Subject.SubjectID,
 					SubjectName: reg.Subject.SubjectName,
@@ -381,6 +387,8 @@ func GetAllBills(c *gin.Context) {
 				if bill.FilePath != "" {
 					filePathMap[key] = bill.FilePath
 				}
+
+				/*ช็คว่ามี Bill เก่าอยู่แล้วหรือไม่ - ถ้าไม่ หรือ Bill ใหม่กว่าที่เคยบันทึก → update*/
 				if existing, ok := latestID[key]; !ok || bill.ID > existing {
 					latestID[key] = bill.ID
 					dateMap[key] = bill.Date.Format("2006-01-02")
@@ -412,9 +420,12 @@ func GetAllBills(c *gin.Context) {
 // GET /bills/preview/:id - เปิด PDF inline
 
 func ShowFile(c *gin.Context) {
-	filename := c.Param("id")
+	filename := c.Param("id") //ดึงชื่อไฟล์จาก URL
 	filePath := fmt.Sprintf("./uploads/%s", filename)
 
+
+	/*os.Stat(filePath) → ตรวจสอบว่าไฟล์มีอยู่หรือไม่
+	ถ้าไฟล์ ไม่มี → ส่ง HTTP 404 พร้อมข้อความ "file not found"*/
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
 		return
@@ -432,18 +443,22 @@ func UpdateBillStatus(c *gin.Context) {
 		StatusID int `json:"status_id"` // แก้เป็น int
 	}
 
+	/*ใช้ Gin binding แปลง JSON → struct
+	ถ้าแปลงไม่ได้ → ส่ง HTTP 400 พร้อมข้อความ error*/
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
+	//หาบิลในฐานข้อมูล
 	var bill entity.Bill
 	if err := db.First(&bill, billID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "bill not found"})
 		return
 	}
 
-	bill.StatusID = req.StatusID // ตอนนี้ตรงชนิดแล้ว
+	/*อัพเดทสถานะ*/
+	bill.StatusID = req.StatusID 
 	if err := db.Save(&bill).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update bill status"})
 		return

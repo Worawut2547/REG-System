@@ -8,8 +8,8 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 import MainPage from './menu/mainpage/mainpage';
 import RegisterPage from './menu/register/register';
 import CoursePage from './menu/course/course';
-import GradePage from './menu/grade/grade';
-import ScorePage from './menu/score/score';
+//import GradePage from './menu/grade/grade';
+//import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
 import StudentPage from './menu/student/mainpage';
 import TeacherPage from './menu/teacher/mainpage';
@@ -29,9 +29,7 @@ import {
   LogoutOutlined,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
-  ReadOutlined,
   ContactsOutlined,
-  SolutionOutlined,
   ApartmentOutlined,
   FormOutlined,
   ExclamationCircleOutlined,
@@ -55,8 +53,6 @@ const AdminDashboardpage: React.FC = () => {
     'หน้าหลัก': 'home',
     'ลงทะเบียนเรียน': 'register',
     'วิชาที่เปิดสอน': 'course',
-    'ผลการเรียน': 'grade',
-    'คะแนน': 'score',
     'ใบแจ้งยอดชำระ': 'payment',
     'นักศึกษา': 'student',
     'อาจารย์': 'teacher',
@@ -72,7 +68,6 @@ const AdminDashboardpage: React.FC = () => {
   useEffect(() => {
     // ดึง username จาก localStorage
     const username = localStorage.getItem("username");
-    console.log("Username fro localStorage:",username);
     
     if(username){
       getNameAdmin(username)
@@ -110,10 +105,6 @@ const AdminDashboardpage: React.FC = () => {
         return <RegisterPage />;
       case 'วิชาที่เปิดสอน':
         return <CoursePage />;
-      case 'ผลการเรียน':
-        return <GradePage />;
-      case 'คะแนน':
-        return <ScorePage />;
       case 'ใบแจ้งยอดชำระ':
         return <PaymentPage />;
       case 'นักศึกษา':
@@ -200,8 +191,6 @@ const AdminDashboardpage: React.FC = () => {
             { key: 'หน้าหลัก', icon: <HomeOutlined />, label: 'หน้าหลัก' },
             { key: 'ลงทะเบียนเรียน', icon: <ScheduleOutlined />, label: 'ลงทะเบียนเรียน' },
             { key: 'วิชาที่เปิดสอน', icon: <BookOutlined />, label: 'วิชาที่เปิดสอน' },
-            { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
-            { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
             { key: 'ใบแจ้งยอดชำระ', icon: <BankOutlined />, label: 'ใบแจ้งยอดชำระ' },
             { key: 'นักศึกษา', icon: <UserOutlined />, label: 'นักศึกษา' },
             { key: 'อาจารย์', icon: <ContactsOutlined />, label: 'อาจารย์' },

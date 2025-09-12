@@ -22,6 +22,9 @@ import { getDegreeAll } from "../../../../../../services/https/degree/degree";
 import type { GenderInterface } from "../../../../../../interfaces/Gender";
 import { getGenderAll } from "../../../../../../services/https/gender/gender";
 
+import type { CurriculumInterface } from "../../../../../../interfaces/Curriculum";
+import { getCurriculumAll } from "../../../../../../services/https/curriculum/curriculum";
+
 
 interface CreateStudentProps {
   onBack: () => void;
@@ -36,6 +39,8 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
   const [selectFaculty, setSelectFaculty] = useState<string | null>(null)
   const [degreeOptions, setDegreeOptions] = useState<DegreeInterface[]>([]);
   const [genderOptions, setGenderOptions] = useState<GenderInterface[]>([]);
+  const [curriculumOptions, setCurriculumOptions] = useState<CurriculumInterface[]>([]);
+  const [selectCurriculum, setSelectCurriculum] = useState<string | null>(null)
 
 
   // เรียก API ดึง field ทั้งหมดเมื่อคอมโพเนนต์ถูกโหลด
@@ -46,14 +51,16 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
       getMajorAll(),
       getFacultyAll(),
       getDegreeAll(),
-      getGenderAll()
+      getGenderAll(),
+      getCurriculumAll(),
     ])
-      .then(([majors, faculties, degrees, genders]) => {
+      .then(([majors, faculties, degrees, genders, curriculums]) => {
         setAllMajors(majors)
         setMajorOptions(majors);
         setFacultyOptions(faculties);
         setDegreeOptions(degrees);
         setGenderOptions(genders);
+        setCurriculumOptions(curriculums);
       })
       .catch((error) => {
         console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
@@ -167,7 +174,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
               name="gender_id"
               rules={[{ required: true, message: "กรุณาเลือกเพศ!" }]}
             >
-            
+
               <Radio.Group>
                 {genderOptions.map((g) => (
                   <Radio key={g.ID} value={g.ID}>
@@ -175,7 +182,7 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
                   </Radio>
                 ))}
               </Radio.Group>
-            
+
             </Form.Item>
           </Col>
         </Row>
@@ -269,6 +276,27 @@ const CreateStudent: React.FC<CreateStudentProps> = ({ onBack }) => {
                 {majorOptions.map((m) => (
                   <Select.Option key={m.MajorID} value={m.MajorID}>
                     {m.MajorName}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+
+          <Col xs={24}>
+            <Form.Item
+              label="หลักสูตร"
+              name="CurriculumID"
+              rules={[{ required: true, message: "กรุณาเลือกหลักสูตร!" }]}
+            >
+              <Select
+                placeholder="เลือกหลักสูตร"
+                showSearch
+                value={selectCurriculum ?? undefined}
+                onChange={(value) => setSelectCurriculum(value)}
+              >
+                {curriculumOptions.map((m) => (
+                  <Select.Option key={m.CurriculumID} value={m.CurriculumID}>
+                    {m.CurriculumName}
                   </Select.Option>
                 ))}
               </Select>
