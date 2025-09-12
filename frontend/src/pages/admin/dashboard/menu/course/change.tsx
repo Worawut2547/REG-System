@@ -848,7 +848,7 @@ const CHANGE: React.FC = () => {
             dataSource={tableRows}                         // ข้อมูลหลังกรอง
             columns={mergedColumns}                        // คอลัมน์พร้อม onCell
             rowKey="SubjectID"                             // ใช้ SubjectID เป็น key
-            pagination={{ onChange: cancel }}              // เปลี่ยนหน้าแล้วปิดโหมดแก้
+            pagination={{ pageSize: 5, showSizeChanger: false, position: ["bottomCenter"] }}              // เปลี่ยนหน้าแล้วปิดโหมดแก้
             loading={
               submitting ||
               loadingFaculties ||

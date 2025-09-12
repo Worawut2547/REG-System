@@ -794,7 +794,7 @@ const ADD: React.FC = () => {
             ]}
             dataSource={tableRows}
             rowKey="SubjectID"
-            pagination={false}
+            pagination={{ pageSize: 5, showSizeChanger: false, position: ["bottomCenter"] }}
             rowClassName={(_record, index) =>
               index % 2 === 0 ? "table-row-light" : "table-row-dark"
             }

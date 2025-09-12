@@ -568,7 +568,7 @@ const CHANGE: React.FC = () => {
               columns={mergedColumns}
               rowKey="key"
               loading={loading}
-              pagination={{ onChange: () => setEditingKey("") }} // เปลี่ยนหน้าแล้วออกจากโหมดแก้
+              pagination={{ pageSize: 5, showSizeChanger: false, position: ["bottomCenter"] }} // เปลี่ยนหน้าแล้วออกจากโหมดแก้
               rowClassName={(_rec, i) => (i % 2 === 0 ? "table-row-light" : "table-row-dark")}
             />
           </Form>

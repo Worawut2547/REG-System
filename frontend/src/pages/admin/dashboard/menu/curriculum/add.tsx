@@ -526,11 +526,7 @@ const Add: React.FC = () => {
                 columns={subjectColumns}
                 loading={loadingSubjects}
                 rowSelection={subjectRowSelection}
-                pagination={{
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showTotal: (total, range) => `${range[0]}–${range[1]} จาก ${total} รายการ`,
-                }}
+                pagination={{ pageSize: 5, showSizeChanger: false, position: ["bottomCenter"] }}
                 className="custom-table-header subject-table"
                 rowClassName={(_, i) => (i % 2 === 0 ? "table-row-light" : "table-row-dark")}
               />
