@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Empty, message, Spin, Button, Tag, Modal, Popconfirm, Card, Table, Input, List } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { apiUrl } from "../../../../../services/https/api.ts";
+import { apiUrl } from "../../../../../services/https/api";
 import { getNameTeacher } from "../../../../../services/https/teacher/teacher";
 import { getNameAdmin } from "../../../../../services/https/admin/admin";
 import "./report.css";
@@ -75,11 +75,37 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
     (async () => {
       try {
         setLoading(true);
-        const data = await http<Report[]>(`/reports/?role=admin`);
-        const ordered = [...(data || [])].sort((a, b) => new Date(pickDate(b) ?? 0 as any).getTime() - new Date(pickDate(a) ?? 0 as any).getTime());
+        const isAdminReviewer = (r: any) => {
+          const role = String(r?.Reviewer?.User?.Role || r?.Reviewer?.User?.role || '').toLowerCase();
+          if (role.includes('admin')) return true;
+          const rid = String(r?.Reviewer_id || r?.reviewer_id || '').toLowerCase();
+          if (rid === 'rv001') return true;
+          const uname = String(r?.Reviewer?.User?.Username || r?.Reviewer?.User?.username || '').toLowerCase();
+          if (uname === 'admin') return true;
+          return false;
+        };
+
+        let list: Report[] = [];
+        try {
+          list = await http<Report[]>(`/reports/?role=admin`);
+        } catch {}
+
+        if (!Array.isArray(list) || list.length === 0) {
+          try {
+            const all = await http<Report[]>(`/reports/`);
+            list = (all || []).filter(isAdminReviewer);
+          } catch {}
+        }
+
+        // บังคับให้เหลือเฉพาะที่ส่งให้ "เจ้าหน้าที่ (admin)" เท่านั้น
+        list = (list || []).filter(isAdminReviewer);
+
+        // บังคับคัดเฉพาะ admin อีกชั้นเพื่อกันหลุดกรอง
+        list = (list || []).filter(isAdminReviewer);
+        const ordered = [...(list || [])].sort((a, b) => new Date(pickDate(b) as any).getTime() - new Date(pickDate(a) as any).getTime());
         setRows(ordered);
       } catch (e: any) {
-        message.error(e?.message || "โหลดข้อมูลล้มเหลว");
+        message.error(e?.message || 'โหลดข้อมูลล้มเหลว');
       } finally { setLoading(false); }
     })();
   }, []);
@@ -111,7 +137,7 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
               if (role === "teacher") {
                 const t = await getNameTeacher(username);
                 const full = [t?.FirstName, t?.LastName].filter(Boolean).join(" ");
-                if (full) updates[username] = full; // e.g., "John Doe"
+                if (full) updates[username] = full;
               } else if (role === "admin") {
                 const a = await getNameAdmin(username);
                 const full = [a?.FirstName, a?.LastName].filter(Boolean).join(" ");
@@ -134,9 +160,11 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
     try {
       setCommenting(true);
       const id = sel?.Report_id || (sel as any).report_id;
+      // บังคับให้คอมเมนต์มาจาก "เจ้าหน้าที่" โดยใช้ reviewer_id ของ admin (fallback RV001)
+      const adminRid = 'RV001';
       await http<any>(`/reports/${encodeURIComponent(String(id))}/comments`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comment: txt, reviewer_id: sel?.Reviewer_id || (sel as any)?.reviewer_id })
+        body: JSON.stringify({ comment: txt, reviewer_id: adminRid })
       });
       setNewComment('');
       await loadComments(String(id));
@@ -198,9 +226,10 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
       // ถ้ามีคอมเมนต์ ให้ส่งคอมเมนต์ก่อน
       const txt = (newComment || '').trim();
       if (txt) {
+        const adminRid = 'RV001';
         await http<any>(`/reports/${encodeURIComponent(String(id))}/comments`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ comment: txt, reviewer_id: sel?.Reviewer_id || (sel as any)?.reviewer_id })
+          body: JSON.stringify({ comment: txt, reviewer_id: adminRid })
         });
         setNewComment('');
         await loadComments(String(id));
@@ -290,13 +319,8 @@ const StudentRequests: React.FC<Props> = ({ deleteMode = false }) => {
                     <List.Item>
                       <div style={{ width: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          {(() => {
-                            const u = item?.Reviewer?.User;
-                            const role = String(u?.Role || u?.role || '').toLowerCase();
-                            const uname = u?.Username || u?.username || '';
-                            const display = nameMap[uname] || (role === 'admin' ? 'เจ้าหน้าที่' : (uname || 'ผู้ตรวจสอบ'));
-                            return <Text strong>{display}</Text>;
-                          })()}
+                          {/* แสดงชื่อผู้คอมเมนต์เป็น "ผู้ตรวจสอบ" ตามคำขอ */}
+                          <Text strong>ผู้ตรวจสอบ</Text>
                           <Text type="secondary">{item?.CommentDate ? new Date(item.CommentDate).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : ''}</Text>
                         </div>
                         <div style={{ whiteSpace: 'pre-wrap' }}>{item?.CommentText || item?.comment || ''}</div>

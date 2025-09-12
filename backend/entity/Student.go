@@ -42,8 +42,8 @@ type Students struct {
 	Grade []Grades `gorm:"foreignKey:StudentID;references:StudentID" json:"Grade"` // ระบุความสัมพันธ์เเบบ 1--many[Grade]
 	Gpax  float32  `json:"GPAX"`
 
-	TeacherID string    `json:"TeacherID"`
-	Teacher   *Teachers `gorm:"foreignKey:TeacherID;references:TeacherID"`
+	/*TeacherID string    `json:"TeacherID"`
+	Teacher   *Teachers `gorm:"foreignKey:TeacherID;references:TeacherID"`*/
 
 	Address     string `json:"Address"`
 	Nationality string `json:"Nationality"`

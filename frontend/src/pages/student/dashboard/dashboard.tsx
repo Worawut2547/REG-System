@@ -12,7 +12,6 @@ import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
 import PaymentPage from './menu/payment/payment';
 import StudentPage from './menu/profile/mainpage';
-import TeacherPage from './menu/teacher/teacher';
 import ReportPage from './menu/report/report';
 import GraduatePage from './menu/graduate/graduate';
 import CurriculumPage from './menu/curriculum/curriculum';
@@ -30,7 +29,6 @@ import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
   ReadOutlined,
-  ContactsOutlined,
   SolutionOutlined,
   ApartmentOutlined,
   FormOutlined,
@@ -58,8 +56,7 @@ const StudentDashboardpage: React.FC = () => {
     'ผลการเรียน': 'grade',
     'คะแนน': 'score',
     'ใบแจ้งยอดชำระ': 'payment',
-    'นักศึกษา': 'student',
-    'อาจารย์': 'teacher',
+    'ระเบียนประวัติ': 'student',
     'คำร้อง': 'report',
     'แจ้งจบการศึกษา': 'graduate',
     'หลักสูตร': 'curriculum',
@@ -72,7 +69,6 @@ const StudentDashboardpage: React.FC = () => {
   useEffect(() => {
     // ดึง username จาก localStorage
     const username = localStorage.getItem("username");
-    console.log("Username fro localStorage:",username);
     
     if(username){
       getNameStudent(username)
@@ -116,10 +112,8 @@ const StudentDashboardpage: React.FC = () => {
         return <ScorePage />;
       case 'ใบแจ้งยอดชำระ':
         return <PaymentPage />;
-      case 'นักศึกษา':
+      case 'ระเบียนประวัติ':
         return <StudentPage />;
-      case 'อาจารย์':
-        return <TeacherPage />;
       case 'คำร้อง':
         return <ReportPage />;
       case 'แจ้งจบการศึกษา':
@@ -203,8 +197,7 @@ const StudentDashboardpage: React.FC = () => {
             { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
             { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
             { key: 'ใบแจ้งยอดชำระ', icon: <BankOutlined />, label: 'ใบแจ้งยอดชำระ' },
-            { key: 'นักศึกษา', icon: <UserOutlined />, label: 'นักศึกษา' },
-            { key: 'อาจารย์', icon: <ContactsOutlined />, label: 'อาจารย์' },
+            { key: 'ระเบียนประวัติ', icon: <UserOutlined />, label: 'ระเบียนประวัติ' },
             { key: 'คำร้อง', icon: <ExclamationCircleOutlined />, label: 'คำร้อง' },
             { key: 'แจ้งจบการศึกษา', icon: <FormOutlined />, label: 'แจ้งจบการศึกษา' },
             { key: 'หลักสูตร', icon: <ApartmentOutlined />, label: 'หลักสูตร' },

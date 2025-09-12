@@ -19,19 +19,13 @@ func ExampleData() {
 	CurriculumBookExample()
 	CurriculumExample()
 
-	RegistrationExample()
+	//RegistrationExample()
 	StudentExample()
 	BillExample()
 	BillStatus()
-
-	//CurriculumBookExample()
-	//CurriculumExample()
-	//SubjectExample()
 	//GradeExample()
-	//ScoresExample()
+	ScoresExample()
 	ReportExampleData()
-
-	//GradeExample()
 	GraduationExample()
 
 	teacher := entity.Teachers{
@@ -68,7 +62,7 @@ func ExampleData() {
 		MajorID:         "ENG23",
 		StatusStudentID: "10",
 		CurriculumID:    "curr23",
-		TeacherID:       "T2900364",
+		//TeacherID:       "T2900364",
 	}
 	db.FirstOrCreate(&student)
 	hashedPasswordStudent, _ := config.HashPassword(student.CitizenID)

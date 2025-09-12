@@ -45,14 +45,14 @@ const dedupe = (list: SemesterInterface[]): SemesterInterface[] => {
 ----------------------------------------------------- */
 export const getSemestermAll = async (): Promise<SemesterInterface[]> => {
   // ทางหลัก: /semesters/
-  /*try {
+  try {
     const res = await api.get<SemAPI[]>(`/semesters/`);
     if (Array.isArray(res.data) && res.data.length > 0) {
       return dedupe(res.data.map(mapSemFromAPI));
     }
   } catch {
     // ปล่อยให้ fallback ต่อไป
-  }*/
+  }
 
   // Fallback: ดึงจาก /subjects/ (ต้องที่ backend ส่ง term/academic_year และถ้าได้ semester_id จะยิ่งดี)
   try {
