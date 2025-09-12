@@ -1,13 +1,17 @@
 package teachers
 
 import (
-	"errors"
-	"net/http"
-	"reg_system/config"
-	"reg_system/entity"
+    "errors"
+    "fmt"
+    "net/http"
+    "regexp"
+    "strconv"
+    "strings"
+    "reg_system/config"
+    "reg_system/entity"
 
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+    "github.com/gin-gonic/gin"
+    "gorm.io/gorm"
 )
 
 // Get Teacher by ID
@@ -136,6 +140,28 @@ func CreateTeacher(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
+
+    // ensure reviewer for this teacher's user account
+    // create a reviewer row if not exists (auto id like RV001, RV002, ...)
+    var existed entity.Reviewer
+    if err := tx.Where("user_id = ?", user.ID).First(&existed).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+        var ids []string
+        _ = tx.Model(&entity.Reviewer{}).Select("reviewer_id").Find(&ids).Error
+        re := regexp.MustCompile(`(?i)^RV(\d+)$`)
+        maxN := 0
+        for _, s := range ids {
+            if m := re.FindStringSubmatch(strings.TrimSpace(s)); len(m) == 2 {
+                if n, err := strconv.Atoi(m[1]); err == nil && n > maxN { maxN = n }
+            }
+        }
+        next := fmt.Sprintf("RV%03d", maxN+1)
+        rev := entity.Reviewer{ Reviewer_id: next, UserID: user.ID }
+        if err := tx.Create(&rev).Error; err != nil {
+            tx.Rollback()
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+    }
 
 	// commit transaction
 	tx.Commit()

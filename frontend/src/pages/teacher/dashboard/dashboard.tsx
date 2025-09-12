@@ -6,7 +6,6 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 
 /* ---------- page components ---------- */
 import MainPage from './menu/mainpage/mainpage';
-//import RegisterPage from './menu/register/register';
 import CoursePage from './menu/course/course';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
@@ -66,7 +65,6 @@ const TeacherDashboardpage: React.FC = () => {
   useEffect(() => {
     // ดึง username จาก localStorage
     const username = localStorage.getItem("username");
-    console.log("Username fro localStorage:",username);
     
     if(username){
       getNameTeacher(username)

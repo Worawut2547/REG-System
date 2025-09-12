@@ -9,22 +9,16 @@ export const getMyRegistrations = async (studentId: string) => {
   try {
     const res = await api.get(`/registrations/${encodeURIComponent(studentId)}`);
     return res.data;
-  } catch (error) {
+  } catch (error: any) {
+    // ถ้าไม่มีรายการและ backend ตอบ 404 ให้คืน [] เพื่อเคลียร์ตารางในหน้า drop
+    const status = error?.response?.status;
+    if (status === 404) {
+      return [] as any[];
+    }
     console.error("Error fetching registrations:", error);
     throw error;
   }
 };
-
-/*export const getStudentBySubjectID = async (subj_id: string): Promise<RegistrationStudentInterface[]>  => {
-    try {
-        const response = await api.get(`/registrations/subjects/${subj_id}`);
-        return response.data
-    }
-    catch (error) {
-        console.error("Error fetching get student by subject id:", error);
-        throw error;
-    }
-}*/
 
 // สร้างข้อมูลลงทะเบียนแบบรายการเดียว
 export const createRegistration = async (data: RegistrationInterface) => {
@@ -41,7 +35,7 @@ export const createRegistration = async (data: RegistrationInterface) => {
 // หน้า UI มี fallback เรียก createRegistration ทีละรายการอยู่แล้ว
 export const createRegistrationBulk = async (
   studentId: string,
-  items: Array<{ SubjectID: string; SectionID: number }>
+  items: Array<{ SubjectID: string }>
 ) => {
   if (!studentId) throw new Error("studentId is required");
   if (!items || items.length === 0) throw new Error("items is required");
