@@ -19,6 +19,10 @@ func MajorExample() {
 
 		{MajorID: "MT29", MajorName: "เทคโนโลยีการจัดการ", FacultyID: "F03"},
 		{MajorID: "MT30", MajorName: "นวัตกรรมเทคโนโลยีอุตสาหากรรมบริการ", FacultyID: "F03"},
+
+		{MajorID: "IST30", MajorName: "ภาษาต่างประเทศ", FacultyID: "F03"},
+		{MajorID: "IST20", MajorName: "ศึกษาทั่วไป", FacultyID: "F03"},
+		
 	}
 
 	for _,maj := range majors {

@@ -4,7 +4,6 @@ import { api } from "../api";
 
 
 export const getNameTeacher = async (username: string): Promise<TeacherInterface> => {
-    //console.log("Fetching student data for:", username);
     if (!username) {
         throw new Error("Username is required");
     }
@@ -19,7 +18,6 @@ export const getNameTeacher = async (username: string): Promise<TeacherInterface
 };
 
 export const getTeacherAll = async (): Promise<TeacherInterface[]> => {
-    //console.log("Fetching student data for:", username);
     try {
         const response = await api.get(`/teachers/`)
         return response.data
@@ -43,7 +41,6 @@ export const createTeacher = async (data: TeacherInterface): Promise<TeacherInte
 
 export const updateTeacherProfile = async (data: TeacherInterface): Promise<TeacherInterface> => {
     const username = localStorage.getItem("username");
-    console.log("api edit profile teacher:", data);
     try {
         const response = await api.put(`/tachers/${username}`, data)
         return response.data
@@ -69,7 +66,6 @@ export const getSubjectByTeacherID = async() => {
     try{
         const tid = localStorage.getItem("username");
         const response = await api.get(`/teachers/${tid}/subjects`);
-        console.log("api subject teacher:",response);
         return response.data
     }
     catch (error) {

@@ -15,7 +15,6 @@ export const getGradeStudent = async () => {
 
 export const createGradeStudent = async (data: GradeStudentInterface[]) => {
     try {
-        console.log("add grades student",data)
         const response = await api.post(`/teachers/grades`,data);
         return response.data
     }

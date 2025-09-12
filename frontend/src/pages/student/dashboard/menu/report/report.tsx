@@ -1,58 +1,72 @@
-// src/pages/dashboard/menu/register.tsx
-import React from 'react';
-import { Layout } from 'antd';
-import './report.css';           // ถ้าต้องปรับเพิ่มค่อยใส่ในไฟล์นี้ก็ได้
+import React, { useMemo, useState } from "react";
+import { Layout, Button } from "antd";
+import SubmitReport from "./SubmitReport";
+import CheckStatus from "./CheckStatus";
+import "./report.css";
 
 const { Header, Content, Footer } = Layout;
 
-// register.tsx  – only wrapperStyle changed
 const wrapperStyle: React.CSSProperties = {
-  /* keep your corner-rounding / shadow if you like */
   borderRadius: 8,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-
-  /* 👇 stretch full size of parent Content */
-  width: '100%',          // fill X
-  minHeight: '100vh',     // ใช้พื้นที่เต็มหน้าจอ
-  display: 'flex',        // so Header/Content/Footer stack vertically
-  flexDirection: 'column',
-  overflow: 'hidden',
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  width: "100%",
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
 };
-
-
 const headerStyle: React.CSSProperties = {
-  background: '#2e236c',            // ม่วงเข้ม
-  color: 'white',
-  textAlign: 'center',
+  background: "#2e236c",
+  color: "white",
+  textAlign: "center",
   padding: 16,
   fontSize: 20,
+  fontWeight: 700,
 };
-
 const contentStyle: React.CSSProperties = {
-  background: '#f5f5f5',            // เทาอ่อน
+  background: "#f5f5f5",
   padding: 24,
   minHeight: 400,
-  color: '#333',
-  overflowY: 'auto',                // ให้สามารถเลื่อนขึ้นลงได้
+  color: "#333",
+  overflowY: "auto",
 };
-
 const footerStyle: React.CSSProperties = {
-  background: '#1890ff',            // ฟ้า Ant Design
-  color: 'white',
-  textAlign: 'center',
+  background: "#1890ff",
+  color: "white",
+  textAlign: "center",
   padding: 12,
 };
 
-const Report: React.FC = () => {
+const ReportPage: React.FC = () => {
+  const [active, setActive] = useState<"submit" | "status">("submit");
+  // resolve current student id (no hardcoded fallback)
+  const studentId = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const username = (localStorage.getItem("username") || "").trim();
+    const sid = (localStorage.getItem("student_id") || "").trim();
+    // Prefer stored student_id; fallback to username
+    return sid || username;
+  }, []);
+
   return (
     <Layout style={wrapperStyle}>
-      <Header style={headerStyle}>Header – หน้ารายงาน</Header>
+      <Header style={headerStyle}>ระบบคำร้อง</Header>
       <Content style={contentStyle}>
-        Content – ใส่ฟอร์มลงทะเบียน / ตารางวิชา ฯลฯ ตรงนี้
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <Button type={active === "submit" ? "primary" : "default"} onClick={() => setActive("submit")}>
+            ส่งคำร้อง
+          </Button>
+          <Button type={active === "status" ? "primary" : "default"} onClick={() => setActive("status")}>
+            ตรวจสอบสถานะ
+          </Button>
+        </div>
+
+        {active === "submit" ? <SubmitReport studentId={studentId} /> : <CheckStatus studentId={studentId} />}
       </Content>
-      <Footer style={footerStyle}>Footer © 2025</Footer>
+      <Footer style={footerStyle}>Arcanatech University © 2025</Footer>
     </Layout>
   );
 };
 
-export default Report;
+export default ReportPage;
+

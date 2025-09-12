@@ -5,7 +5,6 @@ export const getScoreByStudentID = async () => {
     try {
         const username = localStorage.getItem("username");
         const response = await api.get(`/students/${username}/scores`);
-        console.log("api score student data:", response.data);
         return response.data
     }
     catch (error) {
