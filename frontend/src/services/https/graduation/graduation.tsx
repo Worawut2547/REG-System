@@ -17,33 +17,27 @@ export const statusStudentMap: Record<string, string> = {
 export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
     try {
 
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("User not authenticated");
-
-        const res = await api.get(`/graduations/`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const res = await api.get(`/graduations/`);
         const items = res.data?.data ?? [];
 
         return items.map((item: any): GraduationInterface => ({
             id: item.GraduationID?.toString() || "",
             StudentID: item.StudentID || "",
             fullName: `${item.FirstName ?? ""} ${item.LastName ?? ""}`.trim(),
-            curriculum: item.Curriculum ?? "",
+            curriculum: item.Curriculum ?? item.Student?.Curriculum?.CurriculumName ?? "",
             statusStudent: item.StatusStudent ?? "รอตรวจสอบ",
             reason: item.RejectReason ?? "",
             Date: item.Date ? new Date(item.Date) : null,
-
-            totalCredits: item.TotalCredits ?? 0, // ✅ ดึงมาจาก backend
-            GPAX: item.GPA ?? 0,
+            totalCredits: item.TotalCredits ?? 0,
+            GPAX: item.GPAX ?? 0, // ✅ map จาก backend field GPA
         }));
     } catch (err) {
         console.error("Error fetching all graduations:", err);
         return [];
     }
 };
+
+
 
 // --------------------------
 // สร้างคำขอแจ้งจบ (นักศึกษา)
@@ -52,14 +46,8 @@ export const createGraduation = async (
     data: CreateGraduationInput
 ): Promise<GraduationInterface> => {
     try {
-        const token = localStorage.getItem("token"); 
-        if (!token) throw new Error("User not authenticated");
 
-        const res = await api.post(`/graduations/`, data, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const res = await api.post(`/graduations/`, data);
         const item = res.data?.data;
 
         if (!item) throw new Error("No data returned from backend");
@@ -88,14 +76,8 @@ export const createGraduation = async (
 export const getMyGraduation = async (): Promise<GraduationInterface | null> => {
     try {
         const studentID = localStorage.getItem("username");
-        const token = localStorage.getItem("token"); // ✅ ดึง token
-        if (!studentID || !token) return null;
 
-        const res = await api.get(`/graduations/${studentID}`, {
-            headers: {
-                Authorization: `Bearer ${token}`, // ✅ ใส่ header
-            },
-        });
+        const res = await api.get(`/graduations/${studentID}`);
 
         const data = res.data?.data;
         if (!data) return null;
@@ -104,7 +86,7 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
             id: data.GraduationID?.toString() || "",
             StudentID: data.StudentID || "",
             fullName: `${data.FirstName ?? ""} ${data.LastName ?? ""}`.trim(),
-            curriculum: data.Curriculum ?? "",
+            curriculum: data.Curriculum ?? data.Student?.Curriculum?.CurriculumName ?? "",
             statusStudent: data.StatusStudent ?? "รอตรวจสอบ",
             GPAX: data.GPA ?? 0,
             reason: data.RejectReason ?? "",
@@ -124,12 +106,15 @@ export const updateGraduation = async (
     rejectReason?: string
 ): Promise<void> => {
     try {
+
         const payload = {
             StatusStudentID: statusStudentID,
             RejectReason: rejectReason ?? null,
         };
 
-        const res = await api.put(`/graduations/${graduationID}`,payload);
+        const res = await api.put(`/graduations/${graduationID}`, payload);
+
+        console.log("Graduation updated:", res.data);
         return res.data;
 
     } catch (err: any) {
@@ -137,6 +122,7 @@ export const updateGraduation = async (
         throw err;
     }
 };
+
 
 /*
 -----------------------------------------

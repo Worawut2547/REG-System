@@ -65,7 +65,7 @@ var RoutePermission = map[string][]string{
 	"GET /graduations/":    {"admin"},
 	"POST /graduations/":   {"student"},
 	"GET /graduations/:id": {"student"},
-	"PUT /graduations/:id": {"admin , student"},
+	"PUT /graduations/:id": {"admin" , "student"},
 
 	// registration
 	"GET /registrations/:id":    {"student"},

@@ -10,7 +10,7 @@ func ExampleData() {
 
 	FacultyExample()
 	MajorExample()
-	//SubjectExample()
+	SubjectExample()
 	PositionExample()
 	DegreeExample()
 	SemesterExample()
@@ -19,19 +19,13 @@ func ExampleData() {
 	CurriculumBookExample()
 	CurriculumExample()
 
-	RegistrationExample()
+	//RegistrationExample()
 	StudentExample()
 	BillExample()
 	BillStatus()
-
-	//CurriculumBookExample()
-	//CurriculumExample()
-	//SubjectExample()
 	//GradeExample()
 	//ScoresExample()
 	ReportExampleData()
-
-	//GradeExample()
 	GraduationExample()
 
 	teacher := entity.Teachers{

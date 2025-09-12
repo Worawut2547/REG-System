@@ -35,7 +35,7 @@ const Element1: React.FC = () => {
         fullName: item.fullName,
         curriculum: item.curriculum,
         totalCredits: item.totalCredits ?? 0,
-        GPAX: item.GPAX,
+        GPAX: item.GPAX ?? 0,
         statusStudent: item.statusStudent,
         reason: item.reason ?? '',
         Date: item.Date ? new Date(item.Date) : undefined,
