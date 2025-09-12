@@ -103,20 +103,25 @@ const TeacherReport: React.FC = () => {
   const [newComment, setNewComment] = useState<string>("");
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
 
+  // Resolve current teacher's reviewer id (auto-create on backend if missing)
+  const resolveReviewerId = async (): Promise<string> => {
+    try {
+      const cached = (typeof window !== 'undefined' ? (localStorage.getItem('reviewer_id') || '') : '').trim();
+      if (cached) return cached;
+      const uname = (typeof window !== 'undefined' ? (localStorage.getItem('username') || localStorage.getItem('teacher_id') || '') : '').trim();
+      if (!uname) return '';
+      const r: any = await http(`/reviewers/by-username/${encodeURIComponent(uname)}`);
+      const rid = String(r?.reviewer_id || r?.Reviewer_id || r?.id || '');
+      if (rid && typeof window !== 'undefined') localStorage.setItem('reviewer_id', rid);
+      return rid;
+    } catch { return ''; }
+  };
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        // หา reviewer_id
-        let rid = localStorage.getItem("reviewer_id") || "";
-        if (!rid && candidates.length) {
-          for (const cand of candidates) {
-            try {
-              const r = await http<{ reviewer_id: string }>(`/reviewers/by-username/${encodeURIComponent(cand)}`);
-              if (r?.reviewer_id) { rid = r.reviewer_id; localStorage.setItem("reviewer_id", rid); break; }
-            } catch {}
-          }
-        }
+        const rid = await resolveReviewerId();
 
         // ดึงรายการของ reviewer
         let list: AnyObj[] = [];
@@ -124,21 +129,30 @@ const TeacherReport: React.FC = () => {
           try { list = await http<AnyObj[]>(`/reviewers/${encodeURIComponent(rid)}/reports`); } catch {}
         }
         if (!list?.length) {
-          // fallback: ผู้ใช้บทบาท teacher ทั้งหมด
-          try { list = await http<AnyObj[]>(`/reports/?role=teacher`); } catch {}
+          // fallback: ขอเฉพาะของฉันจาก backend โดยส่ง username ไปด้วย
+          try {
+            const unameParam = (typeof window !== 'undefined' ? (localStorage.getItem('username') || '') : '').trim();
+            if (unameParam) {
+              list = await http<AnyObj[]>(`/reports/?role=teacher&username=${encodeURIComponent(unameParam)}`);
+            }
+          } catch {}
         }
         if (!list?.length) {
-          // fallback สุดท้าย: ดึงทั้งหมดแล้วกรองด้วย username ปัจจุบัน
+          // fallback สุดท้าย: ดึงทั้งหมดแล้วกรองด้วย reviewer_id / ตัวระบุตัวตนของฉัน
           try {
             const all = await http<AnyObj[]>(`/reports/`);
-            const lowers = candidates.map((s) => s.toLowerCase());
-            list = (all || []).filter((r) => {
-              if (rid && (r.Reviewer_id === rid || r.reviewer_id === rid)) return true;
-              const u = r?.Reviewer?.User?.Username || r?.Reviewer?.user?.username || "";
-              return u && lowers.includes(String(u).toLowerCase());
+            const ids = (typeof window !== 'undefined'
+              ? [localStorage.getItem('username') || '', localStorage.getItem('teacher_id') || '', localStorage.getItem('email') || '']
+              : []).map((s) => String(s).toLowerCase()).filter(Boolean);
+            list = (all || []).filter((r: any) => {
+              if (rid && (String(r.Reviewer_id) === rid || String(r.reviewer_id) === rid)) return true;
+              const u = String(r?.Reviewer?.User?.Username || r?.Reviewer?.user?.username || '').toLowerCase();
+              return ids.includes(u);
             });
           } catch {}
         }
+
+        // ไม่แสดงของอาจารย์คนอื่น: ถ้ายังว่าง ให้คงว่างไว้ (ไม่ fallback แสดงทั้งหมด)
 
         const ordered = [...(list || [])].sort((a, b) => (pickDate(b)?.getTime() ?? 0) - (pickDate(a)?.getTime() ?? 0));
         setRows(ordered);
@@ -220,8 +234,9 @@ const TeacherReport: React.FC = () => {
     try {
       const txt = (newComment || '').trim();
       if (txt) {
+        const rid = await resolveReviewerId();
         await http(`/reports/${encodeURIComponent(String(id))}/comments`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comment: txt, reviewer_id: sel?.Reviewer_id || sel?.reviewer_id })
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comment: txt, reviewer_id: rid })
         });
         setNewComment('');
         await loadComments(String(id));
@@ -242,8 +257,9 @@ const TeacherReport: React.FC = () => {
     if (!txt) { message.warning('กรุณาพิมพ์คอมเมนต์'); return; }
     try {
       setCommenting(true);
+      const rid = await resolveReviewerId();
       await http(`/reports/${encodeURIComponent(String(id))}/comments`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comment: txt, reviewer_id: sel?.Reviewer_id || sel?.reviewer_id })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comment: txt, reviewer_id: rid })
       });
       setNewComment('');
       await loadComments(String(id));

@@ -4,7 +4,6 @@ import { Layout, Input, Table, Button, message, Space, Divider, Card, Modal } fr
 import { SearchOutlined, DeleteOutlined, SendOutlined } from "@ant-design/icons";
 
 import { getSubjectAll, getSubjectById } from "../../../../../../services/https/subject/subjects";
-// import { getNameStudent } from "../../../../../../services/https/student/student"; // ไม่ได้ใช้แล้ว
 import { createRegistration, getMyRegistrations } from "../../../../../../services/https/registration/registration";
 import type { SubjectInterface } from "../../../../../../interfaces/Subjects";
 import type { RegistrationInterface } from "../../../../../../interfaces/Registration";
@@ -12,16 +11,14 @@ import AddCourseReview from "./AddCourseReview";
 
 const { Content } = Layout;
 
-// ✅ ไม่ใช้ Section อีกต่อไป
-type Step = "select" | "review" | "done";
+type Step = "select" | "review";
 
-// ลดฟิลด์ให้เหลือเท่าที่ต้องใช้ (ไม่พึ่ง section/schedule)
 type BasketRow = {
   key: string;
   SubjectID: string;
   SubjectName?: string;
   Credit?: number;
-  SemesterID?: number; // เพิ่ม SemesterID มาด้วย
+  SemesterID?: number;
 };
 
 type Props = { onBack?: () => void, studentId?: string };
@@ -39,13 +36,16 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
 
   const [basket, setBasket] = useState<BasketRow[]>([]);
   const [myRows, setMyRows] = useState<BasketRow[]>([]);
-  const [, setMyLoading] = useState(false);
 
   // modal browse subjects
   const [browseOpen, setBrowseOpen] = useState(false);
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseRows, setBrowseRows] = useState<SubjectInterface[]>([]);
   const [browseQuery, setBrowseQuery] = useState("");
+  // success modal after registration
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successLines, setSuccessLines] = useState<string[]>([]);
+
 
   const columnsBasket = useMemo(
     () => [
@@ -68,7 +68,6 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
   const isRegistered = (sid: string) =>
     myRows.some((r) => (r.SubjectID || "").toUpperCase() === sid.toUpperCase());
 
-  // ✅ เลือกวิชาแบบไม่ผ่านกลุ่ม/เวลา
   const addSubjectToBasket = (sub: SubjectInterface) => {
     const sid = String(sub.SubjectID || "").toUpperCase();
     if (!sid) return message.warning("ไม่พบรหัสวิชา");
@@ -120,7 +119,6 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
     setStep("review");
   };
 
-  // ✅ ส่งลงทะเบียนโดยไม่มี SectionID
   const submitBulk = async () => {
     setLoading(true);
     try {
@@ -129,37 +127,40 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
           Date: new Date().toISOString(),
           StudentID: studentId,
           SubjectID: it.SubjectID,
-          SemesterID: it.SemesterID, // ค่าตายตัวก่อน (ต้องมีค่า)
-          
-          // SectionID: undefined // ตัดออก
+          SemesterID: it.SemesterID,
         } as any;
         await createRegistration(payload);
       }
-      message.success("ลงทะเบียนสำเร็จ");
+      const lines = basket.map((b) => `${b.SubjectID}${b.SubjectName ? ` - ${b.SubjectName}` : ""}`);
+      setSuccessLines(lines);
+      setSuccessOpen(true);
       setBasket([]);
       await reloadMyList();
       setStep("select");
+      return true;
     } catch (e) {
       console.error(e);
       message.error("บันทึกล้มเหลว");
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConfirmSubmit = async () => {
-    if (basket.length === 0) return message.warning("ยังไม่ได้เลือกวิชา");
-    // ✅ ไม่ตรวจชนตาราง เพราะไม่มีข้อมูลเวลาแล้ว เหลือแค่กันวิชาซ้ำ
+  const handleConfirmSubmit = async (): Promise<boolean> => {
+    if (basket.length === 0) {
+      message.warning("ยังไม่ได้เลือกวิชา");
+      return false;
+    }
     const dup = basket.filter((b) => isRegistered(b.SubjectID));
     if (dup.length > 0) {
       message.error(`พบวิชาซ้ำ: ${dup.map((d) => d.SubjectID).join(", ")}`);
-      return;
+      return false;
     }
-    await submitBulk();
+    return await submitBulk();
   };
 
   const reloadMyList = async () => {
-    setMyLoading(true);
     try {
       const regs = await getMyRegistrations(studentId);
       const baseRows: BasketRow[] = (Array.isArray(regs) ? regs : []).map((r: any) => ({
@@ -171,8 +172,6 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
       setMyRows(baseRows);
     } catch (e) {
       console.error(e);
-    } finally {
-      setMyLoading(false);
     }
   };
 
@@ -240,13 +239,13 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
               <Button onClick={openBrowseSubjects}>ดูรหัสวิชาทั้งหมด</Button>
             </Space>
             <Divider />
-            <Table
-              columns={columnsBasket as any}
-              dataSource={basket}
-              rowKey="key"
-              bordered
-              pagination={false}
-            />
+        <Table
+          columns={columnsBasket as any}
+          dataSource={basket}
+          rowKey="key"
+          bordered
+          pagination={false}
+        />
             <div
               style={{
                 display: "flex",
@@ -271,16 +270,14 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
         )}
         {step === "review" && (
           <AddCourseReview
-            rows={basket as any} // รูปแบบเรียบง่ายขึ้น (ไม่มี section/blocks)
+            rows={basket as any}
             loading={loading}
             onBack={() => setStep("select")}
             onSubmit={handleConfirmSubmit}
-            registeredRows={myRows as any}
           />
         )}
       </Content>
 
-      {/* Modal ดูรหัสวิชาทั้งหมด */}
       <Modal
         title="เลือกรหัสวิชาจากรายการ"
         open={browseOpen}
@@ -325,6 +322,33 @@ const AddCoursePage: React.FC<Props> = ({ onBack, studentId: propStudentId }) =>
           ] as any}
         />
       </Modal>
+
+      {/* Success Modal after registration */}
+      <Modal
+        title="ลงทะเบียนสำเร็จ"
+        open={successOpen}
+        onCancel={() => setSuccessOpen(false)}
+        footer={[
+          <Button key="ok" type="primary" onClick={() => setSuccessOpen(false)}>
+            OK
+          </Button>,
+        ]}
+        centered
+      >
+        {successLines.length > 0 ? (
+          <div>
+            <div>{`ลงทะเบียน ${successLines.length} รายวิชา`}</div>
+            <div style={{ marginTop: 6 }}>
+              {successLines.map((t, i) => (
+                <div key={`${t}-${i}`}>{t}</div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>บันทึกข้อมูลเรียบร้อย</div>
+        )}
+      </Modal>
+
     </Layout>
   );
 };

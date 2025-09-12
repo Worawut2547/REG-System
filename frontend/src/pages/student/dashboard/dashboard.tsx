@@ -72,7 +72,6 @@ const StudentDashboardpage: React.FC = () => {
   useEffect(() => {
     // ดึง username จาก localStorage
     const username = localStorage.getItem("username");
-    console.log("Username fro localStorage:",username);
     
     if(username){
       getNameStudent(username)

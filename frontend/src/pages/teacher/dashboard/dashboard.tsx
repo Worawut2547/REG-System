@@ -6,7 +6,6 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 
 /* ---------- page components ---------- */
 import MainPage from './menu/mainpage/mainpage';
-//import RegisterPage from './menu/register/register';
 import CoursePage from './menu/course/course';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
@@ -22,7 +21,6 @@ import './dashboard.css';
 
 import {
   HomeOutlined,
-  ScheduleOutlined,
   BookOutlined,
   UserOutlined,
   LockOutlined,
@@ -53,7 +51,6 @@ const TeacherDashboardpage: React.FC = () => {
   // ✅ ADD: map ชื่อเมนู ↔ slug สำหรับใช้ใน URL
   const keyToSlug: Record<string, string> = {
     'หน้าหลัก': 'home',
-    'ลงทะเบียนเรียน': 'register',
     'วิชาที่เปิดสอน': 'course',
     'ผลการเรียน': 'grade',
     'คะแนน': 'score',
@@ -72,7 +69,6 @@ const TeacherDashboardpage: React.FC = () => {
   useEffect(() => {
     // ดึง username จาก localStorage
     const username = localStorage.getItem("username");
-    console.log("Username fro localStorage:",username);
     
     if(username){
       getNameTeacher(username)
@@ -106,8 +102,6 @@ const TeacherDashboardpage: React.FC = () => {
   // ---------- render page by key ----------
   const renderContent = () => {
     switch (activePage) {
-      case 'ลงทะเบียนเรียน':
-        return //<RegisterPage />;
       case 'วิชาที่เปิดสอน':
         return <CoursePage />;
       case 'ผลการเรียน':
@@ -198,7 +192,6 @@ const TeacherDashboardpage: React.FC = () => {
           onClick={handleMenuClick}
           items={[
             { key: 'หน้าหลัก', icon: <HomeOutlined />, label: 'หน้าหลัก' },
-            { key: 'ลงทะเบียนเรียน', icon: <ScheduleOutlined />, label: 'ลงทะเบียนเรียน' },
             { key: 'วิชาที่เปิดสอน', icon: <BookOutlined />, label: 'วิชาที่เปิดสอน' },
             { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
             { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
