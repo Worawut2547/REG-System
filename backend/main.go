@@ -246,9 +246,9 @@ func main() {
 	billGroup := r.Group("/bills")
 	{
 		billGroup.GET("/:id", bill.GetBillByStudentID)    
-		billGroup.POST("/:id/create", bill.CreateBill)   
+		//billGroup.POST("/:id/create", bill.CreateBill)   
 		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt)
-		billGroup.GET("/preview/:id", bill.ShowFile)    
+		//billGroup.GET("/preview/:id", bill.ShowFile)    
 		billGroup.GET("/admin/all", bill.GetAllBills) 
 		billGroup.PUT("/:id", bill.UpdateBillStatus) 
 	}

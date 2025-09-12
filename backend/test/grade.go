@@ -41,10 +41,10 @@ func GradeExample() {
 		{ID: 20 ,SubjectID: "234052" , TotalScore: 84.36, Grade: "A" , StudentID: "B6616052"},
 
 		{ID: 21 ,SubjectID: "233031" , TotalScore: 81.26, Grade: "A" , StudentID: "B6616052"},
-		{ID: 22 ,SubjectID: "233031" , TotalScore: 75.32 , Grade: "B+" , StudentID: "B6630652"},
+		{ID: 22 ,SubjectID: "233031" , TotalScore: 67 , Grade: "C+" , StudentID: "B6630652"},
 
 		{ID: 23 ,SubjectID: "233012" , TotalScore: 81.26, Grade: "A" , StudentID: "B6616052"},
-		{ID: 24 ,SubjectID: "233012" , TotalScore: 75.32 , Grade: "B+" , StudentID: "B6630652"},
+		{ID: 24 ,SubjectID: "233012" , TotalScore: 88 , Grade: "A" , StudentID: "B6630652"},
 	
 	}
 

@@ -18,7 +18,7 @@ import (
 // ======================================================
 // 1) Response DTOs
 // ======================================================
-
+//ส่งข้อมูลจาก backend ไป frontend
 type BillResponse struct {
 	ID         int               `json:"id"`
 	TotalPrice int               `json:"total_price"`
@@ -29,7 +29,7 @@ type BillResponse struct {
 	Term       int               `json:"term,omitempty"`
 	StatusMap  map[string]string `json:"status_map,omitempty"` // เพิ่ม map สถานะ
 }
-
+//ส่งข้อมูลจาก backend ไป frontend
 type SubjectResponse struct {
 	SubjectID    string `json:"subject_id"`
 	SubjectName  string `json:"subject_name"`
@@ -54,7 +54,7 @@ func GetBillByStudentID(c *gin.Context) {
 		Find(&registrations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch registrations"})
 		return
-	}
+	}//Find ดึงข้อมูลหลายแถวจากฐานข้อมูล
 
 	if len(registrations) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no registrations found"})
@@ -68,9 +68,9 @@ func GetBillByStudentID(c *gin.Context) {
 		Find(&bills).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bills"})
 		return
-	}
+	}//Preload โหลด relation พร้อมกับ record หลัก (eager loading)
 
-	// 3️⃣ สร้าง map
+	// 3️⃣ สร้าง map - แยกวิชาตามปี/เทอม/รหัสวิชา ไฟล์ด้วย ยอดชำระด้วย
 	type SubjectKey string
 	subjectMap := map[SubjectKey]SubjectResponse{}
 	statusMap := map[string]string{}
@@ -95,10 +95,10 @@ func GetBillByStudentID(c *gin.Context) {
 				Term:         term,
 				AcademicYear: year,
 			}
-		}
+		}//ถ้า map แล้วยังไม่มีวิชานี้ -> เพิ่มเข้าไป , ถา้ามีแล้ว -> ข้าม ไม่เพิ่มซ้ำ
 
 		// หา bill ของเทอมนี้
-		found := false
+		found := false 
 		for _, bill := range bills {
 			if bill.AcademicYear == year && bill.Term == term {
 				status := "-"
@@ -211,7 +211,8 @@ func UploadReceipt(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
 		return
-	}
+	}/*strconv แปลงค่าระหว่าง string กับตัวเลข - Atoi แปลง string ให้เป็น int 
+	**URL params เป็น string เสมอ - Database / logic ต้องใช้ int*/
 
 	term, err := strconv.Atoi(termStr)
 	if err != nil {
