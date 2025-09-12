@@ -18,6 +18,7 @@ export const getAllGraduations = async (): Promise<GraduationInterface[]> => {
     try {
 
         const res = await api.get(`/graduations/`);
+
         const items = res.data?.data ?? [];
 
         return items.map((item: any): GraduationInterface => ({
@@ -46,7 +47,6 @@ export const createGraduation = async (
     data: CreateGraduationInput
 ): Promise<GraduationInterface> => {
     try {
-
         const res = await api.post(`/graduations/`, data);
         const item = res.data?.data;
 
@@ -79,6 +79,7 @@ export const getMyGraduation = async (): Promise<GraduationInterface | null> => 
 
         const res = await api.get(`/graduations/${studentID}`);
 
+
         const data = res.data?.data;
         if (!data) return null;
 
@@ -106,13 +107,13 @@ export const updateGraduation = async (
     rejectReason?: string
 ): Promise<void> => {
     try {
-
         const payload = {
             StatusStudentID: statusStudentID,
             RejectReason: rejectReason ?? null,
         };
 
         const res = await api.put(`/graduations/${graduationID}`, payload);
+
 
         console.log("Graduation updated:", res.data);
         return res.data;

@@ -23,8 +23,8 @@ func ExampleData() {
 	StudentExample()
 	BillExample()
 	BillStatus()
-	//GradeExample()
-	//ScoresExample()
+	GradeExample()
+	ScoresExample()
 	ReportExampleData()
 	GraduationExample()
 
