@@ -10,7 +10,7 @@ func ExampleData() {
 
 	FacultyExample()
 	MajorExample()
-	SubjectExample()
+	//SubjectExample()
 	PositionExample()
 	DegreeExample()
 	SemesterExample()
@@ -68,7 +68,7 @@ func ExampleData() {
 		MajorID:         "ENG23",
 		StatusStudentID: "10",
 		CurriculumID:    "curr23",
-		TeacherID:       "T2900364",
+		//TeacherID:       "T2900364",
 	}
 	db.FirstOrCreate(&student)
 	hashedPasswordStudent, _ := config.HashPassword(student.CitizenID)

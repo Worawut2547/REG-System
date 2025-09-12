@@ -23,7 +23,7 @@ func StudentExample() {
 			MajorID:         "ENG23",
 			StatusStudentID: "10",
 			CurriculumID:    "curr23",
-			TeacherID:       "T2900364",
+			//TeacherID:       "T2900364",
 		},
 		{
 			StudentID:       "B6630654",
@@ -38,7 +38,7 @@ func StudentExample() {
 			MajorID:         "ENG23",
 			StatusStudentID: "10",
 			CurriculumID:    "curr23",
-			TeacherID:       "T2900366",
+			//TeacherID:       "T2900366",
 		},
 	}
 
