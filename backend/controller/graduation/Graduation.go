@@ -21,55 +21,54 @@ import (
 // ----------------------
 
 func CreateGraduation(c *gin.Context) {
-    db := config.DB()
-    db.AutoMigrate(&entity.Graduation{})
+	db := config.DB()
+	db.AutoMigrate(&entity.Graduation{})
 
-    input := &entity.Graduation{}
+	input := &entity.Graduation{}
 
-    if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-    // 1️⃣ ดึงข้อมูลนักศึกษาจาก Students table
-    var student entity.Students
-    if err := db.Where("student_id = ?", input.StudentID).First(&student).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Student not found"})
-        return
-    }
+	// 1️⃣ ดึงข้อมูลนักศึกษาจาก Students table
+	var student entity.Students
+	if err := db.Where("student_id = ?", input.StudentID).First(&student).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Student not found"})
+		return
+	}
 
-    // 2️⃣ สร้าง Graduation object โดยใช้ CurriculumID จาก student table
-    graduation := entity.Graduation{
-        StudentID:    input.StudentID,
-        CurriculumID: &student.CurriculumID,
-        // สามารถใส่ค่าอื่นๆ เช่น Date, Status หรือ Reason ได้ตามต้องการ
-    }
+	// 2️⃣ สร้าง Graduation object โดยใช้ CurriculumID จาก student table
+	graduation := entity.Graduation{
+		StudentID:    input.StudentID,
+		CurriculumID: &student.CurriculumID,
+		// สามารถใส่ค่าอื่นๆ เช่น Date, Status หรือ Reason ได้ตามต้องการ
+	}
 
-    // 3️⃣ ใช้ transaction เพื่อให้ทั้งการสร้าง Graduation และอัพเดท status นักศึกษาเป็น atomic operation
-    err := db.Transaction(func(tx *gorm.DB) error {
-        if err := tx.Create(&graduation).Error; err != nil {
-            return err
-        }
-        if err := tx.Model(&entity.Students{}).
-            Where("student_id = ?", input.StudentID).
-            Update("status_student_id", "20").Error; err != nil {
-            return err
-        }
-        return nil
-    })
+	// 3️⃣ ใช้ transaction เพื่อให้ทั้งการสร้าง Graduation และอัพเดท status นักศึกษาเป็น atomic operation
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&graduation).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&entity.Students{}).
+			Where("student_id = ?", input.StudentID).
+			Update("status_student_id", "20").Error; err != nil {
+			return err
+		}
+		return nil
+	})
 
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-    // 4️⃣ ตอบกลับ client
-    c.JSON(http.StatusOK, gin.H{
-        "message": "Graduation created and status updated successfully",
-        "data":    graduation,
-    })
+	// 4️⃣ ตอบกลับ client
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Graduation created and status updated successfully",
+		"data":    graduation,
+	})
 }
-
 
 // ----------------------
 // 2. ดึงคำขอแจ้งจบของนักศึกษาปัจจุบัน
@@ -85,6 +84,7 @@ func GetMyGraduation(c *gin.Context) {
 		Preload("Student.StatusStudent").
 		Preload("Student.Curriculum").
 		Preload("Student.Grade.Subject").
+		Order("id DESC").
 		First(&graduation, "student_id = ?", studentID).Error
 
 	if err != nil {
@@ -119,7 +119,7 @@ func GetMyGraduation(c *gin.Context) {
 			"RejectReason":  "",
 			"Date":          nil,
 			"TotalCredits":  totalCredits,
-			"GPAX":           gpa,
+			"GPAX":          gpa,
 		}})
 		return
 	}
@@ -151,7 +151,7 @@ func GetMyGraduation(c *gin.Context) {
 		"RejectReason":  graduation.RejectReason,
 		"Date":          graduation.Date,
 		"TotalCredits":  totalCredits,
-		"GPAX":           gpa,
+		"GPAX":          gpa,
 	}})
 }
 
@@ -219,7 +219,7 @@ func GetAllGraduation(c *gin.Context) {
 			"RejectReason":  g.RejectReason,
 			"Date":          g.Date,
 			"TotalCredits":  totalCredits,
-			"GPAX":           gpa,
+			"GPAX":          gpa,
 		})
 	}
 
