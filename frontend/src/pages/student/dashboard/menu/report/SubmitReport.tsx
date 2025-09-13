@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, Select, Input, Upload, Button, Modal, Space, message, Typography, List } from "antd";
 import { FilePdfOutlined, FileOutlined } from "@ant-design/icons";
 import type { UploadFile, UploadProps } from "antd/es/upload/interface";
-//import axios from "axios";
 import { getReportTypes, listReviewerOptions, createReport, findReviewerIdByUsername } from "../../../../../services/https/report/report";
 import { api } from "../../../../../services/https/api";
 import { getNameTeacher, getTeacherAll } from "../../../../../services/https/teacher/teacher";
@@ -15,7 +14,7 @@ const { Text } = Typography;
 type Props = { studentId?: string };
 
 const SubmitReport: React.FC<Props> = ({ studentId: propStudentId }) => {
-  // Popup picker for static PDF forms from /public/forms/index.json
+  // Popup picker for static PDF forms from /public/reportforms/index.json
   type FormFile = { name: string; path: string };
   const [pickerOpen, setPickerOpen] = useState(false);
   const [formFiles, setFormFiles] = useState<FormFile[]>([]);
@@ -25,14 +24,26 @@ const SubmitReport: React.FC<Props> = ({ studentId: propStudentId }) => {
   const normalizeHref = (p: string) => {
     if (!p) return "";
     if (p.startsWith("http")) return p;
-    const rel = p.startsWith("/") ? p : `/${p}`;
-    return `${window.location.origin}${rel}`;
+    // normalize base path and correct any stale '/forms/' prefix to '/reportforms/'
+    let rel = p.startsWith("/") ? p : `/${p}`;
+    if (rel.startsWith("/forms/")) rel = rel.replace(/^\/forms\//, "/reportforms/");
+    // encode each path segment to support non-ASCII filenames
+    const hashIndex = rel.indexOf("#");
+    const queryIndex = rel.indexOf("?");
+    const cutIndex = [hashIndex, queryIndex].filter((i) => i >= 0).sort((a, b) => a - b)[0] ?? rel.length;
+    const pathPart = rel.slice(0, cutIndex);
+    const suffix = rel.slice(cutIndex);
+    const encodedPath = pathPart
+      .split("/")
+      .map((seg, idx) => (idx === 0 ? seg : encodeURIComponent(seg))) // keep leading '' for root
+      .join("/");
+    return `${window.location.origin}${encodedPath}${suffix}`;
   };
   const loadFormIndex = async () => {
     setLoadingForms(true);
     setPickerError(null);
     try {
-      const res = await fetch(`/reportforms/index.json`, { cache: "no-cache" });
+      const res = await fetch(`/reportforms/index.json`, { cache: "no-store" });
       if (!res.ok) throw new Error(`โหลดรายการไฟล์ไม่สำเร็จ (${res.status})`);
       const data = await res.json();
       const arr = Array.isArray(data) ? data : [];
@@ -104,7 +115,6 @@ const SubmitReport: React.FC<Props> = ({ studentId: propStudentId }) => {
       } catch {}
       try {
         const reviewers = await listReviewerOptions();
-        console.log("reviewers from /reviewers:", reviewers);
         // Enrich labels: teacher => FirstName LastName, admin => เจ้าหน้าที่ (generic)
         const enriched = await Promise.all(
           (reviewers || []).map(async (o: any) => {
@@ -160,7 +170,17 @@ const SubmitReport: React.FC<Props> = ({ studentId: propStudentId }) => {
           } catch {}
         }
 
-        // ถ้า API ว่างจริงๆ ใส่ fallback อย่างน้อยเป็น "เจ้าหน้าที่" เท่านั้น
+        // Ensure at least one admin/staff option appears as "เจ้าหน้าที่"
+        const hasStaff = finalOpts.some((o: any) => String(o?.label).trim() === "เจ้าหน้าที่");
+        if (!hasStaff) {
+          // Try to find an admin reviewer id from the original list first
+          const fromList = (reviewers || []).find((r: any) => /\(admin\)/i.test(String(r?.label || "")) || /เจ้าหน้าที่/.test(String(r?.label || "")));
+          const staffId = fromList?.value || "RV001"; // fallback to seed id
+          if (!finalOpts.some((x: any) => x.value === staffId)) {
+            finalOpts.unshift({ value: staffId, label: "เจ้าหน้าที่" });
+          }
+        }
+        // ถ้า API ว่างจริงๆ (กรณีสุดโต่ง) ให้มีอย่างน้อยเจ้าหน้าที่
         if (!finalOpts.length) finalOpts = [{ value: "RV001", label: "เจ้าหน้าที่" }];
         setReviewerOptions(finalOpts);
       } catch {}

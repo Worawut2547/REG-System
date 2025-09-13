@@ -23,7 +23,9 @@ type Curriculum struct {
 
 	CreatedAt time.Time `json:"CreatedAt"`
 	UpdatedAt time.Time `json:"UpdatedAt"`
-	DeletedAt gorm.DeletedAt `json:"DeletedAt,omitempty" gorm:"index"` // ใช้สำหรับ soft delete
+	DeletedAt gorm.DeletedAt `json:"DeletedAt,omitempty" gorm:"index"` 
 
-	Students []Students `gorm:"foreignKey:CurriculumID" json:"-"` // ระบุความสัมพันธ์ 1--many [Student]
+
+	Students []Students `gorm:"foreignKey:CurriculumID" json:"-"` 
 }
+

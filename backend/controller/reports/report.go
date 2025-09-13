@@ -191,12 +191,17 @@ func DeleteReportAttachment(c *gin.Context) {
 func GetReports(c *gin.Context) {
     db := config.DB()
     role := strings.ToLower(strings.TrimSpace(c.Query("role")))
+    username := strings.ToLower(strings.TrimSpace(c.Query("username")))
     var items []entity.Report
     q := preloadReport(orderReport(db))
     if role == "admin" || role == "teacher" {
         q = q.Joins("JOIN reviewers r ON r.reviewer_id = reports.reviewer_id").
             Joins("JOIN users u ON u.id = r.user_id").
             Where("LOWER(u.role) = ?", role)
+        // จำกัดให้เหลือเฉพาะอาจารย์คนที่ระบุ หากมี username
+        if role == "teacher" && username != "" {
+            q = q.Where("LOWER(u.username) = ?", username)
+        }
     }
     if err := q.Find(&items).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -368,7 +373,43 @@ func GetReviewerIDByUsername(c *gin.Context) {
         return
     }
     if r.ReviewerID == "" {
-        c.JSON(http.StatusNotFound, gin.H{"error": "reviewer not found"})
+        // Auto-create reviewer for teacher when not found
+        // 1) lookup user by username
+        type userRow struct{ ID uint; Role string }
+        var u userRow
+        if err := db.Table("users").Select("id, role").Where("LOWER(username)=LOWER(?)", username).First(&u).Error; err != nil {
+            c.JSON(http.StatusNotFound, gin.H{"error": "reviewer not found"})
+            return
+        }
+        if strings.ToLower(strings.TrimSpace(u.Role)) != "teacher" {
+            // only auto-create for teacher
+            c.JSON(http.StatusNotFound, gin.H{"error": "reviewer not found"})
+            return
+        }
+        // 2) check if reviewer already exists for this user id
+        var existed row
+        _ = db.Table("reviewers").Select("reviewer_id").Where("user_id = ?", u.ID).Limit(1).Scan(&existed).Error
+        if existed.ReviewerID != "" {
+            c.JSON(http.StatusOK, gin.H{"reviewer_id": existed.ReviewerID})
+            return
+        }
+        // 3) generate next reviewer id e.g., RV001
+        var ids []string
+        _ = db.Table("reviewers").Select("reviewer_id").Find(&ids).Error
+        maxN := 0
+        re := regexp.MustCompile(`(?i)^RV(\d+)$`)
+        for _, s := range ids {
+            if m := re.FindStringSubmatch(strings.TrimSpace(s)); len(m) == 2 {
+                if n, err := strconv.Atoi(m[1]); err == nil && n > maxN { maxN = n }
+            }
+        }
+        next := fmt.Sprintf("RV%03d", maxN+1)
+        rev := entity.Reviewer{ Reviewer_id: next, UserID: u.ID }
+        if err := db.Create(&rev).Error; err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(http.StatusOK, gin.H{"reviewer_id": rev.Reviewer_id})
         return
     }
     c.JSON(http.StatusOK, gin.H{"reviewer_id": r.ReviewerID})

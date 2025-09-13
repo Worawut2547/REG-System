@@ -6,12 +6,11 @@ import { type AdminInterface } from '../../../interfaces/Admin'
 
 /* ---------- page components ---------- */
 import MainPage from './menu/mainpage/mainpage';
-//import RegisterPage from './menu/register/register';
 import CoursePage from './menu/course/course';
 import GradePage from './menu/grade/grade';
 import ScorePage from './menu/score/score';
-import PaymentPage from './menu/payment/payment';
-import StudentPage from './menu/profile/mainpage';
+//import PaymentPage from './menu/payment/payment';
+import Profile from './menu/profile/mainpage';
 import TeacherPage from './menu/teacher/teacher';
 import ReportPage from './menu/report/report';
 import GraduatePage from './menu/graduate/graduate';
@@ -22,7 +21,6 @@ import './dashboard.css';
 
 import {
   HomeOutlined,
-  ScheduleOutlined,
   BookOutlined,
   UserOutlined,
   LockOutlined,
@@ -30,12 +28,9 @@ import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
   ReadOutlined,
-  ContactsOutlined,
   SolutionOutlined,
   ApartmentOutlined,
-  FormOutlined,
   ExclamationCircleOutlined,
-  BankOutlined,
 } from '@ant-design/icons';
 
 import { Button, Layout, Menu, Col, Row } from 'antd';
@@ -53,12 +48,10 @@ const TeacherDashboardpage: React.FC = () => {
   // ✅ ADD: map ชื่อเมนู ↔ slug สำหรับใช้ใน URL
   const keyToSlug: Record<string, string> = {
     'หน้าหลัก': 'home',
-    'ลงทะเบียนเรียน': 'register',
     'วิชาที่เปิดสอน': 'course',
     'ผลการเรียน': 'grade',
     'คะแนน': 'score',
-    'ใบแจ้งยอดชำระ': 'payment',
-    'นักศึกษา': 'student',
+    'ระเบียนประวัติ': 'student',
     'อาจารย์': 'teacher',
     'คำร้อง': 'report',
     'แจ้งจบการศึกษา': 'graduate',
@@ -72,7 +65,6 @@ const TeacherDashboardpage: React.FC = () => {
   useEffect(() => {
     // ดึง username จาก localStorage
     const username = localStorage.getItem("username");
-    console.log("Username fro localStorage:",username);
     
     if(username){
       getNameAdmin(username)
@@ -106,18 +98,14 @@ const TeacherDashboardpage: React.FC = () => {
   // ---------- render page by key ----------
   const renderContent = () => {
     switch (activePage) {
-      case 'ลงทะเบียนเรียน':
-        return //<RegisterPage />;
       case 'วิชาที่เปิดสอน':
         return <CoursePage />;
       case 'ผลการเรียน':
         return <GradePage />;
       case 'คะแนน':
         return <ScorePage />;
-      case 'ใบแจ้งยอดชำระ':
-        return <PaymentPage />;
-      case 'นักศึกษา':
-        return <StudentPage />;
+      case 'ระเบียนประวัติ':
+        return <Profile />;
       case 'อาจารย์':
         return <TeacherPage />;
       case 'คำร้อง':
@@ -198,15 +186,11 @@ const TeacherDashboardpage: React.FC = () => {
           onClick={handleMenuClick}
           items={[
             { key: 'หน้าหลัก', icon: <HomeOutlined />, label: 'หน้าหลัก' },
-            { key: 'ลงทะเบียนเรียน', icon: <ScheduleOutlined />, label: 'ลงทะเบียนเรียน' },
             { key: 'วิชาที่เปิดสอน', icon: <BookOutlined />, label: 'วิชาที่เปิดสอน' },
             { key: 'ผลการเรียน', icon: <ReadOutlined />, label: 'ผลการเรียน' },
             { key: 'คะแนน', icon: <SolutionOutlined />, label: 'คะแนน' },
-            { key: 'ใบแจ้งยอดชำระ', icon: <BankOutlined />, label: 'ใบแจ้งยอดชำระ' },
-            { key: 'นักศึกษา', icon: <UserOutlined />, label: 'นักศึกษา' },
-            { key: 'อาจารย์', icon: <ContactsOutlined />, label: 'อาจารย์' },
+            { key: 'ระเบียนประวัติ', icon: <UserOutlined />, label: 'ระเบียนประวัติ' },
             { key: 'คำร้อง', icon: <ExclamationCircleOutlined />, label: 'คำร้อง' },
-            { key: 'แจ้งจบการศึกษา', icon: <FormOutlined />, label: 'แจ้งจบการศึกษา' },
             { key: 'หลักสูตร', icon: <ApartmentOutlined />, label: 'หลักสูตร' },
             { key: 'เปลี่ยนรหัสผ่าน', icon: <LockOutlined />, label: 'เปลี่ยนรหัสผ่าน' },
             { key: 'ออกจากระบบ', icon: <LogoutOutlined />, label: 'ออกจากระบบ' },

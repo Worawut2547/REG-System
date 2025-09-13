@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-
 	"reg_system/config"
 	"reg_system/entity"
 	"reg_system/services"
@@ -48,56 +47,78 @@ func GetBillByStudentID(c *gin.Context) {
 	studentID := c.Param("id")
 	db := config.DB()
 
-	var bills []entity.Bill
-	// ดึงทุก bill ของ student พร้อม preload
-	if err := db.Preload("Student.Registration.Subject.Semester").
-		Preload("Status").
-		Preload("Registration.Subject").
+	// 1️⃣ ดึง Registration ของ student พร้อม Subject + Semester
+	var registrations []entity.Registration
+	if err := db.Preload("Subject.Semester").
 		Where("student_id = ?", studentID).
-		Find(&bills).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "bills not found"})
+		Find(&registrations).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch registrations"})
 		return
 	}
 
+	if len(registrations) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no registrations found"})
+		return
+	}
+
+	// 2️⃣ ดึง Bill ของ student
+	var bills []entity.Bill
+	if err := db.Preload("Status").
+		Where("student_id = ?", studentID).
+		Find(&bills).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bills"})
+		return
+	}
+
+	// 3️⃣ สร้าง map
 	type SubjectKey string
 	subjectMap := map[SubjectKey]SubjectResponse{}
 	statusMap := map[string]string{}
 	filePathMap := map[string]string{}
 	totalPriceMap := map[string]int{}
 
-	for _, bill := range bills {
-		status := "-"
-		if bill.Status != nil {
-			status = bill.Status.Status
+	for _, reg := range registrations {
+		if reg.Subject == nil || reg.Subject.Semester == nil {
+			continue
 		}
 
-		year := bill.AcademicYear
-		term := bill.Term
+		year := reg.Subject.Semester.AcademicYear
+		term := reg.Subject.Semester.Term
 		key := fmt.Sprintf("%d-%d", year, term)
 
-		// เก็บ filePath ต่อเทอม
-		if bill.FilePath != "" {
-			filePathMap[key] = bill.FilePath
+		sKey := SubjectKey(fmt.Sprintf("%d-%d-%s", year, term, reg.SubjectID))
+		if _, exists := subjectMap[sKey]; !exists {
+			subjectMap[sKey] = SubjectResponse{
+				SubjectID:    reg.SubjectID,
+				SubjectName:  reg.Subject.SubjectName,
+				Credit:       reg.Subject.Credit,
+				Term:         term,
+				AcademicYear: year,
+			}
 		}
 
-		// รวม totalPrice ต่อเทอม
-		totalPriceMap[key] += bill.TotalPrice
-
-		for _, reg := range bill.Student.Registration {
-			if reg.Subject != nil && reg.Subject.Semester != nil {
-				sKey := SubjectKey(fmt.Sprintf("%d-%d-%s", reg.Subject.Semester.AcademicYear, reg.Subject.Semester.Term, reg.SubjectID))
-				if _, exists := subjectMap[sKey]; !exists {
-					subjectMap[sKey] = SubjectResponse{
-						SubjectID:    reg.SubjectID,
-						SubjectName:  reg.Subject.SubjectName,
-						Credit:       reg.Subject.Credit,
-						Term:         reg.Subject.Semester.Term,
-						AcademicYear: reg.Subject.Semester.AcademicYear,
-					}
+		// หา bill ของเทอมนี้
+		found := false
+		for _, bill := range bills {
+			if bill.AcademicYear == year && bill.Term == term {
+				status := "-"
+				if bill.Status != nil {
+					status = bill.Status.Status
 				}
-				// เก็บ status per year-term
 				statusMap[key] = status
+				if bill.FilePath != "" {
+					filePathMap[key] = bill.FilePath
+				}
+				totalPriceMap[key] += bill.TotalPrice
+				found = true
+				break
 			}
+		}
+
+		if !found {
+			// กรณีไม่มี bill ให้คำนวณเอง
+			statusMap[key] = "ค้างชำระ"
+			totalPriceMap[key] += reg.Subject.Credit * 800
 		}
 	}
 
@@ -115,10 +136,10 @@ func GetBillByStudentID(c *gin.Context) {
 	}
 
 	resp := BillResponse{
-		ID:         0, // สามารถใส่ ID ของ bill ล่าสุด หรือ 0
+		ID:         0,
 		TotalPrice: totalPriceMap[fmt.Sprintf("%d-%d", defaultYear, defaultTerm)],
 		Subjects:   subjects,
-		Status:     "-", // ไม่ใช้รวม status
+		Status:     "-",
 		StatusMap:  statusMap,
 		FilePath:   filePathMap[fmt.Sprintf("%d-%d", defaultYear, defaultTerm)],
 		Year:       defaultYear,
@@ -282,9 +303,9 @@ func UploadReceipt(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "upload success",
-		"file_path": fileName,
-		"status":    "รอตรวจสอบ",
+		"message":     "upload success",
+		"file_path":   fileName,
+		"status":      "รอตรวจสอบ",
 		"uploaded_at": now.Format("2006-01-02 15:04:05"), // ✅ ส่งเวลาให้ frontend
 	})
 }
@@ -446,4 +467,5 @@ func UpdateBillStatus(c *gin.Context) {
 //   billGroup.GET("/admin/all", GetAllBills)
 //   billGroup.GET("/preview/:id", PreviewBill)
 //   billGroup.GET("/download/:id", DownloadBill)
+// }
 

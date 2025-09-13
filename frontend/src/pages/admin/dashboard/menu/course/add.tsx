@@ -1,8 +1,3 @@
-// ====================================================================
-// AddSubject.tsx — เพิ่ม/แสดงรายวิชา + แสดงช่วงเวลาเรียนจากหลังบ้านจริง
-// (ปรับให้ SemesterID เป็น number ในหน้าฟอร์ม + dropdown ภาคการศึกษาใช้ ID จริง)
-// ====================================================================
-
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Layout,
@@ -37,16 +32,12 @@ import { getFacultyAll } from "../../../../../services/https/faculty/faculty";
 import { getMajorAll } from "../../../../../services/https/major/major";
 import { getTeacherAll } from "../../../../../services/https/teacher/teacher";
 import { getSemestermAll as getSemesterAll } from "../../../../../services/https/semesterm/semesterm";
-//เพิ่มลูกเล่นสักหน่อย
 import Swal from "sweetalert2";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-/* -----------------------------------------
- * Types (ภายในไฟล์)
- * ----------------------------------------- */
 type Faculty = { id: string; name: string };
 type Major = { id: string; name: string; facultyId?: string };
 
@@ -58,7 +49,7 @@ type TeacherOpt = {
 };
 
 type SemesterOpt = {
-  id: number; // ⬅ ใช้ number จริง
+  id: number;
   term: string;
   academicYear: string;
 };
@@ -87,80 +78,66 @@ type MajorAPI = {
   FacultyID?: string;
 };
 
-/* รองรับคีย์จาก /subjects + แปลง semester/teacher ให้ตรงชนิด */
 type SubjectFromService = SubjectInterface & {
   teacher_id?: string | number;
   TeacherID?: string | number;
   teacherId?: string | number;
-
   semester_id?: string | number;
   SemesterID?: string | number;
   semesterId?: string | number;
-
   term?: string;
   academic_year?: string;
 };
 
-/* แถวในตาราง (Override ให้ SemesterID เป็น number ในหน้า Add นี้) */
 type SubjectRow = Omit<SubjectInterface, "SemesterID"> & {
   SemesterID?: number;
   schedule: SubjectStudyTimeInterface[];
   formattedSchedule?: string[];
 };
 
-/* ฟอร์มในหน้านี้: Override ให้ SemesterID เป็น number */
 type FormValues = Omit<SubjectInterface, "SemesterID"> & {
   SubjectID: string;
   SemesterID?: number;
   schedule: [dayjs.Dayjs, dayjs.Dayjs][];
 };
 
-/* -----------------------------------------
- * Utils
- * ----------------------------------------- */
+// หั่นลิสต์เป็นก้อน ๆ ไว้แสดงแท็กทีละแถว
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
+// แปลงเป็น string แบบกัน null/undefined
 const toStr = (v: string | number | undefined | null): string =>
   v == null ? "" : String(v);
+// แปลงเป็น number แบบกันค่าว่าง
 const toNum = (v: string | number | undefined | null): number | undefined => {
   if (v === null || v === undefined || v === "") return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 };
 
-/* ====================================================================
- * Component
- * ==================================================================== */
 const ADD: React.FC = () => {
   const [form] = Form.useForm<FormValues>();
 
-  // lists
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [teachers, setTeachers] = useState<TeacherOpt[]>([]);
   const [semesters, setSemesters] = useState<SemesterOpt[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
 
-  // UI state
   const [loadingFaculties, setLoadingFaculties] = useState(false);
   const [loadingMajors, setLoadingMajors] = useState(false);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [loadingSemesters, setLoadingSemesters] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // search
   const [query, setQuery] = useState<string>("");
 
-  // watches
   const selectedFacultyId = Form.useWatch("FacultyID", form);
   const selectedMajorId = Form.useWatch("MajorID", form);
 
-  /* -----------------------------------------
-   * Fetch: faculties / majors / teachers / semesters / subjects
-   * ----------------------------------------- */
+  // โหลดรายชื่อคณะ
   const fetchFaculties = async () => {
     try {
       setLoadingFaculties(true);
@@ -181,6 +158,7 @@ const ADD: React.FC = () => {
     }
   };
 
+  // โหลดรายชื่อสาขา
   const fetchMajors = async () => {
     try {
       setLoadingMajors(true);
@@ -201,6 +179,7 @@ const ADD: React.FC = () => {
     }
   };
 
+  // โหลดรายชื่ออาจารย์
   const fetchTeachers = async () => {
     try {
       setLoadingTeachers(true);
@@ -222,11 +201,11 @@ const ADD: React.FC = () => {
     }
   };
 
-  /* ทำให้ option ภาคการศึกษา “id เป็น number และไม่ซ้ำ” */
+  // โหลดภาคการศึกษา
   const fetchSemesters = async () => {
     try {
       setLoadingSemesters(true);
-      const data = await getSemesterAll(); // คืน { SemesterID, Term, AcademicYear }[]
+      const data = await getSemesterAll();
       const arr = Array.isArray(data) ? data : [];
 
       const mapped = arr
@@ -242,7 +221,6 @@ const ADD: React.FC = () => {
         })
         .filter((x): x is SemesterOpt => Boolean(x));
 
-      // dedupe ตาม id
       const uniq = Array.from(new Map(mapped.map((m) => [m.id, m])).values());
       setSemesters(uniq);
     } catch (err) {
@@ -253,17 +231,16 @@ const ADD: React.FC = () => {
     }
   };
 
+  // โหลดรายวิชา + ต่อด้วยเวลาเรียนของแต่ละวิชา
   const fetchSubjects = async () => {
     try {
       const data = await getSubjectAll();
       const arr = (Array.isArray(data) ? data : []) as SubjectFromService[];
 
       const base: SubjectRow[] = arr.map((s) => {
-        // map TeacherID
         const teacherId =
           s.TeacherID ?? s.teacher_id ?? s.teacherId ?? s.TeacherID;
 
-        // map SemesterID -> number
         const semesterRaw =
           s.SemesterID ?? s.semester_id ?? s.semesterId ?? s.SemesterID;
         const semesterNum = toNum(semesterRaw);
@@ -272,25 +249,18 @@ const ADD: React.FC = () => {
           SubjectID: s.SubjectID ?? "",
           SubjectName: s.SubjectName ?? "",
           Credit: Number(s.Credit ?? 0),
-
           FacultyID: (s.FacultyID ?? "").toString().trim(),
           FacultyName:
             s.FacultyName && s.FacultyName.trim() !== ""
               ? s.FacultyName
               : undefined,
-
           MajorID: (s.MajorID ?? "").toString().trim(),
           MajorName:
             s.MajorName && s.MajorName.trim() !== "" ? s.MajorName : undefined,
-
           TeacherID: toStr(teacherId),
-
-          // เก็บเป็น number ในตาราง
           SemesterID: semesterNum,
-
           Term: s.Term ?? s.term ?? "",
           AcademicYear: s.AcademicYear ?? s.academic_year ?? "",
-
           schedule: [],
           formattedSchedule: [],
         };
@@ -301,6 +271,7 @@ const ADD: React.FC = () => {
           const sid = (row.SubjectID ?? "").trim();
           if (!sid) return row;
           try {
+            // ดึงเวลาเรียนมาแปะให้แถวนี้
             const times = await getStudyTimesBySubject(sid);
             const formatted = times.map((t) => {
               const st = dayjs(t.StartAt, "YYYY-MM-DD HH:mm");
@@ -322,6 +293,7 @@ const ADD: React.FC = () => {
     }
   };
 
+  // โหลดข้อมูลตอนเปิดหน้า
   useEffect(() => {
     fetchFaculties();
     fetchMajors();
@@ -330,9 +302,7 @@ const ADD: React.FC = () => {
     fetchSubjects();
   }, []);
 
-  /* -----------------------------------------
-   * Derived: filter + search
-   * ----------------------------------------- */
+  // กรองสาขาตามคณะที่เลือก
   const filteredMajors = useMemo(() => {
     if (!selectedFacultyId) return majors;
     return majors.filter(
@@ -340,6 +310,7 @@ const ADD: React.FC = () => {
     );
   }, [majors, selectedFacultyId]);
 
+  // กรองอาจารย์ตามสาขาที่เลือก
   const filteredTeachers = useMemo(() => {
     const chosenMajor = form.getFieldValue("MajorID") as string | undefined;
     const majorKey = chosenMajor ?? selectedMajorId;
@@ -347,6 +318,7 @@ const ADD: React.FC = () => {
     return teachers.filter((t) => !t.majorId || t.majorId === majorKey);
   }, [teachers, selectedMajorId, form]);
 
+  // กรองรายการในตารางตามคำค้น
   const tableRows = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return subjects;
@@ -368,13 +340,11 @@ const ADD: React.FC = () => {
     });
   }, [subjects, query, teachers]);
 
-  /* -----------------------------------------
-   * Submit
-   * ----------------------------------------- */
+  // กด submit เพื่อเพิ่มวิชาใหม่
   const onFinish = async (values: FormValues) => {
     setSubmitting(true);
 
-    // — สร้าง payload โดยเก็บ SemesterID เป็น number —
+    // รวม payload ก่อนส่งไปหลังบ้าน
     const payload: Omit<SubjectInterface, "SemesterID"> & {
       SemesterID?: number;
     } = {
@@ -389,10 +359,12 @@ const ADD: React.FC = () => {
     };
 
     try {
+      // ส่งไปหลังบ้าน: สร้างวิชา
       const created = await createSubject(
         payload as unknown as SubjectInterface
       );
 
+      // หา subject_id ที่เพิ่งสร้าง (รองรับหลายรูปแบบตอบกลับ)
       const subjectId =
         (created as SubjectInterface & { subject_id?: string }).subject_id ??
         created.SubjectID ??
@@ -400,6 +372,7 @@ const ADD: React.FC = () => {
 
       if (!subjectId) throw new Error("Missing subject_id from response");
 
+      // ส่งช่วงเวลาเรียนทีละช่วง
       const ranges = values.schedule || [];
       await Promise.all(
         ranges.map((range) =>
@@ -410,7 +383,7 @@ const ADD: React.FC = () => {
         )
       );
 
-      // ✅ เด้งป็อปอัพแจ้งสำเร็จ (ไม่บล็อกรอผู้ใช้กด — ใช้ `void` ป้องกัน warning เรื่อง Promise)
+      // แจ้งสำเร็จ
       void Swal.fire({
         icon: "success",
         title: "บันทึกรายวิชาสำเร็จ",
@@ -419,13 +392,13 @@ const ADD: React.FC = () => {
         confirmButtonColor: "#2e236c",
       });
 
+      // เคลียร์ฟอร์มหลังบันทึก + รีโหลดตาราง
       form.resetFields();
       form.setFieldsValue({ schedule: [] } as Partial<FormValues>);
       await fetchSubjects();
     } catch (e) {
       console.error("[SUBMIT] error:", e);
-
-      // ❌ เด้งป็อปอัพแจ้งข้อผิดพลาด
+      // แจ้งพลาด
       const errMsg = (e as Error)?.message?.trim?.() || "กรุณาลองใหม่อีกครั้ง";
       void Swal.fire({
         icon: "error",
@@ -439,9 +412,6 @@ const ADD: React.FC = () => {
     }
   };
 
-  /* ====================================================================
-   * Render
-   * ==================================================================== */
   return (
     <Layout
       style={{
@@ -459,7 +429,6 @@ const ADD: React.FC = () => {
           padding: 24,
         }}
       >
-        {/* -------------------- ฟอร์ม -------------------- */}
         <div
           style={{
             flex: 1,
@@ -471,6 +440,7 @@ const ADD: React.FC = () => {
             flexDirection: "column",
           }}
         >
+          {/* หัวฟอร์มเพิ่มรายวิชา */}
           <div style={{ marginBottom: 16 }}>
             <Title level={4} style={{ margin: 0 }}>
               เพิ่มรายวิชาใหม่
@@ -478,10 +448,11 @@ const ADD: React.FC = () => {
             <Text type="secondary">กรอกข้อมูลให้ครบ แล้วกด “เพิ่มรายวิชา”</Text>
           </div>
 
+          {/* ฟอร์มเพิ่มวิชา */}
           <Form
             form={form}
             layout="vertical"
-            onFinish={onFinish}
+            onFinish={onFinish} // กดปุ่มแล้วเรียก onFinish
             style={{
               display: "flex",
               flexDirection: "column",
@@ -496,6 +467,7 @@ const ADD: React.FC = () => {
               rules={[{ required: true, message: "กรุณากรอกรหัสวิชา" }]}
               style={{ width: "100%" }}
             >
+              {/* ช่องกรอกรหัสวิชา */}
               <Input
                 placeholder="เช่น CS101"
                 style={{ height: 44, maxWidth: 300, fontSize: 15 }}
@@ -508,6 +480,7 @@ const ADD: React.FC = () => {
               rules={[{ required: true, message: "กรุณากรอกชื่อรายวิชา" }]}
               style={{ width: "100%" }}
             >
+              {/* ช่องกรอกชื่อวิชา */}
               <Input
                 placeholder="เช่น คณิตศาสตร์เบื้องต้น"
                 style={{ height: 44, maxWidth: 600, fontSize: 15 }}
@@ -534,6 +507,7 @@ const ADD: React.FC = () => {
               }
               style={{ width: "100%" }}
             >
+              {/* ช่องกรอกหน่วยกิต */}
               <Input
                 placeholder="เช่น 3"
                 inputMode="numeric"
@@ -541,7 +515,7 @@ const ADD: React.FC = () => {
               />
             </Form.Item>
 
-            {/* เวลาเรียน */}
+            {/* กลุ่มเพิ่ม/ลบช่วงเวลาเรียน */}
             <Form.Item label="เวลาเรียน" style={{ width: "100%" }}>
               <>
                 <Typography.Text type="danger">
@@ -570,6 +544,7 @@ const ADD: React.FC = () => {
                           style={{ display: "flex", marginBottom: 8 }}
                           align="baseline"
                         >
+                          {/* เลือกช่วงเวลาเรียนบรรทัดนี้ */}
                           <Form.Item
                             name={name}
                             rules={[
@@ -583,6 +558,7 @@ const ADD: React.FC = () => {
                               minuteStep={1}
                             />
                           </Form.Item>
+                          {/* ลบช่วงเวลาบรรทัดนี้ */}
                           <Popconfirm
                             title="ลบช่วงเวลานี้?"
                             onConfirm={() => remove(name)}
@@ -593,6 +569,7 @@ const ADD: React.FC = () => {
                           </Popconfirm>
                         </Space>
                       ))}
+                      {/* เพิ่มช่วงเวลาใหม่ */}
                       <Form.Item>
                         <Button
                           type="dashed"
@@ -610,7 +587,7 @@ const ADD: React.FC = () => {
               </>
             </Form.Item>
 
-            {/* คณะ */}
+            {/* เลือกคณะ */}
             <Form.Item
               label="คณะ (Faculty)"
               name="FacultyID"
@@ -631,7 +608,7 @@ const ADD: React.FC = () => {
               </Select>
             </Form.Item>
 
-            {/* สาขา */}
+            {/* เลือกสาขา (ล็อกไว้จนกว่าจะเลือกคณะ) */}
             <Form.Item
               label="สาขา (Major)"
               name="MajorID"
@@ -642,7 +619,7 @@ const ADD: React.FC = () => {
                 placeholder="เลือกสาขา"
                 loading={loadingMajors}
                 style={{ maxWidth: 300, fontSize: 15, width: "100%" }}
-                disabled={!selectedFacultyId}
+                disabled={!selectedFacultyId} // กันกดก่อนเลือกคณะ
                 allowClear
               >
                 {filteredMajors.map((m) => (
@@ -653,7 +630,7 @@ const ADD: React.FC = () => {
               </Select>
             </Form.Item>
 
-            {/* อาจารย์ */}
+            {/* เลือกอาจารย์ (ล็อกไว้จนกว่าจะเลือกสาขา) */}
             <Form.Item
               label="อาจารย์ (Teacher)"
               name="TeacherID"
@@ -664,7 +641,7 @@ const ADD: React.FC = () => {
                 placeholder="เลือกอาจารย์"
                 loading={loadingTeachers}
                 style={{ maxWidth: 300, fontSize: 15, width: "100%" }}
-                disabled={!selectedMajorId}
+                disabled={!selectedMajorId} // กันกดก่อนเลือกสาขา
                 allowClear
               >
                 {filteredTeachers.map((t) => (
@@ -675,7 +652,7 @@ const ADD: React.FC = () => {
               </Select>
             </Form.Item>
 
-            {/* ภาคการศึกษา */}
+            {/* เลือกภาคการศึกษา */}
             <Form.Item
               label="ภาคการศึกษา (Semester)"
               name="SemesterID"
@@ -696,6 +673,7 @@ const ADD: React.FC = () => {
               </Select>
             </Form.Item>
 
+            {/* ปุ่มนี้กดแล้วเรียก onFinish */}
             <Form.Item style={{ marginTop: 8 }}>
               <Button
                 type="primary"
@@ -715,7 +693,7 @@ const ADD: React.FC = () => {
           </Form>
         </div>
 
-        {/* -------------------- ค้นหา + ตาราง -------------------- */}
+        {/* กล่องค้นหารายวิชาที่เพิ่มแล้ว */}
         <div style={{ marginTop: 24, marginBottom: 8 }}>
           <Input.Search
             allowClear
@@ -726,6 +704,7 @@ const ADD: React.FC = () => {
           />
         </div>
 
+        {/* ตารางรายวิชาที่เพิ่มแล้ว */}
         <div style={{ marginTop: 12 }}>
           <Title level={4}>รายวิชาที่เพิ่มแล้ว</Title>
           <Table
@@ -748,7 +727,7 @@ const ADD: React.FC = () => {
                   const list = Array.isArray(formattedSchedule)
                     ? formattedSchedule
                     : [];
-                  const groups = chunk<string>(list, 5);
+                  const groups = chunk<string>(list, 5); // แบ่งแท็กแถวละ 5
                   if (groups.length === 0) return <span>-</span>;
                   return (
                     <>
@@ -815,18 +794,15 @@ const ADD: React.FC = () => {
             ]}
             dataSource={tableRows}
             rowKey="SubjectID"
-            pagination={false}
+            pagination={{ pageSize: 5, showSizeChanger: false, position: ["bottomCenter"] }}
             rowClassName={(_record, index) =>
               index % 2 === 0 ? "table-row-light" : "table-row-dark"
             }
           />
         </div>
 
-        {/* C — Table styles */}
         <style>{`
-          /* ใช้สีเส้นหลักให้ตรงกัน */
           :root { --grid-color: #f0e9e9ff; }
-
           .custom-table-header .ant-table-thead > tr > th {
             border-right: 1px solid var(--grid-color) !important;
             border-bottom: 1px solid var(--grid-color) !important;
@@ -835,23 +811,17 @@ const ADD: React.FC = () => {
             border-right: 1px solid var(--grid-color) !important;
             border-bottom: 1px solid var(--grid-color) !important;
           }
-
-          /* ⛔️ ปิดเส้นขาว (split line) ของหัวตาราง */
           .custom-table-header .ant-table-thead > tr > th::before {
             background: transparent !important;
             width: 0 !important;
           }
-          /* กันกรณี sticky header */
           .custom-table-header .ant-table-sticky-holder .ant-table-thead > tr > th::before {
             background: transparent !important;
             width: 0 !important;
           }
-          /* เผื่อบางธีมมี ::after ด้วย */
           .custom-table-header .ant-table-thead > tr > th::after {
             display: none !important;
           }
-
-          /* วิธีทางเลือก: เปลี่ยนตัวแปรสี split line ให้โปร่งใส (AntD v5) */
           .custom-table-header .ant-table {
             --ant-table-header-column-split-color: transparent;
           }

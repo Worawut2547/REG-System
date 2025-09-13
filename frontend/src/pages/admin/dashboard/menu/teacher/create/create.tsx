@@ -74,7 +74,6 @@ const CreateTeacher: React.FC<CreateTeacherProps> = ({ onBack }) => {
       message.error("กรุณาเลือกสาขา");
       return;
     }
-    console.log("Form values:", values);
     // TODO: เรียก API create student
     setLoading(true);
     try {

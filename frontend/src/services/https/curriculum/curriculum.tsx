@@ -1,6 +1,8 @@
 import { api } from "../api";
 import { type CurriculumInterface } from "../../../interfaces/Curriculum";
 
+// service หลักสูตร: สร้าง/อ่าน/แก้/ลบ + map ฟอร์แมต BE → FE ให้พร้อมใช้
+
 // ---------- API DTOs ----------
 export type CurriculumCreateDTO = {
   curriculum_id: string;
@@ -24,7 +26,7 @@ export type CurriculumUpdateDTO = Partial<{
   description: string;
 }>;
 
-// รูปแบบจาก BE (รองรับได้ทั้ง snake/camel + books array)
+// รูปแบบจาก BE รองรับได้ทั้ง snake/camel
 export type CurriculumAPI = {
   curriculum_id?: string;
   CurriculumID?: string;
@@ -36,12 +38,12 @@ export type CurriculumAPI = {
   FacultyID?: string;
   major_id?: string;
   MajorID?: string;
-  book_id?: number | string; // อาจไม่มีในรุ่นล่าสุด
+  book_id?: number | string; 
   description?: string;
   faculty_name?: string;
   major_name?: string;
-  book_path?: string; // อาจแนบมาบ้าง
-  books?: Array<{ id: number; book_path: string }>; // ✅ สำคัญ
+  book_path?: string; 
+  books?: Array<{ id: number; book_path: string }>; //สำคัญ
 };
 
 // BE อาจตอบ { message, data: {...} } หรือ {...} ตรง ๆ
@@ -50,6 +52,7 @@ type CreateRespShape =
   | CurriculumAPI;
 
 // ---------- Helpers ----------
+// แปลงเป็น number แบบกัน NaN — ถ้าไม่ชัวร์ใช้ค่า def
 function toNum(v: unknown, def = 0): number {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string") {
@@ -59,6 +62,7 @@ function toNum(v: unknown, def = 0): number {
   return def;
 }
 
+// ถ้า BE ห่อใน { data } ให้แกะออกก่อน map
 function unwrapCurriculum(payload: CreateRespShape): CurriculumAPI {
   if (typeof payload === "object" && payload !== null && "data" in payload) {
     const d = (payload as { data?: CurriculumAPI }).data;
@@ -68,32 +72,28 @@ function unwrapCurriculum(payload: CreateRespShape): CurriculumAPI {
 }
 
 // ---------- Mapper (รองรับ books) ----------
+// ตรงนี้รวม logic เลือก book_id/book_path: ฟิลด์ตรงก่อน → fallback books[0]
 const mapCurriculumFromAPI = (c: CurriculumAPI): CurriculumInterface => {
-  // ดึงจาก books[0] เป็นค่าเริ่มต้น (ถ้าไม่มี book_id ตรง ๆ)
   const firstBook = Array.isArray(c.books) && c.books.length > 0 ? c.books[0] : undefined;
   const bookIdFromList = firstBook?.id;
   const bookPathFromList = firstBook?.book_path;
 
-  // ใช้ book_id จากฟิลด์ (ถ้ามี) > ไม่มีก็ fallback books[0].id
   const rawBookId = c.book_id !== undefined && c.book_id !== null ? String(c.book_id) : "";
-  const mappedBookId =
-    rawBookId.trim() !== "" ? toNum(rawBookId) : (bookIdFromList ?? undefined);
-
-  // ใช้ book_path ตรง ๆ ถ้ามี > ไม่มีก็ fallback books[0].book_path
+  const mappedBookId = rawBookId.trim() !== "" ? toNum(rawBookId) : (bookIdFromList ?? undefined);
   const mappedBookPath = c.book_path ?? bookPathFromList ?? "";
 
   return {
     CurriculumID: c.curriculum_id ?? c.CurriculumID ?? "",
     CurriculumName: c.curriculum_name ?? c.CurriculumName ?? "",
-    TotalCredit: toNum(c.total_credit, 0),
+    TotalCredit: toNum(c.total_credit, 0),   // กันเคสส่งมาเป็น string
     StartYear: toNum(c.start_year, 0),
     FacultyID: c.faculty_id ?? c.FacultyID ?? "",
     MajorID: c.major_id ?? c.MajorID ?? "",
-    BookID: mappedBookId,           // ✅ คีย์เดิมของ FE — ได้ค่าจาก books[0] ถ้าไม่มี book_id
+    BookID: mappedBookId,                    // ได้ค่าจาก books[0] ถ้าไม่ส่งตรง
     Description: c.description ?? "",
     FacultyName: c.faculty_name ?? "",
     MajorName: c.major_name ?? "",
-    BookPath: mappedBookPath,       // เผื่อใช้ในอนาคต/แสดงผล
+    BookPath: mappedBookPath,                // เผื่อแสดง/ต่อยอด
   };
 };
 
@@ -101,11 +101,13 @@ const mapCurriculumFromAPI = (c: CurriculumAPI): CurriculumInterface => {
 export const createCurriculum = async (
   data: CurriculumInterface
 ): Promise<CurriculumInterface> => {
+  // เช็คฟิลด์บังคับก่อนยิง — กัน payload ว่าง
   const { CurriculumID, CurriculumName, TotalCredit, StartYear, FacultyID } = data;
   if (!CurriculumID || !CurriculumName || TotalCredit == null || StartYear == null || !FacultyID) {
     throw new Error("Missing required curriculum fields");
   }
 
+  // map เป็น snake_case ให้ตรง BE
   const payload: CurriculumCreateDTO = {
     curriculum_id: CurriculumID,
     curriculum_name: CurriculumName,
@@ -117,37 +119,37 @@ export const createCurriculum = async (
   };
 
   const res = await api.post<CreateRespShape>(`/curriculums/`, payload, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" }, // ย้ำ header JSON
   });
 
-  const body = unwrapCurriculum(res.data);
-  return mapCurriculumFromAPI(body);
+  const body = unwrapCurriculum(res.data); // รองรับทั้ง {data:{}}/object ตรง
+  return mapCurriculumFromAPI(body);       // คืนฟอร์แมตกลางฝั่ง FE
 };
 
 export const getCurriculumAll = async (): Promise<CurriculumInterface[]> => {
+  // รองรับทั้ง array ตรง ๆ หรือ { data: [...] }
   const res = await api.get<CurriculumAPI[] | { data?: CurriculumAPI[] }>(`/curriculums/`);
   const arr: CurriculumAPI[] = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-  return arr.map(mapCurriculumFromAPI);
+  return arr.map(mapCurriculumFromAPI); // map ให้ UI ใช้ได้ทันที
 };
 
 export const updateCurriculum = async (
   curriculumId: string,
   data: CurriculumUpdateDTO
 ): Promise<void> => {
-  if (!curriculumId) throw new Error("curriculumId is required");
+  if (!curriculumId) throw new Error("curriculumId is required"); // ต้องมี id ชัดเจน
 
   const payload: CurriculumUpdateDTO = {
     ...data,
-    // ถ้าวันหน้าจะเปิดให้แก้หนังสือผ่านตัวนี้ ค่อยใส่ book_id
   };
 
   await api.put(`/curriculums/${curriculumId}`, payload, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" }, // ส่งเป็น JSON ปลอดภัยสุด
   });
 };
 
 export const deleteCurriculum = async (curriculumId: string): Promise<void> => {
-  if (!curriculumId) throw new Error("curriculumId is required");
-  await api.delete(`/curriculums/${curriculumId}`);
+  if (!curriculumId) throw new Error("curriculumId is required"); // กันลบผิด
+  await api.delete(`/curriculums/${curriculumId}`); // 200/204 ถือว่าจบ
 };
 

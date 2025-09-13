@@ -75,7 +75,7 @@ const MainPage: React.FC = () => {
             <Tile to="?tab=teacher" icon={<ContactsOutlined />} label="อาจารย์" />
           </Col>
           <Col xs={24} sm={12} md={8}>
-            <Tile to="?tab=score" icon={<SolutionOutlined />} label="คะแนน" />
+            <Tile to="?tab=student" icon={<SolutionOutlined />} label="นักศึกษา" />
           </Col>
           <Col xs={24} sm={12} md={8}>
             <Tile to="?tab=report" icon={<ExclamationCircleOutlined />} label="คำร้อง" />
@@ -84,7 +84,7 @@ const MainPage: React.FC = () => {
             <Tile to="?tab=course" icon={<BookOutlined />} label="วิชาที่เปิดสอน" />
           </Col>
           <Col xs={24} sm={12} md={8}>
-            <Tile to="?tab=student" icon={<UserOutlined />} label="ระเบียนประวัติ" />
+            <Tile to="?tab=password" icon={<UserOutlined />} label="เปลี่ยนรหัสผ่าน" />
           </Col>
           <Col xs={24} sm={12} md={8}>
             <Tile to="?tab=curriculum" icon={<ApartmentOutlined />} label="หลักสูตร" />

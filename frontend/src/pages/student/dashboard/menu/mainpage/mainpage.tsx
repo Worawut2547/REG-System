@@ -72,7 +72,7 @@ const MainPage: React.FC = () => {
         <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
           <Col xs={24} sm={12} md={8}>
             {/* ✅ เปลี่ยนให้ลิงก์ไปที่ query tab */}
-            <Tile to="?tab=teacher" icon={<ContactsOutlined />} label="อาจารย์" />
+            <Tile to="?tab=grade" icon={<ContactsOutlined />} label="ผลการเรียน" />
           </Col>
           <Col xs={24} sm={12} md={8}>
             <Tile to="?tab=score" icon={<SolutionOutlined />} label="คะแนน" />

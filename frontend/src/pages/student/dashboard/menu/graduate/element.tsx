@@ -62,7 +62,7 @@ type GraduateData = {
   gpax?: number;
 };
 
-const GraduateStatus: React.FC = () => {
+const Element: React.FC = () => {
   const [data, setData] = useState<GraduateData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -73,33 +73,29 @@ const GraduateStatus: React.FC = () => {
 
     try {
       setLoading(true);
-      const grad: GraduationInterface | null = await getMyGraduation();
 
-      if (grad) {
-        setData({
-          fullName: grad.fullName,
-          studentId: grad.StudentID,
-          curriculum: grad.curriculum,
-          status: grad.statusStudent,
-          rejectReason: grad.reason,
-          totalCredits: grad.totalCredits, // fallback 0
-          gpax: grad.GPAX ?? 0,
-        });
+      // ดึงข้อมูลนักศึกษาก่อน
+      const student: StudentInterface | null = await getNameStudent(username);
+      if (!student) return;
 
-      } else {
-        const student: StudentInterface | null = await getNameStudent(username);
-        if (student) {
-          setData({
-            fullName: `${student.FirstName ?? ''} ${student.LastName ?? ''}`.trim(),
-            studentId: student.StudentID ?? '',
-            curriculum: student.CurriculumName ?? '',
-            gpax: student.GPAX ?? 0,
-            status: statusMap[student.StatusStudentID ?? ''] ?? 'รอตรวจสอบ',
-            rejectReason: student.RejectReason ?? '',
-            totalCredits: student.TotalCredits ?? 0,
-          });
-        }
+      // พยายามดึงข้อมูลแจ้งจบ
+      let grad: GraduationInterface | null = null;
+      try {
+        grad = await getMyGraduation();
+      } catch (err) {
+        // ถ้าไม่มีข้อมูลแจ้งจบก็ไม่เป็นไร
       }
+
+      setData({
+        fullName: `${student.FirstName ?? ''} ${student.LastName ?? ''}`.trim(),
+        studentId: student.StudentID ?? '',
+        curriculum: grad?.curriculum || student.CurriculumName || '', // ✅ fallback
+        gpax: student.GPAX ?? 0,
+        status: grad?.statusStudent || statusMap[student.StatusStudentID ?? ''] || 'รอตรวจสอบ',
+        rejectReason: grad?.reason || student.RejectReason || '',
+        totalCredits: grad?.totalCredits ?? student.TotalCredits ?? 0,
+      });
+
     } catch (err) {
       console.error(err);
       message.error("ไม่สามารถโหลดข้อมูลนักศึกษาได้");
@@ -111,6 +107,7 @@ const GraduateStatus: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
 
   const handleGraduationClick = async () => {
     if (!data) return;
@@ -219,5 +216,5 @@ const GraduateStatus: React.FC = () => {
   );
 };
 
-export default GraduateStatus;
+export default Element;
 

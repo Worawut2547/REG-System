@@ -47,7 +47,7 @@ var RoutePermission = map[string][]string{
 	"POST /subjects/":             {"admin"},
 	"DELETE /subjects/:subjectId": {"admin"},
 	"PUT /subjects/:subjectId":    {"admin"},
-	
+
 	// subject study time
 	"POST /subjects/:subjectId/times":           {"admin"},
 	"DELETE /subjects/:subjectId/times/:timeId": {"admin"},
@@ -65,7 +65,7 @@ var RoutePermission = map[string][]string{
 	"GET /graduations/":    {"admin"},
 	"POST /graduations/":   {"student"},
 	"GET /graduations/:id": {"student"},
-	"PUT /graduations/:id": {"admin , student"},
+	"PUT /graduations/:id": {"admin" , "student"},
 
 	// registration
 	"GET /registrations/:id":    {"student"},
@@ -106,6 +106,7 @@ var RoutePermission = map[string][]string{
 	"GET /subjects/:subjectId":         {"admin", "student", "teacher"},
 	"GET /report-types/":               {"admin", "student", "teacher"},
 	"GET /teachers/:id":                {"admin", "student", "teacher"},
+	"GET /semesters/":                  {"admin", "student", "teacher"},
 }
 
 func PermissionMiddleware() gin.HandlerFunc {

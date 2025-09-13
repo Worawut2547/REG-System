@@ -12,15 +12,16 @@ import (
 	"reg_system/controller/gender"
 	"reg_system/controller/grade"
 	scores "reg_system/controller/score"
+	"reg_system/controller/semester"
 
 	"reg_system/controller/degree"
 	"reg_system/controller/faculty"
 	"reg_system/controller/graduation"
 	"reg_system/controller/major"
 	"reg_system/controller/position"
+	"reg_system/controller/registration"
 	"reg_system/controller/reports"
 	"reg_system/controller/reporttypes"
-	"reg_system/controller/registration"
 	"reg_system/controller/status"
 	"reg_system/controller/students"
 	subjects "reg_system/controller/subject"
@@ -139,14 +140,20 @@ func main() {
 		statusGroup.GET("/", status.GetStatusStudentAll)
 		statusGroup.POST("/", status.CreateStatus)
 	}
+
+	// -------------------- Semester --------------------
+	semesterGroup := r.Group("/semesters/")
+	{
+		semesterGroup.GET("", semester.GetSemesterAll)
+	}
 	//---------------------------------------------------------
 	registrationGroup := r.Group("/registrations")
 	{
-        registrationGroup.GET("/", registration.GetRegistrationAll)                  
-        registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)
-        registrationGroup.POST("/", registration.CreateRegistration)
-        registrationGroup.PUT("/:id", registration.UpdateRegistration)               
-        registrationGroup.DELETE("/:id", registration.DeleteRegistration)
+		registrationGroup.GET("/", registration.GetRegistrationAll)
+		registrationGroup.GET("/:id", registration.GetRegistrationByStudentID)
+		registrationGroup.POST("/", registration.CreateRegistration)
+		registrationGroup.PUT("/:id", registration.UpdateRegistration)
+		registrationGroup.DELETE("/:id", registration.DeleteRegistration)
 
 		registrationGroup.GET("/subjects/:id", registration.GetStudentBySubjectID)
 	}
@@ -168,7 +175,7 @@ func main() {
 		cb.GET("/", curriculum.GetCurriculumBooks)
 		cb.GET("/:id", curriculum.GetCurriculumBookByID)
 		cb.POST("/register", curriculum.RegisterCurriculumBookByPath)
-		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook) 
+		cb.GET("/preview/:id", curriculum.PreviewCurriculumBook)
 		cb.GET("/download/:id", curriculum.DownloadCurriculumBook)
 		cb.DELETE("/:id", curriculum.DeleteCurriculumBook)
 	}
@@ -206,51 +213,51 @@ func main() {
 				times.DELETE("/:timeId", subjectstudytime.Delete)
 			}
 		}
-    }
+	}
 
 	// -------------------- Reports --------------------
 	reportGroup := r.Group("/reports")
 	{
-		reportGroup.GET("/", reports.GetReportAll) 
-		reportGroup.GET("/:id", reports.GetReportByID)                  
-		reportGroup.POST("/", reports.CreateReport)                           
-		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)         
-		reportGroup.PUT("/:id/status", reports.UpdateStatus)                      
-		reportGroup.GET("/:id/comments", reports.GetReportComments)           
-		reportGroup.POST("/:id/comments", reports.CreateReportComment)            
-		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment) 
-		reportGroup.DELETE("/:id", reports.DeleteReportAlias)                  
+		reportGroup.GET("/", reports.GetReportAll)
+		reportGroup.GET("/:id", reports.GetReportByID)
+		reportGroup.POST("/", reports.CreateReport)
+		reportGroup.POST("/:id/attachments", reports.AddReportAttachment)
+		reportGroup.PUT("/:id/status", reports.UpdateStatus)
+		reportGroup.GET("/:id/comments", reports.GetReportComments)
+		reportGroup.POST("/:id/comments", reports.CreateReportComment)
+		reportGroup.DELETE("/:id/attachments/:attId", reports.DeleteReportAttachment)
+		reportGroup.DELETE("/:id", reports.DeleteReportAlias)
 	}
 
 	// -------------------- Report Types --------------------
-    reportTypeGroup := r.Group("/report-types")
-    {
-        reportTypeGroup.GET("/", reporttypes.ListReportTypes)        
-        reportTypeGroup.GET("", reporttypes.ListReportTypes)         
-        reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID) 
-        reportTypeGroup.POST("/", reporttypes.CreateReportType)    
-        reportTypeGroup.POST("", reporttypes.CreateReportType)    
-        reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)   
-        reportTypeGroup.DELETE("/:id", reporttypes.DeleteReportType)
-    }
+	reportTypeGroup := r.Group("/report-types")
+	{
+		reportTypeGroup.GET("/", reporttypes.ListReportTypes)
+		reportTypeGroup.GET("", reporttypes.ListReportTypes)
+		reportTypeGroup.GET("/:id", reporttypes.GetReportTypeByID)
+		reportTypeGroup.POST("/", reporttypes.CreateReportType)
+		reportTypeGroup.POST("", reporttypes.CreateReportType)
+		reportTypeGroup.PUT("/:id", reporttypes.UpdateReportType)
+		reportTypeGroup.DELETE("/:id", reporttypes.DeleteReportType)
+	}
 
 	// -------------------- Reviewers --------------------
 	reviewerGroup := r.Group("/reviewers")
 	{
-		reviewerGroup.GET("/", reports.ListReviewers)                  
+		reviewerGroup.GET("/", reports.ListReviewers)
 		reviewerGroup.GET("/by-username/:username", reports.GetReviewerByUsername)
-		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)   
+		reviewerGroup.GET("/:rid/reports", reports.GetReportsByReviewer)
 	}
 
 	//---------------------------------------------------------
 	billGroup := r.Group("/bills")
 	{
-		billGroup.GET("/:id", bill.GetBillByStudentID)    
-		billGroup.POST("/:id/create", bill.CreateBill)   
+		billGroup.GET("/:id", bill.GetBillByStudentID)
+		billGroup.POST("/:id/create", bill.CreateBill)
 		billGroup.POST("/upload/:id/:year/:term", bill.UploadReceipt)
-		billGroup.GET("/preview/:id", bill.ShowFile)    
-		billGroup.GET("/admin/all", bill.GetAllBills) 
-		billGroup.PUT("/:id", bill.UpdateBillStatus) 
+		billGroup.GET("/preview/:id", bill.ShowFile)
+		billGroup.GET("/admin/all", bill.GetAllBills)
+		billGroup.PUT("/:id", bill.UpdateBillStatus)
 	}
 
 	//---------------------------------------------------------
